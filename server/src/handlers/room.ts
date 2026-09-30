@@ -16,6 +16,7 @@ const playerToRoom = new Map<string, string>(); // socketId -> roomId
 
 const TICK_INTERVAL_MS = 1000;
 const roomIntervals = new Map<string, NodeJS.Timeout>();
+const roomBriefingTimers = new Map<string, NodeJS.Timeout>();
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
   socket.on('createRoom', ({ playerName, matchDuration = 600 }) => {
@@ -259,11 +260,14 @@ function startMatch(io: Server, room: Room): void {
   }
 
   // After briefing phase, start playing
-  setTimeout(() => {
+  const briefingTimer = setTimeout(() => {
+    roomBriefingTimers.delete(room.id);
+    if (room.phase !== 'briefing') return;
     room.phase = 'playing';
     io.to(room.id).emit('roomUpdate', toPublicRoom(room));
     startGameLoop(io, room);
   }, 5000); // 5 second briefing window
+  roomBriefingTimers.set(room.id, briefingTimer);
 }
 
 function startGameLoop(io: Server, room: Room): void {
@@ -339,6 +343,11 @@ function startGameLoop(io: Server, room: Room): void {
 
 function endMatch(io: Server, room: Room): void {
   room.phase = 'ended';
+  const briefingTimer = roomBriefingTimers.get(room.id);
+  if (briefingTimer) {
+    clearTimeout(briefingTimer);
+    roomBriefingTimers.delete(room.id);
+  }
   const interval = roomIntervals.get(room.id);
   if (interval) {
     clearInterval(interval);

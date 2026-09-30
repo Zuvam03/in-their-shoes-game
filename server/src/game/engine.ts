@@ -12,7 +12,7 @@ export class SeededRng {
   constructor(seed: number) { this.state = seed >>> 0; }
   next(): number {
     this.state = (this.state * 1664525 + 1013904223) & 0xffffffff;
-    return (this.state >>> 0) / 0xffffffff;
+    return (this.state >>> 0) / 0x100000000;
   }
   chance(probability: number): boolean { return this.next() < probability; }
   between(min: number, max: number): number { return min + Math.floor(this.next() * (max - min + 1)); }
@@ -112,10 +112,6 @@ export function resolveAction(
   room: Room,
   rng: SeededRng
 ): ActionResult {
-  const s = { ...player.state };
-  const persona = player.persona;
-  const m = persona.modifiers;
-
   switch (action.type) {
     case 'move': return resolveMove(action, player, room, rng);
     case 'eat': return resolveEat(action, player, rng);
@@ -480,7 +476,7 @@ function resolveCompleteObjective(action: GameAction, player: Player, room: Room
   const mission = player.mission.definition;
   if (mission.requiredLocations && mission.requiredLocations.length > 0) {
     const isAtRequired = mission.requiredLocations.includes(player.state.location);
-    if (!isAtRequired && !objective.optional) {
+    if (!isAtRequired) {
       return {
         success: false,
         message: `You need to be at a specific location to complete this. Try reaching: ${mission.requiredLocations.join(', ')}`,
@@ -518,7 +514,7 @@ function resolveEventChoice(action: GameAction, player: Player, room: Room, rng:
 
   const changes: Partial<CharacterState> = {};
   for (const effect of choice.effects) {
-    if (effect.target === 'all' || effect.target === player.id) {
+    if (effect.target === 'all' || effect.target === 'self' || effect.target === player.id) {
       (changes as unknown as Record<string, number>)[effect.stat] = (player.state as unknown as Record<string, number>)[effect.stat] + effect.change;
     }
   }
@@ -590,6 +586,11 @@ export function checkForUnexpectedFortune(
   ];
 
   const fortune = fortunes[rng.between(0, fortunes.length - 1)];
+  const currentVal = (player.state as unknown as Record<string, number>)[fortune.stat] ?? 0;
+  const isCash = fortune.stat === 'cash';
+  const newVal = isCash
+    ? Math.max(0, currentVal + fortune.change)
+    : Math.max(0, Math.min(100, currentVal + fortune.change));
 
   return {
     id: uuidv4(),
@@ -597,7 +598,7 @@ export function checkForUnexpectedFortune(
     type: 'city_event',
     playerId: player.id,
     description: fortune.desc,
-    statChanges: { [fortune.stat]: fortune.change } as Partial<CharacterState>,
+    statChanges: { [fortune.stat]: newVal } as Partial<CharacterState>,
     isPublic: false
   };
 }
