@@ -73,6 +73,22 @@ export interface PersonaMotivations {
   comfort: number; // 1-10
 }
 
+export interface PersonaSocialContext {
+  class: 'working' | 'lower-middle' | 'middle' | 'upper-middle' | 'privileged';
+  communityIdentity: string;
+  politicalPressures: string[];
+  hiddenObligations: string[];
+  decisionWeights: {
+    groupLoyalty: number;      // 1-10
+    selfPreservation: number;  // 1-10
+    principledAction: number;  // 1-10
+    statusAnxiety: number;     // 1-10
+    communityDuty: number;     // 1-10
+  };
+  insightLines: string[];      // shown post-game in Persona Lens
+  dilemmaProfile: string;      // one-line descriptor
+}
+
 export interface PersonaDefinition {
   id: string;
   name: string;
@@ -89,6 +105,8 @@ export interface PersonaDefinition {
   vulnerabilities: string[];
   // Mechanical modifiers
   modifiers: PersonaModifiers;
+  // Social/political context (optional, enriches dilemma resolution + post-game lens)
+  socialContext?: PersonaSocialContext;
 }
 
 export interface PersonaModifiers {
@@ -179,6 +197,8 @@ export interface Player {
     lastKarmaActionTick: number;
   };
   actionLog: GameEvent[];
+  dilemmasResolved: DilemmaRecord[];
+  activeDilemmaId?: string;  // pending dilemma waiting for player response
   isConnected: boolean;
   isReady: boolean;
 }
@@ -198,6 +218,54 @@ export interface Room {
   cityEvents: CityEvent[];
   matchResult?: MatchResult;
   seed: number;          // for reproducible randomness
+}
+
+// --- Social Dilemmas ---
+
+export type SocialDilemmaType =
+  | 'ethics_vs_survival'
+  | 'loyalty_vs_principle'
+  | 'class_encounter'
+  | 'political_pressure'
+  | 'community_obligation'
+  | 'bystander';
+
+export interface DilemmaChoice {
+  id: string;
+  text: string;
+  shortLabel: string;
+  statChanges: Partial<CharacterState>;
+  karmaChange: number;
+  trustChange: number;
+  communityChange: number;
+  conscienceEffect: number;  // mood change reflecting inner conflict
+  narrativeOutcome: string;
+  personaResonance?: Record<string, 'natural' | 'against' | 'neutral'>;
+}
+
+export interface SocialDilemma {
+  id: string;
+  title: string;
+  setup: string;
+  dilemmaType: SocialDilemmaType;
+  choices: DilemmaChoice[];
+  triggerLocation?: string;
+  minTick?: number;
+  maxTick?: number;
+  probabilityPerTick: number;
+  personaContext: Record<string, string>;  // per-persona explanation of natural lean
+}
+
+export interface DilemmaEvent {
+  id: string;
+  dilemmaId: string;
+  title: string;
+  setup: string;
+  dilemmaType: SocialDilemmaType;
+  choices: DilemmaChoice[];
+  tick: number;
+  expiresAtTick: number;
+  personaContext: Record<string, string>;
 }
 
 // --- City Events ---
@@ -254,7 +322,8 @@ export type ActionType =
   | 'share_info'
   | 'transfer_money'
   | 'complete_objective'
-  | 'event_choice';
+  | 'event_choice'
+  | 'dilemma_choice';
 
 export interface GameAction {
   playerId: string;
@@ -288,6 +357,14 @@ export interface GameEvent {
 
 // --- End of Game ---
 
+export interface DilemmaRecord {
+  dilemmaId: string;
+  dilemmaTitle: string;
+  choiceId: string;
+  choiceLabel: string;
+  tick: number;
+}
+
 export interface PlayerResult {
   playerId: string;
   playerName: string;
@@ -304,6 +381,8 @@ export interface PlayerResult {
   cooperationCount: number;
   helpedCount: number;
   narrative: string;
+  dilemmasResolved: DilemmaRecord[];
+  personaLens?: string[];  // insight lines from socialContext
 }
 
 export interface MatchResult {
@@ -322,6 +401,7 @@ export interface ServerToClientEvents {
   playerUpdate: (player: Player) => void;
   actionResult: (result: ActionResult) => void;
   cityEvent: (event: CityEvent) => void;
+  dilemmaEvent: (event: DilemmaEvent) => void;
   gameStarted: (data: { yourPlayer: Player; room: PublicRoom }) => void;
   gameEnded: (result: MatchResult) => void;
   error: (message: string) => void;

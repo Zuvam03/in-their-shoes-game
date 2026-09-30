@@ -1,15 +1,20 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type {
-  Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState
+  Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState,
+  SocialDilemma
 } from '../game/types';
 import { PERSONAS, shufflePersonas } from '../game/personas';
 import { MISSIONS, shuffleMissions } from '../game/missions';
 import { LOCATIONS } from '../game/map';
 import {
   createCharacterState, tickCharacterState, resolveAction, evaluateKarma,
-  checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng
+  checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
+  pickDilemmaForTick, buildDilemmaEvent
 } from '../game/engine';
+import { loadContent, getContentDilemmas } from '../content/loader';
+
+loadContent();
 
 const rooms = new Map<string, Room>();
 const playerToRoom = new Map<string, string>(); // socketId -> roomId
@@ -166,6 +171,17 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
       };
       player.actionLog.push(event);
 
+      // Handle dilemma choice resolution
+      if (action.type === 'dilemma_choice') {
+        const { dilemmaId, choiceId, choiceLabel } = action.payload as {
+          dilemmaId: string; choiceId: string; choiceLabel: string;
+        };
+        const dilemmaTitle = ((player as Player & { _pendingDilemma?: SocialDilemma })._pendingDilemma)?.title || '';
+        player.dilemmasResolved.push({ dilemmaId, dilemmaTitle, choiceId, choiceLabel, tick: room.tick });
+        delete (player as Player & { _pendingDilemma?: SocialDilemma })._pendingDilemma;
+        player.activeDilemmaId = undefined;
+      }
+
       // Handle complete_objective
       if (action.type === 'complete_objective') {
         const objectiveId = (action.payload as { objectiveId?: string }).objectiveId;
@@ -313,6 +329,18 @@ function startGameLoop(io: Server, room: Room): void {
         });
       }
 
+      // Fire social dilemma if eligible
+      const dilemmas = getContentDilemmas();
+      if (dilemmas.length > 0) {
+        const dilemma = pickDilemmaForTick(dilemmas, player, room.tick, rng);
+        if (dilemma) {
+          (player as Player & { _pendingDilemma?: SocialDilemma })._pendingDilemma = dilemma;
+          player.activeDilemmaId = dilemma.id;
+          const evt = buildDilemmaEvent(dilemma, room.tick);
+          io.to(socketId).emit('dilemmaEvent', evt);
+        }
+      }
+
       // Send private player update
       io.to(socketId).emit('playerUpdate', player);
     }
@@ -382,6 +410,7 @@ function addPlayerToRoom(room: Room, socketId: string, name: string): void {
     communityImpact: 0,
     hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
     actionLog: [],
+    dilemmasResolved: [],
     isConnected: true,
     isReady: false
   };

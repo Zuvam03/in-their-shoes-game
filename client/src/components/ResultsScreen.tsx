@@ -82,6 +82,78 @@ export default function ResultsScreen() {
           </div>
         )}
 
+        {/* Persona Lens */}
+        {myResult && myResult.personaLens && myResult.personaLens.length > 0 && (
+          <div style={{
+            padding: '24px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.06))',
+            border: '1px solid rgba(139,92,246,0.25)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '20px' }}>🔍</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '16px', color: '#a78bfa' }}>
+                  Persona Lens: {myResult.personaName}
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Why does this persona make these decisions?
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {myResult.personaLens.map((line, i) => (
+                <div key={i} style={{
+                  padding: '14px 16px', borderRadius: '10px',
+                  background: 'rgba(139,92,246,0.06)',
+                  border: '1px solid rgba(139,92,246,0.15)',
+                  fontSize: '14px', color: '#c4b5fd', lineHeight: 1.7,
+                  borderLeft: '3px solid rgba(139,92,246,0.5)'
+                }}>
+                  {line}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dilemma Choices Made */}
+        {myResult && myResult.dilemmasResolved && myResult.dilemmasResolved.length > 0 && (
+          <div style={{
+            padding: '20px', borderRadius: '14px',
+            background: 'var(--bg-card)', border: '1px solid var(--border)'
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '14px' }}>
+              Social Dilemmas Faced
+            </div>
+            {myResult.dilemmasResolved.map((d, i) => (
+              <div key={i} style={{
+                padding: '12px 14px', borderRadius: '10px',
+                background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+                marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'
+              }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '4px' }}>{d.dilemmaTitle}</div>
+                  <div style={{
+                    fontSize: '12px', color: 'var(--text-muted)',
+                    display: 'flex', alignItems: 'center', gap: '6px'
+                  }}>
+                    <span>You chose:</span>
+                    <span style={{
+                      color: '#fbbf24', background: 'rgba(251,191,36,0.1)',
+                      padding: '2px 8px', borderRadius: '10px', fontWeight: 600
+                    }}>
+                      {d.choiceLabel}
+                    </span>
+                  </div>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap', marginLeft: '12px' }}>
+                  T+{d.tick}s
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* All players */}
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '14px' }}>All Players</h2>

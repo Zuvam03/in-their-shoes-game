@@ -1,7 +1,8 @@
 import type {
   Player, CharacterState, Room, GameAction, ActionResult,
   PersonaDefinition, MissionDefinition, PlayerMission, GameEvent,
-  CityEvent, EventChoice, MissionObjective, InteractionRequest
+  CityEvent, EventChoice, MissionObjective, InteractionRequest,
+  SocialDilemma, DilemmaEvent, DilemmaRecord
 } from './types';
 import { getRoute, getLocation, findShortestPath } from './map';
 import { v4 as uuidv4 } from 'uuid';
@@ -125,6 +126,7 @@ export function resolveAction(
     case 'transfer_money': return resolveTransferMoney(action, player, room);
     case 'complete_objective': return resolveCompleteObjective(action, player, room, rng);
     case 'event_choice': return resolveEventChoice(action, player, room, rng);
+    case 'dilemma_choice': return resolveDilemmaChoice(action, player, room, rng);
     default:
       return { success: false, message: 'Unknown action type.', changes: {} };
   }
@@ -530,6 +532,77 @@ function resolveEventChoice(action: GameAction, player: Player, room: Room, rng:
   };
 }
 
+function resolveDilemmaChoice(action: GameAction, player: Player, _room: Room, _rng: SeededRng): ActionResult {
+  const { dilemmaId, choiceId } = action.payload as { dilemmaId: string; choiceId: string };
+
+  const activeDilemma = (player as Player & { _pendingDilemma?: SocialDilemma }).
+    _pendingDilemma;
+  if (!activeDilemma || activeDilemma.id !== dilemmaId) {
+    return { success: false, message: 'No matching dilemma found.', changes: {} };
+  }
+
+  const choice = activeDilemma.choices.find(c => c.id === choiceId);
+  if (!choice) {
+    return { success: false, message: 'Invalid choice.', changes: {} };
+  }
+
+  const changes: Partial<CharacterState> = {};
+  for (const [stat, delta] of Object.entries(choice.statChanges)) {
+    const current = (player.state as unknown as Record<string, number>)[stat] ?? 0;
+    (changes as unknown as Record<string, number>)[stat] = current + (delta as number);
+  }
+
+  if (choice.conscienceEffect !== 0) {
+    const cur = changes.mood ?? player.state.mood;
+    changes.mood = Math.max(0, Math.min(100, cur + choice.conscienceEffect));
+  }
+
+  return {
+    success: true,
+    message: choice.narrativeOutcome,
+    narrative: choice.narrativeOutcome,
+    changes,
+    karmaChange: choice.karmaChange,
+    trustChange: choice.trustChange,
+    communityChange: choice.communityChange
+  };
+}
+
+export function pickDilemmaForTick(
+  dilemmas: SocialDilemma[],
+  player: Player,
+  tick: number,
+  rng: SeededRng
+): SocialDilemma | null {
+  if (player.activeDilemmaId) return null; // already has one pending
+
+  const resolved = new Set(player.dilemmasResolved.map(d => d.dilemmaId));
+  const eligible = dilemmas.filter(d => {
+    if (resolved.has(d.id)) return false;
+    if (d.triggerLocation && d.triggerLocation !== player.state.location) return false;
+    if (d.minTick !== undefined && tick < d.minTick) return false;
+    if (d.maxTick !== undefined && tick > d.maxTick) return false;
+    return rng.chance(d.probabilityPerTick);
+  });
+
+  if (eligible.length === 0) return null;
+  return eligible[rng.between(0, eligible.length - 1)];
+}
+
+export function buildDilemmaEvent(dilemma: SocialDilemma, tick: number): DilemmaEvent {
+  return {
+    id: uuidv4(),
+    dilemmaId: dilemma.id,
+    title: dilemma.title,
+    setup: dilemma.setup,
+    dilemmaType: dilemma.dilemmaType,
+    choices: dilemma.choices,
+    tick,
+    expiresAtTick: tick + 120, // 2 minute window to respond
+    personaContext: dilemma.personaContext
+  };
+}
+
 // --- Karma system ---
 export function evaluateKarma(
   action: GameAction,
@@ -763,7 +836,9 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
         .map(e => e.description),
       cooperationCount: player.state.helpedOthersCount,
       helpedCount: player.state.receivedHelpCount,
-      narrative
+      narrative,
+      dilemmasResolved: player.dilemmasResolved || [],
+      personaLens: player.persona.socialContext?.insightLines
     });
   }
 

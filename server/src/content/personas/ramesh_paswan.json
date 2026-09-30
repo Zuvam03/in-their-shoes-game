@@ -1,0 +1,81 @@
+{
+  "id": "ramesh_paswan",
+  "name": "Ramesh Paswan",
+  "title": "Bihari Migrant Construction Worker",
+  "description": "Built the city's skyline. Invisible to the city he built.",
+  "backstory": "Ramesh arrived from Sitamarhi, Bihar, fourteen years ago with a phone number on a scrap of paper and the address of a distant cousin's room in Tangra. He's poured concrete for malls in New Town and luxury flats in Rajarhat. He sends ₹8000 home every month for his children's schooling. Kolkata treats him as temporary — three decades later he still can't rent a flat without a Bengali guarantor, and his Hindi is met in shops with exaggerated incomprehension.",
+  "traits": {
+    "analyticalThinking": 5,
+    "emotionalSensitivity": 7,
+    "appetite": 8,
+    "workOrientation": 10,
+    "spendingStyle": 2,
+    "socialOrientation": 6,
+    "riskTolerance": 7,
+    "resilience": 10,
+    "adaptability": 9,
+    "cooperation": 8
+  },
+  "motivations": {
+    "careerAdvancement": 5,
+    "financialSecurity": 10,
+    "socialAcceptance": 5,
+    "personalIndependence": 6,
+    "familyResponsibility": 10,
+    "fairness": 7,
+    "helpingOthers": 7,
+    "achievement": 5,
+    "comfort": 3
+  },
+  "foodPreferences": ["street", "meat", "spicy"],
+  "startingCash": 420,
+  "startingEnergy": 80,
+  "traitInteractions": [
+    "Extreme resilience means he absorbs insults and hardship that would break others — but it accumulates",
+    "High adaptability is survival-hardened, not comfort-seeking",
+    "Cooperation with fellow migrants is deep, but he keeps clear of local political alignment"
+  ],
+  "strengths": ["Physical endurance beyond most others", "Tight migrant solidarity network for cash and information", "Pragmatic decision-maker without sentimentality"],
+  "vulnerabilities": ["Language barrier costs him in negotiations and emergencies", "No legal protections as informal worker; contractor can disappear", "Invisible social discrimination compounds every obstacle"],
+  "modifiers": {
+    "hungerRate": 1.3,
+    "energyRecovery": 1.3,
+    "moodFromFood": 1.4,
+    "stressFromWork": 0.7,
+    "moodFromSocial": 0.9,
+    "analyticsBonus": 0.8,
+    "spendingResistance": 1.8,
+    "socialRecovery": 1.1,
+    "riskRewardBonus": 1.2,
+    "cooperationBonus": 1.3,
+    "stressThreshold": 75,
+    "independencePenalty": 0.3
+  },
+  "socialContext": {
+    "class": "working",
+    "communityIdentity": "Bihari migrant, Hindi-speaking, non-Bengali, informal sector",
+    "politicalPressures": [
+      "Son of the Soil rhetoric marks him as 'outsider' regardless of years in the city",
+      "Cannot vote in Kolkata elections — politically voiceless despite paying taxes",
+      "Contractors exploit migrant status to withhold wages without legal recourse"
+    ],
+    "hiddenObligations": [
+      "Guarantor for three other migrants from his village — if they default on payments, he's liable",
+      "Promised his wife he'd return within two years, a promise now twelve years broken",
+      "Secret: contractor owes him ₹15000 in unpaid wages he's afraid to claim"
+    ],
+    "decisionWeights": {
+      "groupLoyalty": 8,
+      "selfPreservation": 9,
+      "principledAction": 5,
+      "statusAnxiety": 3,
+      "communityDuty": 7
+    },
+    "insightLines": [
+      "Ramesh's silence in the face of discrimination is not acceptance — it is tactical; speaking up costs him work.",
+      "His spending caution looks like miserliness; it is the arithmetic of a man who knows no safety net exists.",
+      "When he chose his migrant network over locals, he was choosing the only people who will actually show up."
+    ],
+    "dilemmaProfile": "Survival-first; solidarity within migrant community; avoids confrontation with power"
+  }
+}

@@ -5,6 +5,7 @@ import CharacterPanel from './CharacterPanel';
 import ActionPanel from './ActionPanel';
 import MissionPanel from './MissionPanel';
 import PlayersPanel from './PlayersPanel';
+import DilemmaModal from './DilemmaModal';
 
 type Tab = 'map' | 'character' | 'mission' | 'players';
 
@@ -167,6 +168,9 @@ export default function GameScreen() {
           <CityMap />
         </div>
       </div>
+
+      {/* Social Dilemma Modal */}
+      <DilemmaModal />
     </div>
   );
 }

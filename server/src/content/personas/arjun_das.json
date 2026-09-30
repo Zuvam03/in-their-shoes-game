@@ -1,0 +1,81 @@
+{
+  "id": "arjun_das",
+  "name": "Arjun Das",
+  "title": "Aspirational First-Gen Graduate",
+  "description": "First in his family to complete a degree. Navigates a city that wasn't built for someone like him.",
+  "backstory": "Grew up in a cramped two-room flat in Jadavpur. His father drives an auto-rickshaw; his mother stitches blouses at home. Arjun spent five years at Presidency University studying economics, sleeping through lectures he couldn't afford to fail. Now he's circling Kolkata with a fresh degree and a burning need to prove the sacrifices meant something — but the corporate world keeps asking for connections he doesn't have.",
+  "traits": {
+    "analyticalThinking": 8,
+    "emotionalSensitivity": 7,
+    "appetite": 6,
+    "workOrientation": 9,
+    "spendingStyle": 2,
+    "socialOrientation": 5,
+    "riskTolerance": 4,
+    "resilience": 8,
+    "adaptability": 7,
+    "cooperation": 6
+  },
+  "motivations": {
+    "careerAdvancement": 10,
+    "financialSecurity": 9,
+    "socialAcceptance": 8,
+    "personalIndependence": 7,
+    "familyResponsibility": 9,
+    "fairness": 8,
+    "helpingOthers": 5,
+    "achievement": 9,
+    "comfort": 4
+  },
+  "foodPreferences": ["street", "vegetarian"],
+  "startingCash": 180,
+  "startingEnergy": 75,
+  "traitInteractions": [
+    "High work orientation means Arjun pushes through fatigue others would yield to",
+    "Status anxiety spikes in elite spaces — Dalhousie Square offices, Flurys cafe — where he reads every glance as judgement",
+    "Frugality is not a choice; it is a survival strategy internalised as virtue"
+  ],
+  "strengths": ["Disciplined under pressure", "Reads situations analytically", "Adapts to unfamiliar social scripts"],
+  "vulnerabilities": ["Imposter syndrome in professional settings", "Reluctant to ask for help — fears confirming weakness", "Family guilt overrides self-care"],
+  "modifiers": {
+    "hungerRate": 1.1,
+    "energyRecovery": 0.9,
+    "moodFromFood": 1.2,
+    "stressFromWork": 0.9,
+    "moodFromSocial": 0.8,
+    "analyticsBonus": 1.4,
+    "spendingResistance": 1.6,
+    "socialRecovery": 0.7,
+    "riskRewardBonus": 0.9,
+    "cooperationBonus": 1.1,
+    "stressThreshold": 55,
+    "independencePenalty": 1.8
+  },
+  "socialContext": {
+    "class": "working",
+    "communityIdentity": "Bengali SC/Dalit, first-generation educated",
+    "politicalPressures": [
+      "Reservation debates make him simultaneously beneficiary and target of resentment",
+      "Pressure to represent 'the community' in any room he enters",
+      "Fellow graduates from affluent families dismiss his degree as quota-assisted"
+    ],
+    "hiddenObligations": [
+      "Remits ₹3000/month to parents — non-negotiable",
+      "Promised cousin Niloy a job referral once he 'makes it'",
+      "Carries debt from coaching centre fees his parents borrowed for"
+    ],
+    "decisionWeights": {
+      "groupLoyalty": 7,
+      "selfPreservation": 8,
+      "principledAction": 7,
+      "statusAnxiety": 9,
+      "communityDuty": 6
+    },
+    "insightLines": [
+      "Arjun's caution isn't cowardice — every mistake costs more for someone without a safety net.",
+      "When he chose status over solidarity, he was performing a script the city taught him: respectability is survival.",
+      "His loyalty to family overrides abstract principles because family is the only institution that has never failed him."
+    ],
+    "dilemmaProfile": "Calculates risk obsessively; defers solidarity when survival is threatened"
+  }
+}

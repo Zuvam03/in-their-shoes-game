@@ -5,7 +5,42 @@ import { io, Socket } from 'socket.io-client';
 export type TransportMode = 'walk' | 'bus' | 'metro' | 'tram' | 'taxi';
 export type GamePhase = 'lobby' | 'briefing' | 'playing' | 'ended';
 export type MissionStatus = 'active' | 'completed' | 'failed' | 'partial';
-export type ActionType = 'move' | 'eat' | 'drink' | 'rest' | 'work' | 'buy' | 'help_player' | 'request_help' | 'share_info' | 'transfer_money' | 'complete_objective' | 'event_choice';
+export type ActionType = 'move' | 'eat' | 'drink' | 'rest' | 'work' | 'buy' | 'help_player' | 'request_help' | 'share_info' | 'transfer_money' | 'complete_objective' | 'event_choice' | 'dilemma_choice';
+
+export type SocialDilemmaType = 'ethics_vs_survival' | 'loyalty_vs_principle' | 'class_encounter' | 'political_pressure' | 'community_obligation' | 'bystander';
+
+export interface DilemmaChoice {
+  id: string;
+  text: string;
+  shortLabel: string;
+  statChanges: Partial<CharacterState>;
+  karmaChange: number;
+  trustChange: number;
+  communityChange: number;
+  conscienceEffect: number;
+  narrativeOutcome: string;
+  personaResonance?: Record<string, 'natural' | 'against' | 'neutral'>;
+}
+
+export interface DilemmaEvent {
+  id: string;
+  dilemmaId: string;
+  title: string;
+  setup: string;
+  dilemmaType: SocialDilemmaType;
+  choices: DilemmaChoice[];
+  tick: number;
+  expiresAtTick: number;
+  personaContext: Record<string, string>;
+}
+
+export interface DilemmaRecord {
+  dilemmaId: string;
+  dilemmaTitle: string;
+  choiceId: string;
+  choiceLabel: string;
+  tick: number;
+}
 
 export interface CharacterState {
   health: number;
@@ -47,6 +82,22 @@ export interface PersonaMotivations {
   comfort: number;
 }
 
+export interface PersonaSocialContext {
+  class: string;
+  communityIdentity: string;
+  politicalPressures: string[];
+  hiddenObligations: string[];
+  decisionWeights: {
+    groupLoyalty: number;
+    selfPreservation: number;
+    principledAction: number;
+    statusAnxiety: number;
+    communityDuty: number;
+  };
+  insightLines: string[];
+  dilemmaProfile: string;
+}
+
 export interface PersonaDefinition {
   id: string;
   name: string;
@@ -61,6 +112,7 @@ export interface PersonaDefinition {
   strengths: string[];
   vulnerabilities: string[];
   traitInteractions: string[];
+  socialContext?: PersonaSocialContext;
 }
 
 export interface MissionObjective {
@@ -184,6 +236,8 @@ export interface PlayerResult {
   cooperationCount: number;
   helpedCount: number;
   narrative: string;
+  dilemmasResolved: DilemmaRecord[];
+  personaLens?: string[];
 }
 
 export interface MatchResult {
@@ -215,6 +269,7 @@ interface GameState {
   lastActionResult: ActionResult | null;
   actionFeedback: string | null;
   pendingCityEvent: CityEvent | null;
+  pendingDilemma: DilemmaEvent | null;
   matchResult: MatchResult | null;
 
   // Selected persona panel
@@ -228,6 +283,7 @@ interface GameState {
   startMatch: () => void;
   submitAction: (type: ActionType, payload: Record<string, unknown>) => void;
   respondToEvent: (eventId: string, choiceId: string) => void;
+  respondToDilemma: (dilemmaId: string, choiceId: string, choiceLabel: string) => void;
   setViewingPersona: (id: string | null) => void;
   clearFeedback: () => void;
 }
@@ -245,6 +301,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastActionResult: null,
   actionFeedback: null,
   pendingCityEvent: null,
+  pendingDilemma: null,
   matchResult: null,
   viewingPersonaId: null,
 
@@ -293,6 +350,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     });
 
+    socket.on('dilemmaEvent', (event: DilemmaEvent) => {
+      set({ pendingDilemma: event });
+    });
+
     socket.on('gameEnded', (result: MatchResult) => {
       set({ matchResult: result, screen: 'results' });
     });
@@ -336,6 +397,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!socket) return;
     socket.emit('submitAction', { type: 'event_choice', payload: { eventId, choiceId } });
     set({ pendingCityEvent: null });
+  },
+
+  respondToDilemma: (dilemmaId, choiceId, choiceLabel) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('submitAction', { type: 'dilemma_choice', payload: { dilemmaId, choiceId, choiceLabel } });
+    set({ pendingDilemma: null });
   },
 
   setViewingPersona: (id) => set({ viewingPersonaId: id }),

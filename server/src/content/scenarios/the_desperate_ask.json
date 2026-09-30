@@ -1,0 +1,90 @@
+{
+  "id": "the_desperate_ask",
+  "title": "The Desperate Ask",
+  "setup": "An older woman sits on the steps outside a bank, holding a paper. She explains that her son's hospital bill is ₹2400. She has ₹800. She needs the rest by this afternoon or the hospital won't release him. She has a phone with a number you can verify the story with. You have ₹600 on you — your transport money for the rest of the day.",
+  "dilemmaType": "community_obligation",
+  "triggerLocation": "new_market",
+  "minTick": 45,
+  "probabilityPerTick": 0.005,
+  "personaContext": {
+    "arjun_das": "He sends money home every month to people in exactly this situation. But that's family. This is a stranger. He cannot verify anything. And if she's not telling the truth, he walks home.",
+    "priya_mondal": "She's heard this story before. Some real, some not. She also knows which charitable trusts sometimes help with medical bills.",
+    "ramesh_paswan": "He's been the person on those steps. He gave everything he could to people he barely knew when he first arrived because that's how the network works.",
+    "siddharth_roy": "He doesn't have ₹600 to spare right now, even though he appears to. The fiction requires looking like he does.",
+    "nasreen_begum": "She'd know which NGO can bridge this in 4 hours. She also has no cash herself today."
+  },
+  "choices": [
+    {
+      "id": "give_all",
+      "text": "Give her all ₹600. Walk home or borrow transport money.",
+      "shortLabel": "Give everything",
+      "statChanges": { "cash": -600, "energy": 35, "mood": 70 },
+      "karmaChange": 15,
+      "trustChange": 12,
+      "communityChange": 10,
+      "conscienceEffect": 22,
+      "narrativeOutcome": "She calls someone immediately. There's a relief in her face that is not performable. You walk 40 minutes home. You are tired and slightly light-headed. Something feels correct.",
+      "personaResonance": {
+        "ramesh_paswan": "natural",
+        "nasreen_begum": "natural",
+        "priya_mondal": "natural",
+        "arjun_das": "against",
+        "siddharth_roy": "against"
+      }
+    },
+    {
+      "id": "give_half",
+      "text": "Give ₹200. Keep enough to get home. Tell her to try a few more people.",
+      "shortLabel": "Give what you can",
+      "statChanges": { "cash": -200, "mood": 58 },
+      "karmaChange": 7,
+      "trustChange": 5,
+      "communityChange": 5,
+      "conscienceEffect": 5,
+      "narrativeOutcome": "She takes it without expression. Not gratitude, not disappointment. She has more calls to make. You keep ₹400. You wonder if ₹200 helped or just spread the problem thinner.",
+      "personaResonance": {
+        "arjun_das": "natural",
+        "siddharth_roy": "neutral",
+        "priya_mondal": "neutral",
+        "ramesh_paswan": "neutral",
+        "nasreen_begum": "neutral"
+      }
+    },
+    {
+      "id": "give_info",
+      "text": "Give no money but spend 15 minutes helping her find an emergency medical charity that can help.",
+      "shortLabel": "Find a charity",
+      "statChanges": { "energy": 40, "mood": 65 },
+      "karmaChange": 10,
+      "trustChange": 8,
+      "communityChange": 7,
+      "conscienceEffect": 12,
+      "narrativeOutcome": "You find one number that might work. She calls. Gets put on hold. You leave her there, phone pressed to her ear, waiting. You don't know what happens next.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "priya_mondal": "natural",
+        "arjun_das": "natural",
+        "ramesh_paswan": "neutral",
+        "siddharth_roy": "neutral"
+      }
+    },
+    {
+      "id": "walk_on",
+      "text": "Tell her you can't help. You don't know if the story is true.",
+      "shortLabel": "Walk on",
+      "statChanges": { "mood": 38, "stress": 42 },
+      "karmaChange": -8,
+      "trustChange": -4,
+      "communityChange": -5,
+      "conscienceEffect": -16,
+      "narrativeOutcome": "She nods. No argument. She already knew most people would say this. The city moves around her. You move with it.",
+      "personaResonance": {
+        "siddharth_roy": "natural",
+        "arjun_das": "neutral",
+        "ramesh_paswan": "against",
+        "priya_mondal": "against",
+        "nasreen_begum": "against"
+      }
+    }
+  ]
+}

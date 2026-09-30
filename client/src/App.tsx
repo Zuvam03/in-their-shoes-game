@@ -6,10 +6,11 @@ import Briefing from './components/Briefing';
 import GameScreen from './components/GameScreen';
 import ResultsScreen from './components/ResultsScreen';
 import CityEventModal from './components/CityEventModal';
+import DilemmaModal from './components/DilemmaModal';
 import FeedbackToast from './components/FeedbackToast';
 
 export default function App() {
-  const { screen, connect, connected, pendingCityEvent } = useGameStore();
+  const { screen, connect, connected, pendingCityEvent, pendingDilemma } = useGameStore();
 
   useEffect(() => {
     connect();
@@ -25,6 +26,7 @@ export default function App() {
 
       {/* Global overlays */}
       {pendingCityEvent && <CityEventModal />}
+      {pendingDilemma && <DilemmaModal />}
       <FeedbackToast />
     </div>
   );

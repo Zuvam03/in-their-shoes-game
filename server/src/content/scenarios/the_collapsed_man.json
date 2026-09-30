@@ -1,0 +1,90 @@
+{
+  "id": "the_collapsed_man",
+  "title": "The Collapsed Man",
+  "setup": "Near Sealdah Station, a man in his fifties has collapsed against a pillar. He's conscious but glassy-eyed, breathing hard. A crowd of fifteen people has formed a circle — watching, murmuring, doing nothing. You have a meeting in 20 minutes you cannot miss. The man needs water. Maybe more.",
+  "dilemmaType": "bystander",
+  "triggerLocation": "sealdah_station",
+  "minTick": 60,
+  "probabilityPerTick": 0.003,
+  "personaContext": {
+    "arjun_das": "The meeting is for the job he needs. Staying means risking the one door that's opened. He knows that makes him complicit in the bystander effect he's witnessing.",
+    "priya_mondal": "She has ration card cases to submit today. But she's also the person in this ward who knows the welfare office number by heart.",
+    "ramesh_paswan": "He's seen men collapse from heat on construction sites. He knows what to do. He's also undocumented in this district and a police interaction is not safe.",
+    "siddharth_roy": "He has nothing scheduled — the 'meeting' he told himself he has is not real. But admitting that means admitting the fiction he's living.",
+    "nasreen_begum": "This is exactly the kind of thing she does. She'll stay regardless of what she loses. That's why she's always running late."
+  },
+  "choices": [
+    {
+      "id": "stay_and_help",
+      "text": "Push through the crowd. Get him water, loosen his collar, call for help. Miss the meeting.",
+      "shortLabel": "Stay and help",
+      "statChanges": { "energy": 45, "cash": 5, "mood": 75 },
+      "karmaChange": 15,
+      "trustChange": 12,
+      "communityChange": 10,
+      "conscienceEffect": 25,
+      "narrativeOutcome": "You spend 35 minutes with him. He's dehydrated. He knows nobody here. Eventually an auto driver helps you get him somewhere safe. You miss your meeting. It costs you more than you wanted to pay. You don't regret it.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "priya_mondal": "natural",
+        "arjun_das": "against",
+        "ramesh_paswan": "neutral",
+        "siddharth_roy": "neutral"
+      }
+    },
+    {
+      "id": "delegate_help",
+      "text": "Get water and hand it to someone else in the crowd: 'Please make sure he has this. I have to go.'",
+      "shortLabel": "Delegate and leave",
+      "statChanges": { "cash": 8, "mood": 55, "stress": 38 },
+      "karmaChange": 6,
+      "trustChange": 3,
+      "communityChange": 4,
+      "conscienceEffect": -5,
+      "narrativeOutcome": "You hand the water to an old woman who nods. You turn and walk fast, not looking back. The city swallows the moment. You half-wonder if the old woman stayed.",
+      "personaResonance": {
+        "arjun_das": "natural",
+        "siddharth_roy": "natural",
+        "priya_mondal": "neutral",
+        "ramesh_paswan": "neutral",
+        "nasreen_begum": "against"
+      }
+    },
+    {
+      "id": "call_ambulance",
+      "text": "Call 108. Tell someone standing nearby to stay until it arrives. Leave.",
+      "shortLabel": "Call help, go",
+      "statChanges": { "mood": 60, "stress": 32 },
+      "karmaChange": 8,
+      "trustChange": 6,
+      "communityChange": 5,
+      "conscienceEffect": 5,
+      "narrativeOutcome": "You call, give the location, and ask a young man nearby to wait. He looks uncertain but doesn't say no. Whether 108 comes in 8 minutes or 40 is the city's answer, not yours.",
+      "personaResonance": {
+        "arjun_das": "natural",
+        "priya_mondal": "natural",
+        "ramesh_paswan": "against",
+        "siddharth_roy": "neutral",
+        "nasreen_begum": "neutral"
+      }
+    },
+    {
+      "id": "walk_past",
+      "text": "The crowd is already there. Someone will handle it. Keep walking.",
+      "shortLabel": "Walk past",
+      "statChanges": { "mood": 35, "stress": 42 },
+      "karmaChange": -10,
+      "trustChange": -5,
+      "communityChange": -5,
+      "conscienceEffect": -20,
+      "narrativeOutcome": "You tell yourself the crowd will do something. The crowd is telling itself the same thing. The man is still there when you round the corner. You walk faster.",
+      "personaResonance": {
+        "ramesh_paswan": "natural",
+        "siddharth_roy": "natural",
+        "arjun_das": "neutral",
+        "priya_mondal": "against",
+        "nasreen_begum": "against"
+      }
+    }
+  ]
+}

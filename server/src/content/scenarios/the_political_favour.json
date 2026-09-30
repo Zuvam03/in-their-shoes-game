@@ -1,0 +1,90 @@
+{
+  "id": "the_political_favour",
+  "title": "The Political Favour",
+  "setup": "A local councillor approaches you with a smile. He's helped people in this area — got a road fixed, released a wrongly detained teenager. He's also known to take cuts on contracts. He offers to 'smooth things over' with a bureaucratic problem you've been stuck on for two weeks. 'Just call it mutual support,' he says.",
+  "dilemmaType": "political_pressure",
+  "triggerLocation": "dalhousie_sq",
+  "minTick": 90,
+  "probabilityPerTick": 0.003,
+  "personaContext": {
+    "arjun_das": "Two weeks of bounced calls. The councillor can end this in a phone call. Arjun knows the system runs on this. Participating makes him part of it.",
+    "priya_mondal": "This is her world. She knows this councillor personally. She also knows exactly what the 'mutual support' will cost her later.",
+    "ramesh_paswan": "He has no leverage in this system. But accepting creates a debt. He's been in debt to people like this before.",
+    "siddharth_roy": "He's done this. He calls it 'networking'. The reframing is getting harder to maintain.",
+    "nasreen_begum": "She's seen what 'mutual support' does to communities over five years. She also has three families whose cases are stuck in the same system."
+  },
+  "choices": [
+    {
+      "id": "accept_favour",
+      "text": "Accept. 'I appreciate it, Kaka. Whatever I can do to help in return.' The problem gets resolved.",
+      "shortLabel": "Accept",
+      "statChanges": { "cash": 0, "mood": 70, "stress": 25 },
+      "karmaChange": -8,
+      "trustChange": -5,
+      "communityChange": -6,
+      "conscienceEffect": -10,
+      "narrativeOutcome": "The problem disappears in 48 hours. The councillor calls once more, casually. 'I told my nephew you might have time this week.' You understand the currency now.",
+      "personaResonance": {
+        "siddharth_roy": "natural",
+        "priya_mondal": "natural",
+        "arjun_das": "neutral",
+        "ramesh_paswan": "neutral",
+        "nasreen_begum": "against"
+      }
+    },
+    {
+      "id": "decline_politely",
+      "text": "Decline with a smile. 'Thank you dada, but I think I'll try the normal process a few more times.'",
+      "shortLabel": "Polite no",
+      "statChanges": { "mood": 55, "stress": 50 },
+      "karmaChange": 7,
+      "trustChange": 5,
+      "communityChange": 3,
+      "conscienceEffect": 12,
+      "narrativeOutcome": "He nods, smile intact. 'Of course, of course.' You've preserved your integrity and extended your wait by at least three weeks. The system rewards patience inversely to need.",
+      "personaResonance": {
+        "arjun_das": "natural",
+        "nasreen_begum": "natural",
+        "siddharth_roy": "against",
+        "ramesh_paswan": "neutral",
+        "priya_mondal": "neutral"
+      }
+    },
+    {
+      "id": "accept_for_others",
+      "text": "Say yes, but use the access to also push through two others' stuck cases. Use it broadly.",
+      "shortLabel": "Accept, use for community",
+      "statChanges": { "energy": 40, "mood": 65, "cash": 15 },
+      "karmaChange": 3,
+      "trustChange": 8,
+      "communityChange": 10,
+      "conscienceEffect": 5,
+      "narrativeOutcome": "All three cases resolve. The councillor raises an eyebrow at the additions. 'You're thorough.' You've bent the system but also redistributed its benefits. The debt is larger now.",
+      "personaResonance": {
+        "priya_mondal": "natural",
+        "nasreen_begum": "natural",
+        "arjun_das": "neutral",
+        "ramesh_paswan": "neutral",
+        "siddharth_roy": "neutral"
+      }
+    },
+    {
+      "id": "expose_publicly",
+      "text": "Decline and document the offer. This is an opportunity to expose how the system works.",
+      "shortLabel": "Document and expose",
+      "statChanges": { "mood": 60, "stress": 70, "cash": 0 },
+      "karmaChange": 15,
+      "trustChange": 3,
+      "communityChange": 8,
+      "conscienceEffect": 20,
+      "narrativeOutcome": "You write it up. Two people share it. The councillor calls to say 'there has been a misunderstanding.' Your problem remains unsolved. You've made an enemy with a long memory.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "arjun_das": "against",
+        "siddharth_roy": "against",
+        "priya_mondal": "against",
+        "ramesh_paswan": "against"
+      }
+    }
+  ]
+}
