@@ -220,6 +220,20 @@ export interface ActionResult {
   narrative?: string;
 }
 
+export interface ScoreBreakdown {
+  missionPoints: number;
+  optionalBonus: number;
+  cashBonus: number;
+  trustBonus: number;
+  communityBonus: number;
+  total: number;
+}
+
+export interface PerformanceInsight {
+  category: 'strength' | 'weakness' | 'tip';
+  text: string;
+}
+
 export interface PlayerResult {
   playerId: string;
   playerName: string;
@@ -238,6 +252,8 @@ export interface PlayerResult {
   narrative: string;
   dilemmasResolved: DilemmaRecord[];
   personaLens?: string[];
+  scoreBreakdown: ScoreBreakdown;
+  performanceInsights: PerformanceInsight[];
 }
 
 export interface MatchResult {
@@ -284,6 +300,7 @@ interface GameState {
   submitAction: (type: ActionType, payload: Record<string, unknown>) => void;
   respondToEvent: (eventId: string, choiceId: string) => void;
   respondToDilemma: (dilemmaId: string, choiceId: string, choiceLabel: string) => void;
+  dismissBriefing: () => void;
   setViewingPersona: (id: string | null) => void;
   clearFeedback: () => void;
 }
@@ -328,8 +345,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     socket.on('gameStarted', ({ yourPlayer, room }: { yourPlayer: Player; room: PublicRoom }) => {
       set({ myPlayer: yourPlayer, room, screen: 'briefing' });
-      // Auto-transition to game after briefing
-      setTimeout(() => set({ screen: 'game' }), 5000);
+    });
+
+    socket.on('briefingComplete', () => {
+      set({ screen: 'game' });
     });
 
     socket.on('playerUpdate', (player: Player) => {
@@ -404,6 +423,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!socket) return;
     socket.emit('submitAction', { type: 'dilemma_choice', payload: { dilemmaId, choiceId, choiceLabel } });
     set({ pendingDilemma: null });
+  },
+
+  dismissBriefing: () => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('readyToPlay');
   },
 
   setViewingPersona: (id) => set({ viewingPersonaId: id }),

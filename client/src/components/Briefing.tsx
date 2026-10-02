@@ -2,7 +2,7 @@ import { useGameStore } from '../store/gameStore';
 import { getLocationById } from '../game/mapData';
 
 export default function Briefing() {
-  const { myPlayer } = useGameStore();
+  const { myPlayer, dismissBriefing } = useGameStore();
   if (!myPlayer) return null;
 
   const persona = myPlayer.persona;
@@ -159,10 +159,30 @@ export default function Briefing() {
           </div>
         </div>
 
-        <div style={{
-          textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px'
-        }} className="pulse">
-          Game starting in a moment...
+        <button
+          onClick={dismissBriefing}
+          style={{
+            padding: '16px 32px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, #f5c842, #f97316)',
+            color: '#000', fontWeight: 700, fontSize: '16px',
+            border: 'none', cursor: 'pointer',
+            boxShadow: '0 4px 20px rgba(245, 200, 66, 0.3)',
+            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+            width: '100%'
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(1.02)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 28px rgba(245, 200, 66, 0.45)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 20px rgba(245, 200, 66, 0.3)';
+          }}
+        >
+          Enter the City
+        </button>
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+          Take your time — the game starts when you're ready
         </div>
       </div>
     </div>

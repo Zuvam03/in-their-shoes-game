@@ -807,17 +807,21 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
     const totalRequired = objectives.filter(o => !o.optional).length;
     const completedOptional = objectives.filter(o => o.optional && o.completed).length;
 
-    // Score calculation
-    let score = 0;
-    score += (completedRequired / Math.max(1, totalRequired)) * 60; // 60 points for required
-    score += completedOptional * 10; // 10 points per optional
-    score += Math.round(player.state.cash / 10); // Cash bonus (capped contribution)
-    score += Math.round(player.socialTrust / 2); // Trust bonus
-    score += Math.round(player.communityImpact); // Community impact
-    score = Math.min(100, Math.round(score));
+    // Score calculation with breakdown
+    const missionPoints = Math.round((completedRequired / Math.max(1, totalRequired)) * 60);
+    const optionalBonus = completedOptional * 10;
+    const cashBonus = Math.round(player.state.cash / 10);
+    const trustBonus = Math.round(player.socialTrust / 2);
+    const communityBonus = Math.round(player.communityImpact);
+
+    const scoreBreakdown = { missionPoints, optionalBonus, cashBonus, trustBonus, communityBonus, total: 0 };
+    const rawTotal = missionPoints + optionalBonus + cashBonus + trustBonus + communityBonus;
+    const score = Math.min(100, Math.max(0, rawTotal));
+    scoreBreakdown.total = score;
 
     // Generate journey narrative
     const narrative = generatePlayerNarrative(player, mission);
+    const performanceInsights = generatePerformanceInsights(player, mission, scoreBreakdown);
 
     playerResults.push({
       playerId: player.id,
@@ -829,8 +833,8 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
       socialTrust: player.socialTrust,
       communityImpact: player.communityImpact,
       score,
-      rank: 0, // filled in after sorting
-      journey: player.actionLog.slice(-20), // last 20 events
+      rank: 0,
+      journey: player.actionLog.slice(-20),
       majorDecisions: player.actionLog
         .filter(e => ['help_player', 'transfer_money', 'event_choice'].includes(e.type))
         .map(e => e.description),
@@ -838,7 +842,9 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
       helpedCount: player.state.receivedHelpCount,
       narrative,
       dilemmasResolved: player.dilemmasResolved || [],
-      personaLens: player.persona.socialContext?.insightLines
+      personaLens: player.persona.socialContext?.insightLines,
+      scoreBreakdown,
+      performanceInsights
     });
   }
 
@@ -894,4 +900,81 @@ function generatePlayerNarrative(player: Player, mission: PlayerMission): string
   }
 
   return parts.join(' ');
+}
+
+function generatePerformanceInsights(
+  player: Player,
+  mission: PlayerMission,
+  breakdown: { missionPoints: number; trustBonus: number; cashBonus: number }
+): import('./types').PerformanceInsight[] {
+  const insights: import('./types').PerformanceInsight[] = [];
+
+  if (mission.status === 'completed') {
+    insights.push({ category: 'strength', text: 'Completed all mission objectives — excellent focus and planning.' });
+  } else if (mission.status === 'partial') {
+    const pct = mission.partialProgress;
+    insights.push({ category: 'weakness', text: `Mission only ${pct}% complete. Prioritize required objectives and plan your route to mission locations early.` });
+  } else {
+    insights.push({ category: 'weakness', text: 'Mission was not completed. Plan your route to hit mission-critical locations before time runs out.' });
+  }
+
+  if (player.state.health > 70) {
+    insights.push({ category: 'strength', text: 'Maintained good health throughout — smart self-care choices.' });
+  } else if (player.state.health < 30) {
+    insights.push({ category: 'weakness', text: `Health dropped to ${Math.round(player.state.health)}%. Visit medical locations or rest areas when health dips below 50.` });
+  }
+
+  if (player.state.energy < 20) {
+    insights.push({ category: 'weakness', text: `Energy critically low (${Math.round(player.state.energy)}%). Rest at parks, gardens, or residential areas to recover.` });
+  } else if (player.state.energy > 60) {
+    insights.push({ category: 'strength', text: 'Good energy management — balanced activity with rest.' });
+  }
+
+  if (player.state.hunger > 70) {
+    insights.push({ category: 'weakness', text: 'Went too long without eating. Eat before hunger passes 60 to avoid health penalties.' });
+  }
+  if (player.state.hydration > 70) {
+    insights.push({ category: 'weakness', text: 'Severe dehydration. Free water is available at stations, hospitals, and temples.' });
+  }
+
+  if (player.socialTrust > 70) {
+    insights.push({ category: 'strength', text: `Social trust of ${Math.round(player.socialTrust)} — community-minded choices paid off in your score.` });
+  } else if (player.socialTrust < 30) {
+    insights.push({ category: 'weakness', text: 'Low social trust. Helping others and making ethical dilemma choices builds trust and boosts your score.' });
+  }
+
+  const cashChange = player.state.cash - player.persona.startingCash;
+  if (cashChange > 100) {
+    insights.push({ category: 'strength', text: `Earned ₹${cashChange} net — strong financial management.` });
+  } else if (player.state.cash < 20) {
+    insights.push({ category: 'weakness', text: 'Nearly ran out of money. Balance spending on food with work opportunities at offices.' });
+  }
+
+  if (player.communityImpact > 10) {
+    insights.push({ category: 'strength', text: `Positive community impact (+${Math.round(player.communityImpact)}). Your choices made a real difference.` });
+  } else if (player.communityImpact < -5) {
+    insights.push({ category: 'weakness', text: 'Negative community impact. Consider helping NPCs and choosing community-friendly options in dilemmas.' });
+  }
+
+  if (player.state.stress > 60) {
+    insights.push({ category: 'tip', text: 'High stress reduces mood and health over time. Visit Maidan, Hooghly Riverbank, or Victoria Memorial to decompress.' });
+  }
+
+  if (breakdown.missionPoints < 30) {
+    insights.push({ category: 'tip', text: 'Mission completion is worth up to 60 points. Plan your route to reach mission locations before tackling side activities.' });
+  }
+  if (breakdown.trustBonus < 15) {
+    insights.push({ category: 'tip', text: 'Social trust contributes to your score. Help other players and engage thoughtfully with social dilemmas.' });
+  }
+  if (breakdown.cashBonus < 5) {
+    insights.push({ category: 'tip', text: 'Work at Dalhousie Square or Salt Lake IT Park to earn cash. Cash remaining at game end adds to your score.' });
+  }
+
+  if ((player.dilemmasResolved || []).length === 0) {
+    insights.push({ category: 'tip', text: 'You did not encounter any social dilemmas. Spend more time at different locations to trigger dilemma events.' });
+  } else if ((player.dilemmasResolved || []).length >= 3) {
+    insights.push({ category: 'strength', text: `Engaged with ${player.dilemmasResolved.length} social dilemmas — each one shapes your persona's story and score.` });
+  }
+
+  return insights;
 }

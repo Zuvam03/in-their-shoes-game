@@ -1,4 +1,5 @@
 import { useGameStore } from '../store/gameStore';
+import type { PerformanceInsight } from '../store/gameStore';
 
 export default function ResultsScreen() {
   const { matchResult, mySocketId } = useGameStore();
@@ -7,14 +8,14 @@ export default function ResultsScreen() {
   const { playerResults, winnerName, highlightEvents } = matchResult;
   const myResult = playerResults.find(r => r.playerId === mySocketId);
 
-  const statusColors = {
+  const statusColors: Record<string, string> = {
     completed: 'var(--accent-green)',
     partial: 'var(--accent-yellow)',
     failed: 'var(--accent-red)',
     active: 'var(--text-muted)'
   };
 
-  const statusIcons = {
+  const statusIcons: Record<string, string> = {
     completed: '✅',
     partial: '◑',
     failed: '❌',
@@ -78,6 +79,62 @@ export default function ResultsScreen() {
               <StatCard label="Social Trust" value={`${myResult.socialTrust}`} color="var(--accent-green)" />
               <StatCard label="Community" value={`${myResult.communityImpact >= 0 ? '+' : ''}${myResult.communityImpact}`}
                 color={myResult.communityImpact >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'} />
+            </div>
+          </div>
+        )}
+
+        {/* Score Breakdown */}
+        {myResult?.scoreBreakdown && (
+          <div style={{
+            padding: '24px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, rgba(245,200,66,0.08), rgba(249,115,22,0.05))',
+            border: '1px solid rgba(245,200,66,0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+              <span style={{ fontSize: '20px' }}>📊</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '16px', color: 'var(--accent-yellow)' }}>
+                  Score Breakdown
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  How your {myResult.scoreBreakdown.total} points were earned
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <ScoreRow label="Mission Objectives" value={myResult.scoreBreakdown.missionPoints} max={60}
+                description="Complete required objectives to earn up to 60 pts" color="#f5c842" />
+              <ScoreRow label="Optional Objectives" value={myResult.scoreBreakdown.optionalBonus} max={30}
+                description="10 pts per optional objective completed" color="#a78bfa" />
+              <ScoreRow label="Cash Remaining" value={myResult.scoreBreakdown.cashBonus} max={20}
+                description="1 pt per ₹10 remaining at game end" color="#22c55e" />
+              <ScoreRow label="Social Trust" value={myResult.scoreBreakdown.trustBonus} max={50}
+                description="Half your trust score — built by helping others" color="#3b82f6" />
+              <ScoreRow label="Community Impact" value={myResult.scoreBreakdown.communityBonus} max={50}
+                description="Points from positive community choices" color="#10b981" />
+            </div>
+          </div>
+        )}
+
+        {/* Performance Analysis */}
+        {myResult?.performanceInsights && myResult.performanceInsights.length > 0 && (
+          <div style={{
+            padding: '24px', borderRadius: '14px',
+            background: 'var(--bg-card)', border: '1px solid var(--border)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '18px' }}>
+              <span style={{ fontSize: '20px' }}>🎯</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '16px' }}>Performance Analysis</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  What went well, what to improve, and tips for next time
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {myResult.performanceInsights.map((insight, i) => (
+                <InsightRow key={i} insight={insight} />
+              ))}
             </div>
           </div>
         )}
@@ -303,6 +360,56 @@ function StatCard({ label, value, color }: { label: string; value: string; color
     }}>
       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>{label}</div>
       <div style={{ fontWeight: 700, fontSize: '20px', color }}>{value}</div>
+    </div>
+  );
+}
+
+function ScoreRow({ label, value, max, description, color }: {
+  label: string; value: number; max: number; description: string; color: string;
+}) {
+  const pct = Math.min(100, Math.max(0, (value / max) * 100));
+  return (
+    <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-secondary)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 600 }}>{label}</span>
+        <span style={{ fontSize: '14px', fontWeight: 700, color }}>
+          {value > 0 ? '+' : ''}{value} pts
+        </span>
+      </div>
+      <div style={{ height: '6px', background: 'var(--border)', borderRadius: '3px', marginBottom: '4px', overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: '3px', width: `${pct}%`,
+          background: color, transition: 'width 0.8s ease'
+        }} />
+      </div>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{description}</div>
+    </div>
+  );
+}
+
+function InsightRow({ insight }: { insight: PerformanceInsight }) {
+  const config = {
+    strength: { icon: '✅', label: 'Strength', border: 'rgba(34,197,94,0.3)', bg: 'rgba(34,197,94,0.06)', color: '#4ade80' },
+    weakness: { icon: '⚠️', label: 'Improve', border: 'rgba(239,68,68,0.3)', bg: 'rgba(239,68,68,0.06)', color: '#f87171' },
+    tip: { icon: '💡', label: 'Tip', border: 'rgba(59,130,246,0.3)', bg: 'rgba(59,130,246,0.06)', color: '#60a5fa' },
+  }[insight.category];
+
+  return (
+    <div style={{
+      padding: '12px 14px', borderRadius: '10px',
+      background: config.bg, border: `1px solid ${config.border}`,
+      borderLeft: `3px solid ${config.color}`,
+      display: 'flex', alignItems: 'flex-start', gap: '10px'
+    }}>
+      <span style={{ fontSize: '14px', flexShrink: 0, marginTop: '1px' }}>{config.icon}</span>
+      <div>
+        <div style={{ fontSize: '10px', color: config.color, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '2px' }}>
+          {config.label}
+        </div>
+        <div style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          {insight.text}
+        </div>
+      </div>
     </div>
   );
 }

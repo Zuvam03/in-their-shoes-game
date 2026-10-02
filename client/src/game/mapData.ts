@@ -6,6 +6,8 @@ export interface LocationInfo {
   x: number;
   y: number;
   description: string;
+  tagline: string;
+  labelDir: 'top' | 'bottom' | 'left' | 'right';
   availableActions: ActionInfo[];
 }
 
@@ -56,6 +58,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'transport',
     x: 120, y: 310,
     description: 'The grand old station, always teeming with people.',
+    tagline: 'Rail hub, cheap snacks',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'drink_water', label: 'Drink water (free)', actionType: 'drink', payload: { cost: 0 }, description: 'Free drinking water at the station', icon: '💧' },
       { id: 'buy_snack', label: 'Buy platform snack (₹15)', actionType: 'eat', payload: { foodType: 'street', cost: 15 }, cost: 15, description: 'Quick platform snack', icon: '🍪' }
@@ -68,6 +72,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'transport',
     x: 280, y: 290,
     description: 'The crossroads of the city. Every bus, tram, and metro passes here.',
+    tagline: 'City crossroads, puchka',
+    labelDir: 'bottom' as const,
     availableActions: [
       { id: 'buy_puchka', label: 'Puchka from vendor (₹20)', actionType: 'eat', payload: { foodType: 'street', cost: 20 }, cost: 20, description: 'Famous Kolkata puchka', icon: '🫓' },
       { id: 'drink_chai', label: 'Tea stall chai (₹5)', actionType: 'drink', payload: { cost: 5 }, cost: 5, description: 'Roadside chai', icon: '☕' }
@@ -80,6 +86,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'transport',
     x: 370, y: 220,
     description: 'Eastern gateway for suburban trains.',
+    tagline: 'Suburban trains, food stalls',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'buy_food', label: 'Station food stall (₹25)', actionType: 'eat', payload: { foodType: 'street', cost: 25 }, cost: 25, description: 'Station food stall', icon: '🍱' },
       { id: 'drink_water', label: 'Water fountain (free)', actionType: 'drink', payload: { cost: 0 }, description: 'Free station water', icon: '💧' }
@@ -92,6 +100,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'education',
     x: 310, y: 200,
     description: "The city's intellectual heart. Books, students, old paper.",
+    tagline: 'Books, coffee house',
+    labelDir: 'top' as const,
     availableActions: [
       { id: 'buy_books', label: 'Buy study materials (₹50)', actionType: 'buy', payload: { item: 'study materials', cost: 50 }, cost: 50, description: 'Books and study materials', icon: '📚' },
       { id: 'complete_obj_books', label: 'Get required books (mission)', actionType: 'complete_objective', payload: { objectiveId: 'get_books' }, description: 'Complete the books objective', icon: '✅' },
@@ -105,6 +115,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'food',
     x: 270, y: 360,
     description: 'The restaurant mile. Every cuisine, every price point.',
+    tagline: 'Restaurants, kathi rolls',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'restaurant_meal', label: 'Restaurant meal (₹80)', actionType: 'eat', payload: { foodType: 'restaurant', cost: 80 }, cost: 80, description: 'Full restaurant meal', icon: '🍽️' },
       { id: 'street_roll', label: 'Kathi roll (₹40)', actionType: 'eat', payload: { foodType: 'street', cost: 40 }, cost: 40, description: 'Famous Kolkata kathi roll', icon: '🌯' },
@@ -118,6 +130,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'public',
     x: 230, y: 340,
     description: 'Vast open green. A rare place to breathe and recover.',
+    tagline: 'Rest, open air',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'rest_park', label: 'Rest in the park (2 min)', actionType: 'rest', payload: { duration: 120 }, energyCost: 0, description: 'Relaxing rest on the grass', icon: '😴' },
       { id: 'buy_water', label: 'Buy bottled water (₹12)', actionType: 'drink', payload: { cost: 12 }, cost: 12, description: 'Cold water from a vendor', icon: '💧' },
@@ -131,6 +145,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'public',
     x: 240, y: 400,
     description: 'Historical monument and gardens. Visiting restores mood.',
+    tagline: 'Gardens, mood boost',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'visit_memorial', label: 'Walk the gardens', actionType: 'rest', payload: { duration: 90 }, description: 'A peaceful walk in the gardens', icon: '🏛️' },
       { id: 'buy_snack', label: 'Gardens snack (₹20)', actionType: 'eat', payload: { foodType: 'street', cost: 20 }, cost: 20, description: 'Snack from a gardens vendor', icon: '🍿' }
@@ -143,6 +159,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'shop',
     x: 260, y: 260,
     description: 'Legendary market with everything. Best prices in the city.',
+    tagline: 'Shopping, fresh food',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'buy_goods', label: 'Buy goods (₹60)', actionType: 'buy', payload: { item: 'market goods', cost: 60 }, cost: 60, description: 'General market shopping', icon: '🛍️' },
       { id: 'buy_food_market', label: 'Fresh food (₹25)', actionType: 'eat', payload: { foodType: 'vegetarian', cost: 25 }, cost: 25, description: 'Fresh food from the market', icon: '🥗' },
@@ -156,6 +174,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'shop',
     x: 280, y: 480,
     description: "South Kolkata's biggest market.",
+    tagline: 'Market, street food',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'buy_goods', label: 'Shopping (₹50)', actionType: 'buy', payload: { item: 'Gariahat goods', cost: 50 }, cost: 50, description: 'Sarees, handicrafts, trinkets', icon: '🛍️' },
       { id: 'eat_street', label: 'Street food (₹18)', actionType: 'eat', payload: { foodType: 'street', cost: 18 }, cost: 18, description: 'Gariahat street food', icon: '🍛' }
@@ -168,6 +188,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'residential',
     x: 290, y: 160,
     description: 'Classic north Kolkata neighbourhood. Famous puchkas.',
+    tagline: 'Puchka, rest spots',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'eat_puchka', label: 'Neighbourhood puchka (₹15)', actionType: 'eat', payload: { foodType: 'street', cost: 15 }, cost: 15, description: 'Best puchka in north Kolkata', icon: '🫓' },
       { id: 'rest_home', label: 'Quick rest (1 min)', actionType: 'rest', payload: { duration: 60 }, description: 'Rest at a nearby bench', icon: '😴' }
@@ -180,6 +202,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'residential',
     x: 310, y: 520,
     description: 'Quiet residential area. Good for rest.',
+    tagline: 'Long rest, dhaba',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'long_rest', label: 'Proper rest (3 min)', actionType: 'rest', payload: { duration: 180 }, description: 'A longer, restorative rest', icon: '😴' },
       { id: 'eat_home', label: 'Local dhaba (₹35)', actionType: 'eat', payload: { foodType: 'vegetarian', cost: 35 }, cost: 35, description: 'Home-style dhaba meal', icon: '🍱' }
@@ -192,6 +216,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'residential',
     x: 240, y: 440,
     description: 'Residential neighbourhood with excellent local dhabas.',
+    tagline: 'Dhaba, free water',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'eat_dhaba', label: 'Local dhaba meal (₹30)', actionType: 'eat', payload: { foodType: 'vegetarian', cost: 30 }, cost: 30, description: 'Authentic local dhaba', icon: '🍱' },
       { id: 'drink_water_free', label: 'Water (free)', actionType: 'drink', payload: { cost: 0 }, description: 'Free water from a filter', icon: '💧' }
@@ -204,6 +230,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'public',
     x: 260, y: 140,
     description: "The potters' quarter. Fascinating artisan neighbourhood.",
+    tagline: 'Artisan quarter, delivery',
+    labelDir: 'top' as const,
     availableActions: [
       { id: 'deliver_package', label: 'Deliver package (mission)', actionType: 'complete_objective', payload: { objectiveId: 'deliver_package' }, description: 'Deliver your package here', icon: '📦' },
       { id: 'eat_local', label: 'Local snack (₹12)', actionType: 'eat', payload: { foodType: 'street', cost: 12 }, cost: 12, description: 'Neighbourhood snack stall', icon: '🍪' }
@@ -216,6 +244,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'food',
     x: 300, y: 280,
     description: 'Legendary puchka, kathi rolls, and jhalmuri stalls.',
+    tagline: 'Puchka, rolls, biryani',
+    labelDir: 'top' as const,
     availableActions: [
       { id: 'eat_puchka', label: 'Puchka (₹15)', actionType: 'eat', payload: { foodType: 'street', cost: 15 }, cost: 15, description: 'Classic Kolkata puchka', icon: '🫓' },
       { id: 'eat_jhalmuri', label: 'Jhalmuri (₹10)', actionType: 'eat', payload: { foodType: 'street', cost: 10 }, cost: 10, description: 'Spicy puffed rice mix', icon: '🌶️' },
@@ -231,6 +261,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'office',
     x: 330, y: 270,
     description: 'Commercial and government district. Work and formal errands.',
+    tagline: 'Work, pay bills',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'work_basic', label: 'Quick work task (₹40)', actionType: 'work', payload: { workType: 'basic', duration: 180 }, description: 'Basic work task — 3 minutes', icon: '💼' },
       { id: 'pay_rent', label: 'Pay rent/bills (mission)', actionType: 'complete_objective', payload: { objectiveId: 'pay_rent' }, description: 'Pay your essential bills', icon: '🏦' },
@@ -244,6 +276,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'office',
     x: 480, y: 230,
     description: 'Modern tech hub. Better paying work but further away.',
+    tagline: 'IT work, high pay',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'work_skilled', label: 'Skilled work task (₹80)', actionType: 'work', payload: { workType: 'skilled', duration: 240 }, description: 'IT work task — 4 minutes', icon: '💻' },
       { id: 'work_basic', label: 'Support task (₹40)', actionType: 'work', payload: { workType: 'basic', duration: 180 }, description: 'Basic support task', icon: '💼' },
@@ -257,6 +291,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'medical',
     x: 360, y: 300,
     description: 'Major hospital district. Restore health and obtain medicine.',
+    tagline: 'Medical care, medicine',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'get_treatment', label: 'Get treatment (₹80)', actionType: 'buy', payload: { item: 'medical treatment', cost: 80 }, cost: 80, description: 'Professional medical care', icon: '💊' },
       { id: 'get_medicine', label: 'Get medicine (mission)', actionType: 'complete_objective', payload: { objectiveId: 'get_medicine' }, description: 'Obtain the required medicine', icon: '💉' },
@@ -270,6 +306,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'medical',
     x: 250, y: 420,
     description: 'Community health clinic. Cheaper, basic care.',
+    tagline: 'Cheap treatment',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'basic_treatment', label: 'Basic treatment (₹30)', actionType: 'buy', payload: { item: 'basic treatment', cost: 30 }, cost: 30, description: 'Basic medical care', icon: '🩺' },
       { id: 'get_medicine_alt', label: 'Alternative medicine (mission)', actionType: 'complete_objective', payload: { objectiveId: 'get_medicine' }, description: 'Get substitute medicine here', icon: '💊' }
@@ -282,6 +320,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'public',
     x: 150, y: 260,
     description: 'Banks of the Hooghly. Peaceful, with tea stalls and open skies.',
+    tagline: 'Riverside rest, chai',
+    labelDir: 'left' as const,
     availableActions: [
       { id: 'sit_riverside', label: 'Sit by the river (2 min)', actionType: 'rest', payload: { duration: 120 }, description: 'Peaceful rest by the Hooghly', icon: '🌊' },
       { id: 'drink_chai', label: 'Riverside chai (₹8)', actionType: 'drink', payload: { cost: 8 }, cost: 8, description: 'Tea at a riverside stall', icon: '☕' },
@@ -295,6 +335,8 @@ export const LOCATIONS: LocationInfo[] = [
     type: 'transport',
     x: 250, y: 450,
     description: 'Famous temple area and metro station.',
+    tagline: 'Temple, free water',
+    labelDir: 'right' as const,
     availableActions: [
       { id: 'eat_prasad', label: 'Temple prasad (₹5)', actionType: 'eat', payload: { foodType: 'sweet', cost: 5 }, cost: 5, description: 'Sweet temple offering', icon: '🍬' },
       { id: 'drink_water', label: 'Temple water (free)', actionType: 'drink', payload: { cost: 0 }, description: 'Free water at the temple', icon: '💧' }

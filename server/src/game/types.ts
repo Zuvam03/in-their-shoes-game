@@ -365,6 +365,20 @@ export interface DilemmaRecord {
   tick: number;
 }
 
+export interface ScoreBreakdown {
+  missionPoints: number;
+  optionalBonus: number;
+  cashBonus: number;
+  trustBonus: number;
+  communityBonus: number;
+  total: number;
+}
+
+export interface PerformanceInsight {
+  category: 'strength' | 'weakness' | 'tip';
+  text: string;
+}
+
 export interface PlayerResult {
   playerId: string;
   playerName: string;
@@ -382,7 +396,9 @@ export interface PlayerResult {
   helpedCount: number;
   narrative: string;
   dilemmasResolved: DilemmaRecord[];
-  personaLens?: string[];  // insight lines from socialContext
+  personaLens?: string[];
+  scoreBreakdown: ScoreBreakdown;
+  performanceInsights: PerformanceInsight[];
 }
 
 export interface MatchResult {
@@ -416,6 +432,7 @@ export interface ClientToServerEvents {
   submitAction: (action: Omit<GameAction, 'tick'>) => void;
   respondToInteraction: (data: { requestId: string; accept: boolean }) => void;
   ready: () => void;
+  readyToPlay: () => void;
 }
 
 export interface InteractionRequest {

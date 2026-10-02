@@ -204,6 +204,26 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     io.to(roomId).emit('roomUpdate', toPublicRoom(room));
   });
 
+  socket.on('readyToPlay', () => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'briefing') return;
+
+    const player = room.players[socket.id];
+    if (player) player.isReady = true;
+
+    const allReady = Object.values(room.players).every(p => p.isReady);
+    if (allReady) {
+      const timer = roomBriefingTimers.get(room.id);
+      if (timer) { clearTimeout(timer); roomBriefingTimers.delete(room.id); }
+      room.phase = 'playing';
+      io.to(room.id).emit('briefingComplete');
+      io.to(room.id).emit('roomUpdate', toPublicRoom(room));
+      startGameLoop(io, room);
+    }
+  });
+
   socket.on('respondToInteraction', ({ requestId, accept }) => {
     // TODO: Handle interaction responses (help requests, trades)
   });
@@ -275,14 +295,18 @@ function startMatch(io: Server, room: Room): void {
     });
   }
 
-  // After briefing phase, start playing
+  // Reset ready flags so players must explicitly signal readyToPlay
+  for (const p of Object.values(room.players)) p.isReady = false;
+
+  // Fallback: auto-start after 2 minutes if players never signal ready
   const briefingTimer = setTimeout(() => {
     roomBriefingTimers.delete(room.id);
     if (room.phase !== 'briefing') return;
     room.phase = 'playing';
+    io.to(room.id).emit('briefingComplete');
     io.to(room.id).emit('roomUpdate', toPublicRoom(room));
     startGameLoop(io, room);
-  }, 5000); // 5 second briefing window
+  }, 120000);
   roomBriefingTimers.set(room.id, briefingTimer);
 }
 
