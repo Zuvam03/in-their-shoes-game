@@ -521,6 +521,38 @@ function startGameLoop(io: Server, room: Room): void {
       const { newState, events } = tickCharacterState(player.state, player.persona, room.tick);
       player.state = newState;
 
+      // Environmental effects — weather and night
+      const isNightTime = room.tick > 0 && ((room.tick % 600) > 400);
+      const activeWeather = room.cityEvents.some(e =>
+        e.type === 'weather' &&
+        e.startTick + e.duration > room.tick &&
+        (e.affectedLocations.includes('all') || e.affectedLocations.includes(player.state.location))
+      );
+      const activeHeat = room.cityEvents.some(e =>
+        e.type === 'heat' &&
+        e.startTick + e.duration > room.tick &&
+        (e.affectedLocations.includes('all') || e.affectedLocations.includes(player.state.location))
+      );
+
+      if (activeWeather) {
+        player.state.hydration = Math.min(100, player.state.hydration + 0.15);
+        player.state.mood = Math.max(0, player.state.mood - 0.08);
+        if (room.tick % 60 === 0 && !events.length) {
+          events.push('The rain makes everything harder.');
+        }
+      }
+      if (activeHeat) {
+        player.state.hydration = Math.min(100, player.state.hydration + 0.25);
+        player.state.energy = Math.max(0, player.state.energy - 0.1);
+        if (room.tick % 60 === 0 && !events.length) {
+          events.push('The heat is draining you.');
+        }
+      }
+      if (isNightTime) {
+        player.state.stress = Math.min(100, player.state.stress + 0.08);
+        player.state.energy = Math.max(0, player.state.energy - 0.05);
+      }
+
       // Log any state events and notify
       for (const evt of events) {
         player.actionLog.push({

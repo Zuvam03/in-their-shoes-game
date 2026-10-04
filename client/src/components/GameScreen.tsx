@@ -16,6 +16,7 @@ import Minimap from './Minimap';
 import LocationDetail from './LocationDetail';
 import JourneyTimeline from './JourneyTimeline';
 import QuickEmoteBar from './QuickEmoteBar';
+import StatusEffectsBar from './StatusEffectsBar';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -180,6 +181,11 @@ export default function GameScreen() {
           }}>
             ⚙️
           </button>
+        </div>
+
+        {/* Status effects */}
+        <div style={{ padding: '0 8px' }}>
+          <StatusEffectsBar />
         </div>
 
         {/* Content area */}
@@ -402,6 +408,7 @@ export default function GameScreen() {
             <StatBar label="Hydration" value={myPlayer.state.hydration} color="var(--accent-blue)" icon="💧" inverted />
             <StatBar label="Mood" value={myPlayer.state.mood} color="var(--accent-purple)" icon="😊" />
             <StatBar label="Stress" value={myPlayer.state.stress} color="#ef4444" icon="😰" inverted />
+            <StatusEffectsBar />
           </div>
 
           {/* Tab navigation */}
