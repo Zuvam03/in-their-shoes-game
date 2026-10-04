@@ -1,18 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import CityMap from './CityMap';
 import CharacterPanel from './CharacterPanel';
 import ActionPanel from './ActionPanel';
 import MissionPanel from './MissionPanel';
 import PlayersPanel from './PlayersPanel';
+import ChatPanel from './ChatPanel';
+import EventFeed from './EventFeed';
 import DilemmaModal from './DilemmaModal';
+import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playChat, playDilemma, playFortune } from '../game/sounds';
 
-type Tab = 'map' | 'character' | 'mission' | 'players';
+type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed';
 
 export default function GameScreen() {
-  const { room, myPlayer } = useGameStore();
+  const { room, myPlayer, unreadChatCount, unreadNotifCount, soundEnabled, toggleSound, notifications, chatMessages, lastActionResult, pendingDilemma } = useGameStore();
   const [activeTab, setActiveTab] = useState<Tab>('map');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Sound effects
+  useEffect(() => {
+    if (!soundEnabled || !lastActionResult) return;
+    if (lastActionResult.success) {
+      if (lastActionResult.changes.cash !== undefined && lastActionResult.changes.cash > (myPlayer?.state.cash || 0)) {
+        playCoinEarn();
+      } else {
+        playActionSuccess();
+      }
+    } else {
+      playActionFail();
+    }
+  }, [lastActionResult]);
+
+  useEffect(() => {
+    if (!soundEnabled) return;
+    const last = notifications[notifications.length - 1];
+    if (!last) return;
+    if (last.type === 'warning') playWarning();
+    else if (last.type === 'fortune') playFortune();
+  }, [notifications.length]);
+
+  useEffect(() => {
+    if (!soundEnabled || chatMessages.length === 0) return;
+    const last = chatMessages[chatMessages.length - 1];
+    if (last && last.senderId !== myPlayer?.id) playChat();
+  }, [chatMessages.length]);
+
+  useEffect(() => {
+    if (soundEnabled && pendingDilemma) playDilemma();
+  }, [pendingDilemma]);
 
   if (!myPlayer || !room) return null;
 
@@ -22,6 +64,123 @@ export default function GameScreen() {
   const timeIsLow = timeLeft < 60;
   const timeIsCritical = timeLeft < 30;
 
+  const tabs: { key: Tab; icon: string; label: string; badge?: number }[] = [
+    { key: 'map', icon: '🗺️', label: 'Map' },
+    { key: 'character', icon: '👤', label: 'Stats' },
+    { key: 'mission', icon: '🎯', label: 'Mission' },
+    { key: 'players', icon: '👥', label: 'Players' },
+    { key: 'chat', icon: '💬', label: 'Chat', badge: unreadChatCount },
+    { key: 'feed', icon: '📋', label: 'Events', badge: unreadNotifCount }
+  ];
+
+  if (isMobile) {
+    return (
+      <div style={{
+        width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Compact header */}
+        <div style={{
+          height: '40px', minHeight: '40px',
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center',
+          padding: '0 8px', gap: '8px'
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 8px', borderRadius: '12px',
+            background: timeIsCritical ? 'rgba(239,68,68,0.2)' : timeIsLow ? 'rgba(245,200,66,0.15)' : 'var(--bg-card)',
+            color: timeIsCritical ? 'var(--accent-red)' : timeIsLow ? 'var(--accent-yellow)' : 'var(--text-primary)',
+            fontWeight: 700, fontSize: '13px'
+          }}>
+            ⏱ {timeMin}:{timeSec.toString().padStart(2, '0')}
+          </div>
+
+          <div style={{ flex: 1 }} />
+
+          <MiniStatBar label="HP" value={myPlayer.state.health} color="var(--accent-red)" />
+          <MiniStatBar label="EN" value={myPlayer.state.energy} color="var(--accent-yellow)" />
+
+          <div style={{
+            padding: '4px 8px', borderRadius: '12px',
+            background: 'rgba(34, 197, 94, 0.1)',
+            fontWeight: 700, color: 'var(--accent-green)', fontSize: '12px'
+          }}>
+            ₹{myPlayer.state.cash}
+          </div>
+
+          <button onClick={toggleSound} style={{
+            background: 'none', border: 'none', fontSize: '14px',
+            color: soundEnabled ? 'var(--text-primary)' : 'var(--text-muted)', padding: '2px'
+          }}>
+            {soundEnabled ? '🔊' : '🔇'}
+          </button>
+        </div>
+
+        {/* Content area */}
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {activeTab === 'map' && <CityMap />}
+          {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
+          {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayersPanel /></div>}
+          {activeTab === 'chat' && <ChatPanel />}
+          {activeTab === 'feed' && <EventFeed />}
+          {activeTab === 'map' && (
+            <div style={{
+              position: 'absolute', bottom: '0', left: '0', right: '0',
+              background: 'linear-gradient(transparent, var(--bg-secondary))',
+              padding: '8px', maxHeight: '45%', overflowY: 'auto'
+            }}>
+              <ActionPanel />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom tab bar */}
+        <div style={{
+          height: '52px', minHeight: '52px',
+          background: 'var(--bg-secondary)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex'
+        }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: '2px',
+                background: activeTab === tab.key ? 'rgba(245,200,66,0.08)' : 'transparent',
+                color: activeTab === tab.key ? 'var(--accent-yellow)' : 'var(--text-muted)',
+                borderTop: activeTab === tab.key ? '2px solid var(--accent-yellow)' : '2px solid transparent',
+                fontSize: '10px', fontWeight: 600, position: 'relative'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+              <span>{tab.label}</span>
+              {(tab.badge || 0) > 0 && (
+                <span style={{
+                  position: 'absolute', top: '4px', right: '50%', marginRight: '-16px',
+                  background: 'var(--accent-red)', color: '#fff',
+                  fontSize: '9px', fontWeight: 700,
+                  width: '14px', height: '14px', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {tab.badge! > 9 ? '9+' : tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <DilemmaModal />
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -43,7 +202,6 @@ export default function GameScreen() {
 
         <div style={{ flex: 1 }} />
 
-        {/* Timer */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '6px 12px', borderRadius: '20px',
@@ -60,7 +218,6 @@ export default function GameScreen() {
           ⏱ {timeMin}:{timeSec.toString().padStart(2, '0')}
         </div>
 
-        {/* Cash */}
         <div style={{
           padding: '6px 12px', borderRadius: '20px',
           background: 'rgba(34, 197, 94, 0.1)',
@@ -70,7 +227,6 @@ export default function GameScreen() {
           ₹{myPlayer.state.cash}
         </div>
 
-        {/* Mission status */}
         <div style={{
           padding: '5px 10px', borderRadius: '20px', fontSize: '12px',
           background: myPlayer.mission.status === 'completed'
@@ -91,6 +247,14 @@ export default function GameScreen() {
         }}>
           {myPlayer.mission.title || myPlayer.mission.definition.title}
         </div>
+
+        <button onClick={toggleSound} style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: '6px', padding: '5px 8px', fontSize: '14px',
+          color: soundEnabled ? 'var(--text-primary)' : 'var(--text-muted)'
+        }}>
+          {soundEnabled ? '🔊' : '🔇'}
+        </button>
       </div>
 
       {/* Main content */}
@@ -119,22 +283,34 @@ export default function GameScreen() {
 
           {/* Tab navigation */}
           <div style={{
-            display: 'flex', borderBottom: '1px solid var(--border)'
+            display: 'flex', borderBottom: '1px solid var(--border)', flexWrap: 'wrap'
           }}>
-            {(['map', 'character', 'mission', 'players'] as Tab[]).map(tab => (
+            {tabs.map(tab => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
                 style={{
-                  flex: 1, padding: '8px 4px',
-                  background: activeTab === tab ? 'rgba(245,200,66,0.1)' : 'transparent',
-                  color: activeTab === tab ? 'var(--accent-yellow)' : 'var(--text-muted)',
-                  borderBottom: activeTab === tab ? '2px solid var(--accent-yellow)' : '2px solid transparent',
-                  fontSize: '11px', fontWeight: 600, textTransform: 'capitalize'
+                  flex: 1, padding: '6px 2px', minWidth: '40px',
+                  background: activeTab === tab.key ? 'rgba(245,200,66,0.1)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--accent-yellow)' : 'var(--text-muted)',
+                  borderBottom: activeTab === tab.key ? '2px solid var(--accent-yellow)' : '2px solid transparent',
+                  fontSize: '10px', fontWeight: 600, textTransform: 'capitalize',
+                  position: 'relative'
                 }}
               >
-                {tab === 'map' ? '🗺️' : tab === 'character' ? '👤' : tab === 'mission' ? '🎯' : '👥'}
-                <div>{tab}</div>
+                <span>{tab.icon}</span>
+                <div>{tab.label}</div>
+                {(tab.badge || 0) > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '2px', right: '4px',
+                    background: 'var(--accent-red)', color: '#fff',
+                    fontSize: '8px', fontWeight: 700,
+                    width: '12px', height: '12px', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {tab.badge! > 9 ? '9+' : tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -144,6 +320,8 @@ export default function GameScreen() {
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
             {activeTab === 'players' && <PlayersPanel />}
+            {activeTab === 'chat' && <ChatPanel />}
+            {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
                 <ActionPanel />
@@ -169,7 +347,6 @@ export default function GameScreen() {
         </div>
       </div>
 
-      {/* Social Dilemma Modal */}
       <DilemmaModal />
     </div>
   );
@@ -209,6 +386,24 @@ function StatBar({ label, value, color, icon, inverted = false }: {
             : isWarning
               ? 'var(--accent-yellow)'
               : color,
+          transition: 'width 0.5s ease'
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function MiniStatBar({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{label}</span>
+      <div style={{
+        width: '32px', height: '4px', background: 'var(--border)',
+        borderRadius: '2px', overflow: 'hidden'
+      }}>
+        <div style={{
+          height: '100%', borderRadius: '2px',
+          width: `${Math.round(value)}%`, background: color,
           transition: 'width 0.5s ease'
         }} />
       </div>

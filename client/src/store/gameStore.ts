@@ -265,7 +265,30 @@ export interface MatchResult {
   highlightEvents: GameEvent[];
 }
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  tick: number;
+  target: 'all' | string;
+  timestamp: number;
+}
+
+export interface GameNotification {
+  id: string;
+  tick: number;
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma';
+  text: string;
+  playerId?: string;
+  playerName?: string;
+  isPrivate: boolean;
+}
+
 export type UIScreen = 'landing' | 'lobby' | 'briefing' | 'game' | 'results';
+
+const MAX_NOTIFICATIONS = 50;
+const MAX_CHAT_MESSAGES = 100;
 
 interface GameState {
   // Connection
@@ -291,6 +314,17 @@ interface GameState {
   // Selected persona panel
   viewingPersonaId: string | null;
 
+  // Chat
+  chatMessages: ChatMessage[];
+  unreadChatCount: number;
+
+  // Notifications
+  notifications: GameNotification[];
+  unreadNotifCount: number;
+
+  // Settings
+  soundEnabled: boolean;
+
   // Actions
   connect: () => void;
   createRoom: (name: string, duration: number) => void;
@@ -303,6 +337,11 @@ interface GameState {
   dismissBriefing: () => void;
   setViewingPersona: (id: string | null) => void;
   clearFeedback: () => void;
+  sendChat: (text: string, target: 'all' | string) => void;
+  markChatRead: () => void;
+  markNotifsRead: () => void;
+  toggleSound: () => void;
+  playAgain: () => void;
 }
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
@@ -321,6 +360,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   pendingDilemma: null,
   matchResult: null,
   viewingPersonaId: null,
+  chatMessages: [],
+  unreadChatCount: 0,
+  notifications: [],
+  unreadNotifCount: 0,
+  soundEnabled: true,
 
   connect: () => {
     if (get().socket?.connected) return;
@@ -344,7 +388,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     socket.on('gameStarted', ({ yourPlayer, room }: { yourPlayer: Player; room: PublicRoom }) => {
-      set({ myPlayer: yourPlayer, room, screen: 'briefing' });
+      set({ myPlayer: yourPlayer, room, screen: 'briefing', chatMessages: [], notifications: [], unreadChatCount: 0, unreadNotifCount: 0 });
     });
 
     socket.on('briefingComplete', () => {
@@ -380,6 +424,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     socket.on('error', (msg: string) => {
       set({ actionFeedback: `Error: ${msg}` });
       setTimeout(() => set({ actionFeedback: null }), 4000);
+    });
+
+    socket.on('chatMessage', (msg: ChatMessage) => {
+      set(s => ({
+        chatMessages: [...s.chatMessages.slice(-(MAX_CHAT_MESSAGES - 1)), msg],
+        unreadChatCount: s.unreadChatCount + 1
+      }));
+    });
+
+    socket.on('gameNotification', (notif: GameNotification) => {
+      set(s => ({
+        notifications: [...s.notifications.slice(-(MAX_NOTIFICATIONS - 1)), notif],
+        unreadNotifCount: s.unreadNotifCount + 1
+      }));
     });
 
     set({ socket });
@@ -433,5 +491,36 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setViewingPersona: (id) => set({ viewingPersonaId: id }),
 
-  clearFeedback: () => set({ actionFeedback: null, lastActionResult: null })
+  clearFeedback: () => set({ actionFeedback: null, lastActionResult: null }),
+
+  sendChat: (text, target) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('sendChat', { text, target });
+  },
+
+  markChatRead: () => set({ unreadChatCount: 0 }),
+
+  markNotifsRead: () => set({ unreadNotifCount: 0 }),
+
+  toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })),
+
+  playAgain: () => {
+    set({
+      roomId: null,
+      room: null,
+      myPlayer: null,
+      screen: 'landing',
+      lastActionResult: null,
+      actionFeedback: null,
+      pendingCityEvent: null,
+      pendingDilemma: null,
+      matchResult: null,
+      viewingPersonaId: null,
+      chatMessages: [],
+      notifications: [],
+      unreadChatCount: 0,
+      unreadNotifCount: 0
+    });
+  }
 }));

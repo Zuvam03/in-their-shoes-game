@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState,
-  SocialDilemma
+  SocialDilemma, ChatMessage, GameNotification
 } from '../game/types';
 import { PERSONAS, shufflePersonas } from '../game/personas';
 import { MISSIONS, shuffleMissions } from '../game/missions';
@@ -202,6 +202,13 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     socket.emit('actionResult', result);
     socket.emit('playerUpdate', player);
     io.to(roomId).emit('roomUpdate', toPublicRoom(room));
+
+    if (result.success) {
+      emitNotification(io, roomId, socket.id, 'action', result.message, room.tick, socket.id, player.name);
+      if (['help_player', 'transfer_money', 'share_info'].includes(action.type)) {
+        emitNotification(io, roomId, null, 'action', `${player.name}: ${result.message}`, room.tick, socket.id, player.name);
+      }
+    }
   });
 
   socket.on('readyToPlay', () => {
@@ -221,6 +228,37 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
       io.to(room.id).emit('briefingComplete');
       io.to(room.id).emit('roomUpdate', toPublicRoom(room));
       startGameLoop(io, room);
+    }
+  });
+
+  socket.on('sendChat', ({ text, target }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const sanitized = text.trim().slice(0, 200);
+    if (!sanitized) return;
+
+    const msg: ChatMessage = {
+      id: uuidv4(),
+      senderId: socket.id,
+      senderName: player.name,
+      text: sanitized,
+      tick: room.tick,
+      target,
+      timestamp: Date.now()
+    };
+
+    if (target === 'all') {
+      io.to(roomId).emit('chatMessage', msg);
+    } else {
+      socket.emit('chatMessage', msg);
+      if (room.players[target]) {
+        io.to(target).emit('chatMessage', msg);
+      }
     }
   });
 
@@ -327,7 +365,7 @@ function startGameLoop(io: Server, room: Room): void {
       const { newState, events } = tickCharacterState(player.state, player.persona, room.tick);
       player.state = newState;
 
-      // Log any state events
+      // Log any state events and notify
       for (const evt of events) {
         player.actionLog.push({
           id: uuidv4(),
@@ -337,6 +375,7 @@ function startGameLoop(io: Server, room: Room): void {
           description: evt,
           isPublic: false
         });
+        emitNotification(io, room.id, socketId, 'warning', evt, room.tick);
       }
 
       // Check for unexpected fortune
@@ -351,6 +390,7 @@ function startGameLoop(io: Server, room: Room): void {
           changes: fortune.statChanges,
           narrative: fortune.description
         });
+        emitNotification(io, room.id, socketId, 'fortune', fortune.description, room.tick, socketId, player.name);
       }
 
       // Fire social dilemma if eligible
@@ -362,6 +402,7 @@ function startGameLoop(io: Server, room: Room): void {
           player.activeDilemmaId = dilemma.id;
           const evt = buildDilemmaEvent(dilemma, room.tick);
           io.to(socketId).emit('dilemmaEvent', evt);
+          emitNotification(io, room.id, socketId, 'dilemma', `Dilemma: ${dilemma.title}`, room.tick);
         }
       }
 
@@ -374,6 +415,7 @@ function startGameLoop(io: Server, room: Room): void {
       const event = generateCityEvent(room.tick, rng);
       room.cityEvents.push(event);
       io.to(room.id).emit('cityEvent', event);
+      emitNotification(io, room.id, null, 'event', `${event.title}: ${event.description}`, room.tick);
     }
 
     // Check match time limit
@@ -438,6 +480,23 @@ function addPlayerToRoom(room: Room, socketId: string, name: string): void {
     isConnected: true,
     isReady: false
   };
+}
+
+function emitNotification(
+  io: Server, roomId: string, targetSocket: string | null,
+  type: GameNotification['type'], text: string, tick: number,
+  playerId?: string, playerName?: string
+): void {
+  const notif: GameNotification = {
+    id: uuidv4(), tick, type, text,
+    playerId, playerName,
+    isPrivate: targetSocket !== null
+  };
+  if (targetSocket) {
+    io.to(targetSocket).emit('gameNotification', notif);
+  } else {
+    io.to(roomId).emit('gameNotification', notif);
+  }
 }
 
 function applyStateChanges(player: Player, changes: Partial<CharacterState>): void {

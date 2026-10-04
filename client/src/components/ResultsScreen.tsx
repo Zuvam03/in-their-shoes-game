@@ -2,7 +2,7 @@ import { useGameStore } from '../store/gameStore';
 import type { PerformanceInsight } from '../store/gameStore';
 
 export default function ResultsScreen() {
-  const { matchResult, mySocketId } = useGameStore();
+  const { matchResult, mySocketId, playAgain } = useGameStore();
   if (!matchResult) return null;
 
   const { playerResults, winnerName, highlightEvents } = matchResult;
@@ -337,7 +337,7 @@ export default function ResultsScreen() {
         )}
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={playAgain}
           style={{
             padding: '14px', borderRadius: '12px',
             background: 'linear-gradient(135deg, #f5c842, #f97316)',

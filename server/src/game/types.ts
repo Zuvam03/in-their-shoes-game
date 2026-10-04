@@ -412,6 +412,26 @@ export interface MatchResult {
 
 // --- Socket Events ---
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  tick: number;
+  target: 'all' | string; // 'all' or a specific player id
+  timestamp: number;
+}
+
+export interface GameNotification {
+  id: string;
+  tick: number;
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma';
+  text: string;
+  playerId?: string;
+  playerName?: string;
+  isPrivate: boolean;
+}
+
 export interface ServerToClientEvents {
   roomUpdate: (room: Omit<Room, 'players'> & { players: Record<string, PublicPlayer> }) => void;
   playerUpdate: (player: Player) => void;
@@ -423,6 +443,10 @@ export interface ServerToClientEvents {
   error: (message: string) => void;
   tick: (tick: number) => void;
   interactionRequest: (request: InteractionRequest) => void;
+  chatMessage: (msg: ChatMessage) => void;
+  gameNotification: (notification: GameNotification) => void;
+  briefingComplete: () => void;
+  joinedRoom: (data: { roomId: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -433,6 +457,7 @@ export interface ClientToServerEvents {
   respondToInteraction: (data: { requestId: string; accept: boolean }) => void;
   ready: () => void;
   readyToPlay: () => void;
+  sendChat: (data: { text: string; target: 'all' | string }) => void;
 }
 
 export interface InteractionRequest {
