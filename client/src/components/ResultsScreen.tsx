@@ -263,6 +263,42 @@ export default function ResultsScreen() {
           </div>
         )}
 
+        {/* Score comparison */}
+        {playerResults.length > 1 && (
+          <div style={{
+            padding: '20px', borderRadius: '14px',
+            background: 'var(--bg-card)', border: '1px solid var(--border)'
+          }}>
+            <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '14px' }}>Score Comparison</div>
+            {playerResults.map((r) => {
+              const isMe = r.playerId === mySocketId;
+              return (
+                <div key={r.playerId} style={{ marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: isMe ? 700 : 400, color: isMe ? 'var(--accent-yellow)' : 'var(--text-secondary)' }}>
+                      #{r.rank} {r.playerName} {isMe ? '(you)' : ''}
+                    </span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent-yellow)' }}>{r.score}</span>
+                  </div>
+                  <div style={{ height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%', borderRadius: '4px',
+                      width: `${r.score}%`,
+                      background: isMe
+                        ? 'linear-gradient(90deg, #f5c842, #f97316)'
+                        : `hsl(${r.playerName.charCodeAt(0) * 7}deg 50% 45%)`,
+                      transition: 'width 1s ease'
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {r.personaName} — {r.missionTitle} ({r.missionStatus})
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {/* All players */}
         <div>
           <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '14px' }}>All Players</h2>

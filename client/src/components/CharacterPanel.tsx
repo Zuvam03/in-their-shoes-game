@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 const TRAIT_LABELS: Record<string, string> = {
@@ -17,6 +18,7 @@ const MOTIVATION_LABELS: Record<string, string> = {
 
 export default function CharacterPanel() {
   const { myPlayer } = useGameStore();
+  const [showBackstory, setShowBackstory] = useState(false);
   if (!myPlayer) return null;
 
   const persona = myPlayer.persona;
@@ -38,6 +40,46 @@ export default function CharacterPanel() {
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5 }}>
           {persona.description}
+        </div>
+        <button onClick={() => setShowBackstory(!showBackstory)} style={{
+          marginTop: '6px', background: 'none', border: 'none',
+          color: 'var(--accent-blue)', fontSize: '11px', padding: 0,
+          cursor: 'pointer', textDecoration: 'underline'
+        }}>
+          {showBackstory ? 'Hide backstory' : 'Read full backstory'}
+        </button>
+        {showBackstory && (
+          <div style={{
+            marginTop: '8px', fontSize: '11px', color: 'var(--text-secondary)',
+            lineHeight: 1.6, padding: '8px', borderRadius: '6px',
+            background: 'rgba(0,0,0,0.2)', fontStyle: 'italic'
+          }}>
+            {persona.backstory}
+          </div>
+        )}
+      </div>
+
+      {/* Strengths & Vulnerabilities */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent-green)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Strengths
+          </div>
+          {persona.strengths?.map((s, i) => (
+            <div key={i} style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px', paddingLeft: '6px', borderLeft: '2px solid rgba(34,197,94,0.3)' }}>
+              {s}
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent-red)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Vulnerabilities
+          </div>
+          {persona.vulnerabilities?.map((v, i) => (
+            <div key={i} style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px', paddingLeft: '6px', borderLeft: '2px solid rgba(239,68,68,0.3)' }}>
+              {v}
+            </div>
+          ))}
         </div>
       </div>
 

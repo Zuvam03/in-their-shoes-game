@@ -101,6 +101,18 @@ export default function GameScreen() {
   const timeIsLow = timeLeft < 60;
   const timeIsCritical = timeLeft < 30;
 
+  // Live score estimate
+  const completedRequired = myPlayer.mission.objectives.filter((o: { optional: boolean; completed: boolean }) => !o.optional && o.completed).length;
+  const totalRequired = myPlayer.mission.objectives.filter((o: { optional: boolean }) => !o.optional).length;
+  const completedOptional = myPlayer.mission.objectives.filter((o: { optional: boolean; completed: boolean }) => o.optional && o.completed).length;
+  const liveScore = Math.min(100, Math.max(0,
+    Math.round((completedRequired / Math.max(1, totalRequired)) * 60)
+    + completedOptional * 10
+    + Math.round(myPlayer.state.cash / 10)
+    + Math.round(myPlayer.socialTrust / 2)
+    + Math.round(myPlayer.communityImpact)
+  ));
+
   const tabs: { key: Tab; icon: string; label: string; badge?: number }[] = [
     { key: 'map', icon: '🗺️', label: 'Map' },
     { key: 'character', icon: '👤', label: 'Stats' },
@@ -146,6 +158,14 @@ export default function GameScreen() {
             fontWeight: 700, color: 'var(--accent-green)', fontSize: '12px'
           }}>
             ₹{myPlayer.state.cash}
+          </div>
+
+          <div style={{
+            padding: '4px 6px', borderRadius: '12px',
+            background: 'rgba(168, 85, 247, 0.1)',
+            fontWeight: 700, color: 'var(--accent-purple)', fontSize: '11px'
+          }}>
+            {liveScore}pts
           </div>
 
           <button onClick={() => setShowSettings(true)} style={{
@@ -277,6 +297,17 @@ export default function GameScreen() {
           fontWeight: 700, color: 'var(--accent-green)', fontSize: '14px'
         }}>
           ₹{myPlayer.state.cash}
+        </div>
+
+        <div style={{
+          padding: '5px 10px', borderRadius: '20px',
+          background: 'rgba(168, 85, 247, 0.1)',
+          border: '1px solid rgba(168, 85, 247, 0.2)',
+          fontWeight: 700, color: 'var(--accent-purple)', fontSize: '12px'
+        }}
+          title="Estimated score based on current progress"
+        >
+          Score: {liveScore}
         </div>
 
         <div style={{
