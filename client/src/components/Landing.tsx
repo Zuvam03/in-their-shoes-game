@@ -97,18 +97,25 @@ export default function Landing() {
               Join Existing Room
             </button>
             <div style={{
-              padding: '16px', borderRadius: '10px',
-              background: 'var(--bg-card)', border: '1px solid var(--border)',
-              fontSize: '13px', color: 'var(--text-secondary)'
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px',
+              width: '100%'
             }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '8px' }}>How to play</div>
-              <ul style={{ paddingLeft: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <li>Receive a unique persona with different traits and motivations</li>
-                <li>Complete your mission while managing hunger, energy, and cash</li>
-                <li>Navigate a fictionalized Kolkata map</li>
-                <li>Cooperate or compete with other players</li>
-                <li>Your choices have different consequences based on who you are</li>
-              </ul>
+              {[
+                { icon: '🎭', title: 'Unique Personas', desc: 'Play as someone with different privileges, challenges, and motivations' },
+                { icon: '🗺️', title: 'Explore Kolkata', desc: 'Navigate real neighborhoods with distinct resources and dangers' },
+                { icon: '⚖️', title: 'Moral Dilemmas', desc: 'Face tough choices where there is no easy answer' },
+                { icon: '🤝', title: 'Cooperate or Compete', desc: 'Help others for trust bonuses or focus on your own survival' },
+              ].map((f, i) => (
+                <div key={i} style={{
+                  padding: '12px', borderRadius: '10px',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '20px', marginBottom: '6px' }}>{f.icon}</div>
+                  <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '4px', color: 'var(--text-primary)' }}>{f.title}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{f.desc}</div>
+                </div>
+              ))}
             </div>
           </div>
         )}
