@@ -8,7 +8,8 @@ const TYPE_CONFIG: Record<GameNotification['type'], { icon: string; color: strin
   warning: { icon: '⚠', color: 'var(--accent-red)' },
   chat: { icon: '✉', color: 'var(--accent-purple)' },
   system: { icon: '●', color: 'var(--text-muted)' },
-  dilemma: { icon: '⬥', color: 'var(--accent-yellow)' }
+  dilemma: { icon: '⬥', color: 'var(--accent-yellow)' },
+  proximity: { icon: '📍', color: 'var(--accent-orange)' }
 };
 
 export default function EventFeed() {
@@ -45,7 +46,9 @@ export default function EventFeed() {
                 ? 'rgba(34, 197, 94, 0.06)'
                 : n.type === 'dilemma'
                   ? 'rgba(245, 200, 66, 0.06)'
-                  : 'transparent',
+                  : n.type === 'proximity'
+                    ? 'rgba(249, 115, 22, 0.06)'
+                    : 'transparent',
             borderLeft: `2px solid ${cfg.color}`,
             display: 'flex', alignItems: 'flex-start', gap: '6px'
           }}>

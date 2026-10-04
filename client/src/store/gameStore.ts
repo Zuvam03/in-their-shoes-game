@@ -280,7 +280,7 @@ export interface ChatMessage {
 export interface GameNotification {
   id: string;
   tick: number;
-  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma';
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity';
   text: string;
   playerId?: string;
   playerName?: string;

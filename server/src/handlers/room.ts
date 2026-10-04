@@ -22,6 +22,7 @@ const playerToRoom = new Map<string, string>(); // socketId -> roomId
 const TICK_INTERVAL_MS = 1000;
 const roomIntervals = new Map<string, NodeJS.Timeout>();
 const roomBriefingTimers = new Map<string, NodeJS.Timeout>();
+const roomPrevLocations = new Map<string, Map<string, string>>();
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
   socket.on('createRoom', ({ playerName, matchDuration = 600, gameSpeed = 1 }) => {
@@ -561,6 +562,33 @@ function startGameLoop(io: Server, room: Room): void {
       io.to(socketId).emit('playerUpdate', player);
     }
 
+    // Proximity notifications — detect arrivals and departures
+    let prevLocs = roomPrevLocations.get(room.id);
+    if (!prevLocs) {
+      prevLocs = new Map();
+      roomPrevLocations.set(room.id, prevLocs);
+    }
+    for (const [socketId, player] of Object.entries(room.players)) {
+      if (!player.isConnected) continue;
+      const prevLoc = prevLocs.get(socketId);
+      const curLoc = player.state.location;
+      if (prevLoc && prevLoc !== curLoc) {
+        const locName = LOCATIONS.find(l => l.id === curLoc)?.name || curLoc;
+        for (const [otherId, other] of Object.entries(room.players)) {
+          if (otherId === socketId || !other.isConnected) continue;
+          if (other.state.location === curLoc) {
+            emitNotification(io, room.id, otherId, 'proximity',
+              `${player.name} arrived at ${locName}`, room.tick, socketId, player.name);
+          }
+          if (other.state.location === prevLoc) {
+            emitNotification(io, room.id, otherId, 'proximity',
+              `${player.name} left your area`, room.tick, socketId, player.name);
+          }
+        }
+      }
+      prevLocs.set(socketId, curLoc);
+    }
+
     // Clean up expired interaction requests
     room.pendingInteractions = room.pendingInteractions.filter(r => r.expiresAtTick > room.tick);
 
@@ -613,6 +641,7 @@ function endMatch(io: Server, room: Room): void {
     clearInterval(interval);
     roomIntervals.delete(room.id);
   }
+  roomPrevLocations.delete(room.id);
 
   const result = calculateMatchResult(room);
   room.matchResult = result;

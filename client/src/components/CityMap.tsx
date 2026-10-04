@@ -474,6 +474,26 @@ export default function CityMap() {
                   {LOCATION_ICONS[loc.type]}
                 </text>
 
+                {/* Player count badge */}
+                {otherPlayersHere.length > 0 && !isCurrent && (
+                  <g transform="translate(10, -10)">
+                    <circle r="6" fill="var(--accent-blue)" stroke="var(--bg-primary)" strokeWidth="1" />
+                    <text textAnchor="middle" dominantBaseline="central"
+                      fontSize="7" fill="#fff" fontWeight="700"
+                      style={{ pointerEvents: 'none' }}>
+                      {otherPlayersHere.length}
+                    </text>
+                  </g>
+                )}
+
+                {/* Danger zone pulse for affected locations */}
+                {affected && isCurrent && (
+                  <circle r="22" fill="none" stroke="#ef4444" strokeWidth="1" opacity="0.4">
+                    <animate attributeName="r" values="18;26;18" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
                 {/* My player dot */}
                 {isCurrent && (
                   <circle cx="9" cy="-9" r="5" fill="var(--accent-yellow)" stroke="var(--bg-primary)" strokeWidth="1.5" />
