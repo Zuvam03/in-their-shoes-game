@@ -26,6 +26,7 @@ import ContextualHints from './ContextualHints';
 import WeatherWidget from './WeatherWidget';
 import QuickActions from './QuickActions';
 import KeyboardShortcuts from './KeyboardShortcuts';
+import ConnectionStatus from './ConnectionStatus';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -271,6 +272,7 @@ export default function GameScreen() {
         <InteractionModal />
         <AchievementToast />
         <TutorialOverlay />
+        <ConnectionStatus />
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
       </div>
     );
@@ -516,6 +518,7 @@ export default function GameScreen() {
       <AchievementToast />
       <TutorialOverlay />
       <KeyboardShortcuts />
+      <ConnectionStatus />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );

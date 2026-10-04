@@ -1,7 +1,13 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 export default function SettingsPanel({ onClose }: { onClose: () => void }) {
-  const { soundEnabled, volume, toggleSound, setVolume } = useGameStore();
+  const { soundEnabled, volume, toggleSound, setVolume, room, myPlayer } = useGameStore();
+  const [showStats, setShowStats] = useState(false);
+
+  const matchTimeElapsed = room ? room.tick : 0;
+  const matchMin = Math.floor(matchTimeElapsed / 60);
+  const matchSec = matchTimeElapsed % 60;
 
   return (
     <div style={{
@@ -16,7 +22,8 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
         style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: '12px', padding: '24px',
-          maxWidth: '400px', width: '90%'
+          maxWidth: '420px', width: '90%',
+          maxHeight: '80vh', overflowY: 'auto'
         }}
       >
         <div style={{
@@ -74,6 +81,56 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
           />
         </div>
 
+        {/* Match info */}
+        {room && (
+          <div style={{
+            padding: '12px', borderRadius: '8px', background: 'var(--bg-secondary)',
+            marginBottom: '10px'
+          }}>
+            <div style={{ fontSize: '13px', fontWeight: 600, marginBottom: '10px' }}>Match Info</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <InfoItem label="Room" value={room.id.slice(0, 8)} />
+              <InfoItem label="Players" value={`${Object.values(room.players).filter(p => p.isConnected).length}/${Object.keys(room.players).length}`} />
+              <InfoItem label="Elapsed" value={`${matchMin}:${matchSec.toString().padStart(2, '0')}`} />
+              <InfoItem label="Speed" value={`${room.gameSpeed}x`} />
+              <InfoItem label="Phase" value={room.phase} />
+              <InfoItem label="Events" value={`${room.cityEvents.length} active`} />
+            </div>
+          </div>
+        )}
+
+        {/* My character summary */}
+        {myPlayer && (
+          <div style={{
+            padding: '12px', borderRadius: '8px', background: 'var(--bg-secondary)',
+            marginBottom: '10px'
+          }}>
+            <div
+              style={{
+                fontSize: '13px', fontWeight: 600, marginBottom: '4px',
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                cursor: 'pointer'
+              }}
+              onClick={() => setShowStats(!showStats)}
+            >
+              <span>Quick Stats</span>
+              <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                {showStats ? '▲' : '▼'}
+              </span>
+            </div>
+            {showStats && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px' }}>
+                <InfoItem label="Persona" value={myPlayer.persona.title} />
+                <InfoItem label="Cash" value={`₹${myPlayer.state.cash}`} color="var(--accent-green)" />
+                <InfoItem label="Actions" value={`${myPlayer.actionLog.length}`} />
+                <InfoItem label="Helped" value={`${myPlayer.state.helpedOthersCount}`} color="var(--accent-green)" />
+                <InfoItem label="Trust" value={`${myPlayer.socialTrust}`} />
+                <InfoItem label="Impact" value={`${myPlayer.communityImpact >= 0 ? '+' : ''}${myPlayer.communityImpact}`} />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Keyboard shortcuts */}
         <div style={{
           padding: '12px', borderRadius: '8px', background: 'var(--bg-secondary)'
@@ -86,7 +143,9 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
               ['3', 'Mission'],
               ['4', 'Players'],
               ['5', 'Chat'],
-              ['6', 'Event Feed']
+              ['6', 'Event Feed'],
+              ['7', 'Journey'],
+              ['?', 'Shortcuts overlay']
             ].map(([key, label]) => (
               <div key={key} style={{
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
@@ -102,7 +161,24 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
             ))}
           </div>
         </div>
+
+        {/* Version info */}
+        <div style={{
+          marginTop: '16px', textAlign: 'center',
+          fontSize: '10px', color: 'var(--text-muted)'
+        }}>
+          In Their Shoes v0.9 — Kolkata City Survival
+        </div>
       </div>
+    </div>
+  );
+}
+
+function InfoItem({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{label}</span>
+      <span style={{ fontSize: '11px', fontWeight: 600, color: color || 'var(--text-primary)' }}>{value}</span>
     </div>
   );
 }
