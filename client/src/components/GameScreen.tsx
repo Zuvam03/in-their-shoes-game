@@ -32,6 +32,9 @@ import DayNightCycle from './DayNightCycle';
 import PersonaInsights from './PersonaInsights';
 import ProgressSummary from './ProgressSummary';
 import AchievementGallery from './AchievementGallery';
+import DaySummary from './DaySummary';
+import NarrativeJournal from './NarrativeJournal';
+import TradePanel from './TradePanel';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -224,7 +227,7 @@ export default function GameScreen() {
           {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
-          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><JourneyTimeline /></div>}
+          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><NarrativeJournal /></div>}
           {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementGallery /></div>}
           {activeTab === 'map' && (
             <div style={{
@@ -279,6 +282,7 @@ export default function GameScreen() {
         <ActionResultToast />
         <AmbientOverlay />
         <PersonaInsights />
+        <DaySummary />
         <DilemmaModal />
         <InteractionModal />
         <AchievementToast />
@@ -491,13 +495,14 @@ export default function GameScreen() {
             {activeTab === 'players' && <PlayersPanel />}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
-            {activeTab === 'journey' && <JourneyTimeline />}
+            {activeTab === 'journey' && <NarrativeJournal />}
             {activeTab === 'achievements' && <AchievementGallery />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
                 <LocationDetail />
                 <QuickEmoteBar />
                 <ActionPanel />
+                <TradePanel />
               </div>
             )}
           </div>
@@ -530,6 +535,7 @@ export default function GameScreen() {
       <ActionResultToast />
       <AmbientOverlay />
       <PersonaInsights />
+      <DaySummary />
       <DilemmaModal />
       <InteractionModal />
       <AchievementToast />
