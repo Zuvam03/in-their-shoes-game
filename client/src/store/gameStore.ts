@@ -329,6 +329,9 @@ interface GameState {
   pendingDilemma: DilemmaEvent | null;
   matchResult: MatchResult | null;
 
+  // Incoming interaction requests
+  pendingInteraction: { id: string; fromPlayerName: string; type: string; message: string } | null;
+
   // Selected persona panel
   viewingPersonaId: string | null;
 
@@ -352,6 +355,7 @@ interface GameState {
   startMatch: () => void;
   submitAction: (type: ActionType, payload: Record<string, unknown>) => void;
   respondToEvent: (eventId: string, choiceId: string) => void;
+  respondToInteraction: (requestId: string, accept: boolean) => void;
   respondToDilemma: (dilemmaId: string, choiceId: string, choiceLabel: string) => void;
   dismissBriefing: () => void;
   setViewingPersona: (id: string | null) => void;
@@ -379,6 +383,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastActionResult: null,
   actionFeedback: null,
   pendingCityEvent: null,
+  pendingInteraction: null,
   pendingDilemma: null,
   matchResult: null,
   viewingPersonaId: null,
@@ -466,6 +471,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     });
 
+    socket.on('interactionRequest', (request: { id: string; fromPlayerName: string; type: string; message: string }) => {
+      set({ pendingInteraction: request });
+    });
+
     socket.on('dilemmaEvent', (event: DilemmaEvent) => {
       set({ pendingDilemma: event });
     });
@@ -532,6 +541,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ pendingCityEvent: null });
   },
 
+  respondToInteraction: (requestId, accept) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('respondToInteraction', { requestId, accept });
+    set({ pendingInteraction: null });
+  },
+
   respondToDilemma: (dilemmaId, choiceId, choiceLabel) => {
     const { socket } = get();
     if (!socket) return;
@@ -576,6 +592,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastActionResult: null,
       actionFeedback: null,
       pendingCityEvent: null,
+      pendingInteraction: null,
       pendingDilemma: null,
       matchResult: null,
       viewingPersonaId: null,

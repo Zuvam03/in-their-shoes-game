@@ -216,6 +216,7 @@ export interface Room {
   tick: number;          // game tick (incremented by server)
   gameSpeed: number;     // ticks per second
   cityEvents: CityEvent[];
+  pendingInteractions: InteractionRequest[];
   matchResult?: MatchResult;
   seed: number;          // for reproducible randomness
 }
@@ -277,7 +278,10 @@ export type CityEventType =
   | 'opportunity'
   | 'npc_request'
   | 'crowd'
-  | 'emergency';
+  | 'emergency'
+  | 'cultural'
+  | 'market'
+  | 'heat';
 
 export interface CityEvent {
   id: string;

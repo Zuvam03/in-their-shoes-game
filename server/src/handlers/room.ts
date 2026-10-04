@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState,
-  SocialDilemma, ChatMessage, GameNotification
+  SocialDilemma, ChatMessage, GameNotification, InteractionRequest
 } from '../game/types';
 import { PERSONAS, shufflePersonas } from '../game/personas';
 import { MISSIONS, shuffleMissions } from '../game/missions';
@@ -36,6 +36,7 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
       tick: 0,
       gameSpeed: 1,
       cityEvents: [],
+      pendingInteractions: [],
       seed
     };
     rooms.set(roomId, room);
@@ -152,6 +153,25 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     const result = resolveAction(action, player, room, rng);
 
     if (result.success) {
+      // Create interaction request for request_help
+      if (action.type === 'request_help') {
+        const targetId = (action.payload as { targetPlayerId?: string }).targetPlayerId;
+        const target = targetId ? room.players[targetId] : undefined;
+        if (target && targetId) {
+          const request: InteractionRequest = {
+            id: uuidv4(),
+            fromPlayerId: socket.id,
+            fromPlayerName: player.name,
+            type: 'help_request',
+            message: `${player.name} is asking for your help.`,
+            expiresAtTick: room.tick + 120
+          };
+          room.pendingInteractions.push(request);
+          io.to(targetId).emit('interactionRequest', request);
+          emitNotification(io, roomId, targetId, 'action', `${player.name} is asking for your help!`, room.tick, socket.id, player.name);
+        }
+      }
+
       // Apply state changes
       applyStateChanges(player, result.changes);
 
@@ -296,8 +316,51 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on('respondToInteraction', ({ requestId, accept }) => {
-    // TODO: Handle interaction responses (help requests, trades)
+  socket.on('respondToInteraction', ({ requestId, accept }: { requestId: string; accept: boolean }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const idx = room.pendingInteractions.findIndex(r => r.id === requestId);
+    if (idx === -1) return;
+    const request = room.pendingInteractions[idx];
+
+    // Only the target can respond — the request was emitted to a specific socket,
+    // but we don't store targetSocketId on InteractionRequest so we verify via fromPlayerId
+    if (request.fromPlayerId === socket.id) return; // requester can't respond to own request
+
+    room.pendingInteractions.splice(idx, 1);
+    const requester = room.players[request.fromPlayerId];
+    if (!requester) return;
+
+    if (accept) {
+      player.state.energy = Math.max(0, player.state.energy - 5);
+      player.socialTrust = Math.min(100, player.socialTrust + 3);
+      player.communityImpact += 2;
+      player.state.helpedOthersCount++;
+      requester.state.mood = Math.min(100, requester.state.mood + 10);
+      requester.state.receivedHelpCount++;
+
+      io.to(request.fromPlayerId).emit('actionResult', {
+        success: true,
+        message: `${player.name} accepted your help request!`,
+        changes: { mood: requester.state.mood }
+      });
+      io.to(request.fromPlayerId).emit('playerUpdate', requester);
+      io.to(socket.id).emit('playerUpdate', player);
+
+      emitNotification(io, roomId, request.fromPlayerId, 'action', `${player.name} helped you!`, room.tick, socket.id, player.name);
+      emitNotification(io, roomId, socket.id, 'action', `You helped ${requester.name}.`, room.tick, socket.id, player.name);
+    } else {
+      io.to(request.fromPlayerId).emit('actionResult', {
+        success: false,
+        message: `${player.name} couldn't help right now.`,
+        changes: {}
+      });
+    }
   });
 
   socket.on('disconnect', () => {
@@ -443,6 +506,9 @@ function startGameLoop(io: Server, room: Room): void {
       // Send private player update
       io.to(socketId).emit('playerUpdate', player);
     }
+
+    // Clean up expired interaction requests
+    room.pendingInteractions = room.pendingInteractions.filter(r => r.expiresAtTick > room.tick);
 
     // Generate city events occasionally
     if (rng.chance(0.008) && room.cityEvents.filter(e => e.startTick + e.duration > room.tick).length < 3) {

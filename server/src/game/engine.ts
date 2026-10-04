@@ -847,6 +847,76 @@ const CITY_EVENT_TEMPLATES: Array<Omit<CityEvent, 'id' | 'startTick'>> = [
         karmaEffect: -1, socialTrustEffect: 0, communityImpactEffect: -1
       }
     ]
+  },
+  {
+    type: 'cultural',
+    title: 'Street Performance',
+    description: 'A group of Baul folk singers is performing at the roadside, drawing a small crowd.',
+    affectedLocations: ['park_street', 'maidan', 'college_street'],
+    duration: 150,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'watch',
+        text: 'Stop and enjoy the music',
+        effects: [{ target: 'self', stat: 'mood', change: 15 }, { target: 'self', stat: 'stress', change: -10 }],
+        karmaEffect: 1, socialTrustEffect: 1, communityImpactEffect: 2
+      },
+      {
+        id: 'tip',
+        text: 'Leave a tip (₹20)',
+        effects: [{ target: 'self', stat: 'cash', change: -20 }, { target: 'self', stat: 'mood', change: 20 }],
+        karmaEffect: 4, socialTrustEffect: 3, communityImpactEffect: 5
+      },
+      {
+        id: 'pass',
+        text: 'Appreciate from afar and keep walking',
+        effects: [{ target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'market',
+    title: 'Street Vendor Deal',
+    description: 'A vendor is selling fresh seasonal fruit at a deep discount — but only for the next few minutes.',
+    affectedLocations: ['new_market', 'gariahat', 'college_street'],
+    duration: 120,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'buy_fruit',
+        text: 'Buy fruit for yourself (₹15)',
+        effects: [{ target: 'self', stat: 'cash', change: -15 }, { target: 'self', stat: 'hunger', change: -20 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      },
+      {
+        id: 'buy_extra',
+        text: 'Buy extra to share with someone nearby (₹30)',
+        effects: [{ target: 'self', stat: 'cash', change: -30 }, { target: 'self', stat: 'hunger', change: -20 }, { target: 'self', stat: 'mood', change: 12 }],
+        karmaEffect: 6, socialTrustEffect: 4, communityImpactEffect: 4
+      },
+      {
+        id: 'skip',
+        text: 'Not hungry right now',
+        effects: [],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'heat',
+    title: 'Heatwave Warning',
+    description: 'Temperatures have soared above 40°C. Stay hydrated and avoid prolonged walking.',
+    affectedLocations: ['all'],
+    duration: 300,
+    effects: [
+      { target: 'all', stat: 'hydration', change: 10 },
+      { target: 'all', stat: 'energy', change: -5 }
+    ],
+    requiresChoice: false
   }
 ];
 

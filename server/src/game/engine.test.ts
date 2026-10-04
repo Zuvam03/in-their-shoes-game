@@ -136,6 +136,7 @@ describe('Persona-Specific Consequences', () => {
       tick: 100,
       gameSpeed: 1,
       cityEvents: [],
+      pendingInteractions: [],
       seed: 42
     };
   }

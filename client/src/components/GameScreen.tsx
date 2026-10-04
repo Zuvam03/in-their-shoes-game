@@ -10,6 +10,8 @@ import EventFeed from './EventFeed';
 import DilemmaModal from './DilemmaModal';
 import SettingsPanel from './SettingsPanel';
 import AchievementToast from './AchievementToast';
+import TutorialOverlay from './TutorialOverlay';
+import InteractionModal from './InteractionModal';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed';
@@ -209,7 +211,9 @@ export default function GameScreen() {
         </div>
 
         <DilemmaModal />
+        <InteractionModal />
         <AchievementToast />
+        <TutorialOverlay />
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
       </div>
     );
@@ -402,7 +406,9 @@ export default function GameScreen() {
       </div>
 
       <DilemmaModal />
+      <InteractionModal />
       <AchievementToast />
+      <TutorialOverlay />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
