@@ -59,11 +59,35 @@ export default function PlayersPanel() {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <div>
-                <div style={{ fontWeight: 600, fontSize: '13px' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {player.name}
-                  {!player.isConnected && (
-                    <span style={{ color: 'var(--accent-red)', fontSize: '10px', marginLeft: '6px' }}>
-                      disconnected
+                  {!player.isConnected ? (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '3px',
+                      color: 'var(--accent-red)', fontSize: '10px',
+                      padding: '1px 6px', borderRadius: '8px',
+                      background: 'rgba(239,68,68,0.1)'
+                    }}>
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-red)' }} />
+                      offline
+                    </span>
+                  ) : (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '3px',
+                      fontSize: '10px', padding: '1px 6px', borderRadius: '8px',
+                      background: player.state.energy < 20
+                        ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
+                      color: player.state.energy < 20
+                        ? 'var(--accent-red)' : 'var(--accent-green)'
+                    }}>
+                      <span style={{
+                        width: '5px', height: '5px', borderRadius: '50%',
+                        background: player.state.energy < 20
+                          ? 'var(--accent-red)' : 'var(--accent-green)'
+                      }} />
+                      {player.state.energy < 20 ? 'exhausted' :
+                       player.state.health < 30 ? 'struggling' :
+                       player.state.stress > 70 ? 'stressed' : 'active'}
                     </span>
                   )}
                 </div>

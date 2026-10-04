@@ -257,8 +257,18 @@ export default function GameScreen() {
         padding: '0 12px', gap: '12px',
         zIndex: 10
       }}>
-        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--accent-yellow)' }}>
+        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--accent-yellow)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           🏙️ Kolkata City Survival
+          {room.gameSpeed !== 1 && (
+            <span style={{
+              fontSize: '10px', fontWeight: 600, padding: '2px 6px',
+              borderRadius: '8px',
+              background: room.gameSpeed > 1 ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+              color: room.gameSpeed > 1 ? 'var(--accent-red)' : 'var(--accent-blue)'
+            }}>
+              {room.gameSpeed}x
+            </span>
+          )}
         </div>
 
         {room.cityEvents.length > 0 && (

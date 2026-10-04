@@ -2,9 +2,14 @@ import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { LOCATIONS } from '../game/mapData';
 
+const ACTION_COOLDOWN = 3;
+
 export default function ActionPanel() {
-  const { myPlayer, submitAction, lastActionResult } = useGameStore();
+  const { myPlayer, submitAction, lastActionResult, lastActionTick, room } = useGameStore();
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const currentTick = room?.tick || 0;
+  const cooldownRemaining = Math.max(0, ACTION_COOLDOWN - (currentTick - lastActionTick));
+  const isOnCooldown = cooldownRemaining > 0 && lastActionTick > 0;
 
   useEffect(() => {
     if (lastActionResult) setPendingAction(null);
@@ -38,16 +43,29 @@ export default function ActionPanel() {
         <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({currentLoc.district})</span>
       </div>
 
+      {isOnCooldown && (
+        <div style={{
+          marginBottom: '8px', padding: '6px 10px', borderRadius: '6px',
+          background: 'rgba(245,200,66,0.08)', border: '1px solid rgba(245,200,66,0.15)',
+          fontSize: '11px', color: 'var(--accent-yellow)',
+          display: 'flex', alignItems: 'center', gap: '6px'
+        }}>
+          <span style={{ animation: 'pulse 1s infinite' }}>⏳</span>
+          Cooldown: {cooldownRemaining}s
+        </div>
+      )}
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {currentLoc.availableActions.map(action => {
           const canAfford = !action.cost || cash >= action.cost;
           const isObjective = action.actionType === 'complete_objective';
+          const disabled = !canAfford || pendingAction !== null || isOnCooldown;
 
           return (
             <button
               key={action.id}
               onClick={() => { setPendingAction(action.id); submitAction(action.actionType as never, action.payload); }}
-              disabled={!canAfford || pendingAction !== null}
+              disabled={disabled}
               title={action.description}
               style={{
                 padding: '9px 12px',
@@ -82,7 +100,7 @@ export default function ActionPanel() {
         {/* Rest action (available anywhere) */}
         <button
           onClick={() => { setPendingAction('rest'); submitAction('rest', { duration: 120 }); }}
-          disabled={pendingAction !== null}
+          disabled={pendingAction !== null || isOnCooldown}
           style={{
             padding: '9px 12px', borderRadius: '8px',
             background: 'var(--bg-secondary)', border: '1px solid var(--border)',

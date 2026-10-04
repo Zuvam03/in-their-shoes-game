@@ -448,6 +448,7 @@ export interface ServerToClientEvents {
   tick: (tick: number) => void;
   interactionRequest: (request: InteractionRequest) => void;
   chatMessage: (msg: ChatMessage) => void;
+  chatReaction: (reaction: { messageId: string; emoji: string; fromPlayerId: string; fromPlayerName: string }) => void;
   gameNotification: (notification: GameNotification) => void;
   briefingComplete: () => void;
   joinedRoom: (data: { roomId: string }) => void;
@@ -459,6 +460,8 @@ export interface ClientToServerEvents {
   startMatch: () => void;
   submitAction: (action: Omit<GameAction, 'tick'>) => void;
   respondToInteraction: (data: { requestId: string; accept: boolean }) => void;
+  setGameSpeed: (data: { speed: number }) => void;
+  chatReaction: (data: { messageId: string; emoji: string }) => void;
   ready: () => void;
   readyToPlay: () => void;
   sendChat: (data: { text: string; target: 'all' | string }) => void;

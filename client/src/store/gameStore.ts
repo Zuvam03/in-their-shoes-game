@@ -189,6 +189,7 @@ export interface PublicRoom {
   phase: GamePhase;
   matchDuration: number;
   tick: number;
+  gameSpeed: number;
   playerCount: number;
   cityEvents: CityEvent[];
 }
@@ -337,6 +338,7 @@ interface GameState {
 
   // Chat
   chatMessages: ChatMessage[];
+  chatReactions: Record<string, Array<{ emoji: string; fromPlayerName: string }>>;
   unreadChatCount: number;
 
   // Notifications
@@ -347,9 +349,13 @@ interface GameState {
   soundEnabled: boolean;
   volume: number;
 
+  // Action cooldown
+  lastActionTick: number;
+
   // Actions
   connect: () => void;
-  createRoom: (name: string, duration: number) => void;
+  createRoom: (name: string, duration: number, gameSpeed?: number) => void;
+  setGameSpeed: (speed: number) => void;
   joinRoom: (roomId: string, name: string) => void;
   setReady: () => void;
   startMatch: () => void;
@@ -361,6 +367,7 @@ interface GameState {
   setViewingPersona: (id: string | null) => void;
   clearFeedback: () => void;
   sendChat: (text: string, target: 'all' | string) => void;
+  sendReaction: (messageId: string, emoji: string) => void;
   markChatRead: () => void;
   markNotifsRead: () => void;
   toggleSound: () => void;
@@ -388,7 +395,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   matchResult: null,
   viewingPersonaId: null,
   chatMessages: [],
+  chatReactions: {},
   unreadChatCount: 0,
+  lastActionTick: 0,
   notifications: [],
   unreadNotifCount: 0,
   soundEnabled: true,
@@ -458,10 +467,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     socket.on('actionResult', (result: ActionResult) => {
-      set({
+      set(s => ({
         lastActionResult: result,
-        actionFeedback: result.message
-      });
+        actionFeedback: result.message,
+        lastActionTick: s.room?.tick || 0
+      }));
       setTimeout(() => set({ actionFeedback: null }), 3000);
     });
 
@@ -495,6 +505,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       }));
     });
 
+    socket.on('chatReaction', (reaction: { messageId: string; emoji: string; fromPlayerName: string }) => {
+      set(s => {
+        const existing = s.chatReactions[reaction.messageId] || [];
+        return {
+          chatReactions: {
+            ...s.chatReactions,
+            [reaction.messageId]: [...existing, { emoji: reaction.emoji, fromPlayerName: reaction.fromPlayerName }]
+          }
+        };
+      });
+    });
+
     socket.on('gameNotification', (notif: GameNotification) => {
       set(s => ({
         notifications: [...s.notifications.slice(-(MAX_NOTIFICATIONS - 1)), notif],
@@ -505,11 +527,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ socket });
   },
 
-  createRoom: (name, duration) => {
+  createRoom: (name, duration, gameSpeed = 1) => {
     const { socket } = get();
     if (!socket) return;
-    socket.emit('createRoom', { playerName: name, matchDuration: duration });
+    socket.emit('createRoom', { playerName: name, matchDuration: duration, gameSpeed });
     saveSession('pending', name);
+  },
+
+  setGameSpeed: (speed) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('setGameSpeed', { speed });
   },
 
   joinRoom: (roomId, name) => {
@@ -571,6 +599,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     socket.emit('sendChat', { text, target });
   },
 
+  sendReaction: (messageId, emoji) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('chatReaction', { messageId, emoji });
+  },
+
   markChatRead: () => set({ unreadChatCount: 0 }),
 
   markNotifsRead: () => set({ unreadNotifCount: 0 }),
@@ -597,9 +631,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       matchResult: null,
       viewingPersonaId: null,
       chatMessages: [],
+      chatReactions: {},
       notifications: [],
       unreadChatCount: 0,
       unreadNotifCount: 0,
+      lastActionTick: 0,
       reconnecting: false,
       reconnectAttempt: 0
     });

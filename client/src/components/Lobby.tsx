@@ -1,7 +1,14 @@
 import { useGameStore } from '../store/gameStore';
 
+const SPEED_OPTIONS = [
+  { value: 0.5, label: '0.5x', desc: 'Relaxed' },
+  { value: 1, label: '1x', desc: 'Normal' },
+  { value: 1.5, label: '1.5x', desc: 'Fast' },
+  { value: 2, label: '2x', desc: 'Rush' }
+];
+
 export default function Lobby() {
-  const { room, mySocketId, roomId, setReady, startMatch, playAgain } = useGameStore();
+  const { room, mySocketId, roomId, setReady, startMatch, playAgain, setGameSpeed } = useGameStore();
   const isHost = room?.hostId === mySocketId;
   const myPlayer = mySocketId ? room?.players[mySocketId] : null;
   const players = room ? Object.values(room.players) : [];
@@ -51,14 +58,61 @@ export default function Lobby() {
 
         {/* Match info */}
         <div style={{
-          padding: '14px 16px', borderRadius: '10px',
+          borderRadius: '10px',
           background: 'var(--bg-card)', border: '1px solid var(--border)',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          overflow: 'hidden'
         }}>
-          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Match Duration</span>
-          <span style={{ fontWeight: 600 }}>
-            {room ? `${room.matchDuration / 60} minutes` : '—'}
-          </span>
+          <div style={{
+            padding: '14px 16px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            borderBottom: '1px solid var(--border)'
+          }}>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Match Duration</span>
+            <span style={{ fontWeight: 600 }}>
+              {room ? `${room.matchDuration / 60} minutes` : '—'}
+            </span>
+          </div>
+          <div style={{ padding: '14px 16px' }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px'
+            }}>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Game Speed</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                {room?.gameSpeed === 1 ? 'Normal pace' :
+                 room?.gameSpeed === 0.5 ? 'Half speed - more time to think' :
+                 room?.gameSpeed === 1.5 ? 'Faster - more pressure' :
+                 'Double speed - intense!'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {SPEED_OPTIONS.map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => isHost && setGameSpeed(opt.value)}
+                  disabled={!isHost}
+                  style={{
+                    flex: 1, padding: '8px 4px', borderRadius: '8px',
+                    background: room?.gameSpeed === opt.value
+                      ? 'rgba(245,200,66,0.15)'
+                      : 'var(--bg-secondary)',
+                    border: `1px solid ${room?.gameSpeed === opt.value
+                      ? 'rgba(245,200,66,0.4)'
+                      : 'var(--border)'}`,
+                    color: room?.gameSpeed === opt.value
+                      ? 'var(--accent-yellow)'
+                      : 'var(--text-muted)',
+                    fontSize: '12px', fontWeight: 600,
+                    cursor: isHost ? 'pointer' : 'default',
+                    opacity: isHost ? 1 : 0.6,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px'
+                  }}
+                >
+                  <span>{opt.label}</span>
+                  <span style={{ fontSize: '9px', fontWeight: 400 }}>{opt.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Players list */}

@@ -24,9 +24,10 @@ const roomIntervals = new Map<string, NodeJS.Timeout>();
 const roomBriefingTimers = new Map<string, NodeJS.Timeout>();
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
-  socket.on('createRoom', ({ playerName, matchDuration = 600 }) => {
+  socket.on('createRoom', ({ playerName, matchDuration = 600, gameSpeed = 1 }) => {
     const roomId = generateRoomCode();
     const seed = Date.now();
+    const validSpeed = [0.5, 1, 1.5, 2].includes(gameSpeed) ? gameSpeed : 1;
     const room: Room = {
       id: roomId,
       hostId: socket.id,
@@ -34,7 +35,7 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
       phase: 'lobby',
       matchDuration,
       tick: 0,
-      gameSpeed: 1,
+      gameSpeed: validSpeed,
       cityEvents: [],
       pendingInteractions: [],
       seed
@@ -285,6 +286,40 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     }
   });
 
+  socket.on('setGameSpeed', ({ speed }: { speed: number }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'lobby') return;
+    if (room.hostId !== socket.id) {
+      socket.emit('error', 'Only the host can change game speed.');
+      return;
+    }
+    if ([0.5, 1, 1.5, 2].includes(speed)) {
+      room.gameSpeed = speed;
+      io.to(roomId).emit('roomUpdate', toPublicRoom(room));
+    }
+  });
+
+  socket.on('chatReaction', ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const allowed = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+    if (!allowed.includes(emoji)) return;
+
+    io.to(roomId).emit('chatReaction', {
+      messageId,
+      emoji,
+      fromPlayerId: socket.id,
+      fromPlayerName: player.name
+    });
+  });
+
   socket.on('sendChat', ({ text, target }) => {
     const roomId = playerToRoom.get(socket.id);
     if (!roomId) return;
@@ -446,6 +481,7 @@ function startMatch(io: Server, room: Room): void {
 }
 
 function startGameLoop(io: Server, room: Room): void {
+  const tickMs = Math.round(TICK_INTERVAL_MS / room.gameSpeed);
   const interval = setInterval(() => {
     if (room.phase !== 'playing') {
       clearInterval(interval);
@@ -542,7 +578,7 @@ function startGameLoop(io: Server, room: Room): void {
     io.to(room.id).emit('tick', room.tick);
     io.to(room.id).emit('roomUpdate', toPublicRoom(room));
 
-  }, TICK_INTERVAL_MS);
+  }, tickMs);
 
   roomIntervals.set(room.id, interval);
 }

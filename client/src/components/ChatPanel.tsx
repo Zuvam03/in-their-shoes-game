@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 
+const REACTION_EMOJIS = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+
 export default function ChatPanel() {
-  const { chatMessages, sendChat, mySocketId, room, markChatRead } = useGameStore();
+  const { chatMessages, chatReactions, sendChat, sendReaction, mySocketId, room, markChatRead } = useGameStore();
   const [text, setText] = useState('');
   const [target, setTarget] = useState<'all' | string>('all');
+  const [reactionTarget, setReactionTarget] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,10 +44,17 @@ export default function ChatPanel() {
         {chatMessages.map(msg => {
           const isMine = msg.senderId === mySocketId;
           const isDM = msg.target !== 'all';
+          const reactions = chatReactions[msg.id] || [];
+          const reactionCounts: Record<string, number> = {};
+          for (const r of reactions) {
+            reactionCounts[r.emoji] = (reactionCounts[r.emoji] || 0) + 1;
+          }
+          const showReactionPicker = reactionTarget === msg.id;
+
           return (
             <div key={msg.id} style={{
               alignSelf: isMine ? 'flex-end' : 'flex-start',
-              maxWidth: '85%'
+              maxWidth: '85%', position: 'relative'
             }}>
               {!isMine && (
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>
@@ -52,19 +62,61 @@ export default function ChatPanel() {
                   {isDM && <span style={{ color: 'var(--accent-purple)' }}> (DM)</span>}
                 </div>
               )}
-              <div style={{
-                padding: '6px 10px', borderRadius: '10px',
-                fontSize: '12px', lineHeight: 1.4,
-                background: isMine
-                  ? 'rgba(245, 200, 66, 0.15)'
-                  : isDM
-                    ? 'rgba(168, 85, 247, 0.1)'
-                    : 'var(--bg-card)',
-                border: `1px solid ${isMine ? 'rgba(245,200,66,0.2)' : isDM ? 'rgba(168,85,247,0.2)' : 'var(--border)'}`,
-                color: 'var(--text-primary)'
-              }}>
+              <div
+                onClick={() => setReactionTarget(showReactionPicker ? null : msg.id)}
+                style={{
+                  padding: '6px 10px', borderRadius: '10px',
+                  fontSize: '12px', lineHeight: 1.4, cursor: 'pointer',
+                  background: isMine
+                    ? 'rgba(245, 200, 66, 0.15)'
+                    : isDM
+                      ? 'rgba(168, 85, 247, 0.1)'
+                      : 'var(--bg-card)',
+                  border: `1px solid ${isMine ? 'rgba(245,200,66,0.2)' : isDM ? 'rgba(168,85,247,0.2)' : 'var(--border)'}`,
+                  color: 'var(--text-primary)'
+                }}
+              >
                 {msg.text}
               </div>
+
+              {/* Reaction badges */}
+              {Object.keys(reactionCounts).length > 0 && (
+                <div style={{ display: 'flex', gap: '3px', marginTop: '2px', flexWrap: 'wrap' }}>
+                  {Object.entries(reactionCounts).map(([emoji, count]) => (
+                    <span key={emoji} style={{
+                      fontSize: '10px', padding: '1px 4px', borderRadius: '8px',
+                      background: 'var(--bg-secondary)', border: '1px solid var(--border)'
+                    }}>
+                      {emoji} {count > 1 ? count : ''}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Reaction picker */}
+              {showReactionPicker && (
+                <div style={{
+                  position: 'absolute', bottom: '100%', marginBottom: '4px',
+                  left: isMine ? 'auto' : '0', right: isMine ? '0' : 'auto',
+                  display: 'flex', gap: '2px', padding: '4px 6px',
+                  background: 'var(--bg-card)', border: '1px solid var(--border)',
+                  borderRadius: '16px', zIndex: 5, boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                }}>
+                  {REACTION_EMOJIS.map(emoji => (
+                    <button key={emoji} onClick={(e) => {
+                      e.stopPropagation();
+                      sendReaction(msg.id, emoji);
+                      setReactionTarget(null);
+                    }} style={{
+                      background: 'none', border: 'none', fontSize: '14px',
+                      padding: '2px 4px', borderRadius: '4px', cursor: 'pointer'
+                    }}>
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {isMine && isDM && (
                 <div style={{ fontSize: '10px', color: 'var(--accent-purple)', textAlign: 'right', marginTop: '1px' }}>
                   DM
