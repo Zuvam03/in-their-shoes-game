@@ -16,8 +16,23 @@ const MOTIVATION_LABELS: Record<string, string> = {
   helpingOthers: 'Helping Others', achievement: 'Achievement', comfort: 'Comfort'
 };
 
+function TrendArrow({ current, previous }: { current: number; previous: number | undefined }) {
+  if (previous === undefined) return null;
+  const diff = current - previous;
+  if (Math.abs(diff) < 1) return null;
+  const up = diff > 0;
+  return (
+    <span style={{
+      fontSize: '9px', fontWeight: 700, marginLeft: '3px',
+      color: up ? 'var(--accent-green)' : 'var(--accent-red)'
+    }}>
+      {up ? '▲' : '▼'}
+    </span>
+  );
+}
+
 export default function CharacterPanel() {
-  const { myPlayer } = useGameStore();
+  const { myPlayer, prevStats } = useGameStore();
   const [showBackstory, setShowBackstory] = useState(false);
   if (!myPlayer) return null;
 
@@ -57,6 +72,52 @@ export default function CharacterPanel() {
             {persona.backstory}
           </div>
         )}
+      </div>
+
+      {/* Vital Stats with Trends */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px'
+      }}>
+        {([
+          { key: 'health' as const, label: 'Health', icon: '❤️', color: 'var(--accent-red)', inv: false },
+          { key: 'energy' as const, label: 'Energy', icon: '⚡', color: 'var(--accent-yellow)', inv: false },
+          { key: 'mood' as const, label: 'Mood', icon: '😊', color: 'var(--accent-purple)', inv: false },
+          { key: 'hunger' as const, label: 'Hunger', icon: '🍛', color: 'var(--accent-orange)', inv: true },
+          { key: 'hydration' as const, label: 'Thirst', icon: '💧', color: 'var(--accent-blue)', inv: true },
+          { key: 'stress' as const, label: 'Stress', icon: '😰', color: 'var(--accent-red)', inv: true },
+        ]).map(({ key, label, icon, color, inv }) => {
+          const val = state[key] as number;
+          const prev = prevStats?.[key] as number | undefined;
+          const isWarning = inv ? val > 65 : val < 30;
+          return (
+            <div key={key} style={{
+              padding: '6px 8px', borderRadius: '8px',
+              background: isWarning ? 'rgba(239,68,68,0.08)' : 'var(--bg-secondary)',
+              border: `1px solid ${isWarning ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '13px' }}>{icon}</div>
+              <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px' }}>{label}</div>
+              <div style={{ fontWeight: 700, fontSize: '13px', color }}>
+                {Math.round(val)}
+                <TrendArrow current={val} previous={prev} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Cash */}
+      <div style={{
+        padding: '8px 12px', borderRadius: '8px',
+        background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>💰 Cash</span>
+        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--accent-green)' }}>
+          ₹{state.cash}
+          <TrendArrow current={state.cash} previous={prevStats?.cash} />
+        </span>
       </div>
 
       {/* Strengths & Vulnerabilities */}

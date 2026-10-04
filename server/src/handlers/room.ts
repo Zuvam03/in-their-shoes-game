@@ -320,6 +320,24 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     });
   });
 
+  socket.on('playerEmote', ({ emoji }: { emoji: string }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const allowed = ['👋', '😊', '😤', '🏃', '💪', '😩', '🙏', '🎉'];
+    if (!allowed.includes(emoji)) return;
+
+    io.to(roomId).emit('playerEmote', {
+      playerId: socket.id,
+      playerName: player.name,
+      emoji
+    });
+  });
+
   socket.on('sendChat', ({ text, target }) => {
     const roomId = playerToRoom.get(socket.id);
     if (!roomId) return;

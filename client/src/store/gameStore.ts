@@ -352,6 +352,12 @@ interface GameState {
   // Action cooldown
   lastActionTick: number;
 
+  // Stat trends (previous snapshot for comparison)
+  prevStats: { health: number; energy: number; hunger: number; hydration: number; mood: number; stress: number; cash: number } | null;
+
+  // Quick emotes
+  playerEmotes: Record<string, { emoji: string; tick: number }>;
+
   // Actions
   connect: () => void;
   createRoom: (name: string, duration: number, gameSpeed?: number) => void;
@@ -368,6 +374,7 @@ interface GameState {
   clearFeedback: () => void;
   sendChat: (text: string, target: 'all' | string) => void;
   sendReaction: (messageId: string, emoji: string) => void;
+  sendEmote: (emoji: string) => void;
   markChatRead: () => void;
   markNotifsRead: () => void;
   toggleSound: () => void;
@@ -398,6 +405,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   chatReactions: {},
   unreadChatCount: 0,
   lastActionTick: 0,
+  prevStats: null,
+  playerEmotes: {},
   notifications: [],
   unreadNotifCount: 0,
   soundEnabled: true,
@@ -463,7 +472,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
 
     socket.on('playerUpdate', (player: Player) => {
-      set({ myPlayer: player });
+      const prev = get().myPlayer;
+      if (prev) {
+        set({
+          myPlayer: player,
+          prevStats: {
+            health: prev.state.health,
+            energy: prev.state.energy,
+            hunger: prev.state.hunger,
+            hydration: prev.state.hydration,
+            mood: prev.state.mood,
+            stress: prev.state.stress,
+            cash: prev.state.cash
+          }
+        });
+      } else {
+        set({ myPlayer: player });
+      }
     });
 
     socket.on('actionResult', (result: ActionResult) => {
@@ -515,6 +540,22 @@ export const useGameStore = create<GameState>((set, get) => ({
           }
         };
       });
+    });
+
+    socket.on('playerEmote', (data: { playerId: string; playerName: string; emoji: string }) => {
+      set(s => ({
+        playerEmotes: {
+          ...s.playerEmotes,
+          [data.playerId]: { emoji: data.emoji, tick: s.room?.tick || 0 }
+        }
+      }));
+      setTimeout(() => {
+        set(s => {
+          const emotes = { ...s.playerEmotes };
+          delete emotes[data.playerId];
+          return { playerEmotes: emotes };
+        });
+      }, 3000);
     });
 
     socket.on('gameNotification', (notif: GameNotification) => {
@@ -605,6 +646,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     socket.emit('chatReaction', { messageId, emoji });
   },
 
+  sendEmote: (emoji) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('playerEmote', { emoji });
+  },
+
   markChatRead: () => set({ unreadChatCount: 0 }),
 
   markNotifsRead: () => set({ unreadNotifCount: 0 }),
@@ -636,6 +683,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       unreadChatCount: 0,
       unreadNotifCount: 0,
       lastActionTick: 0,
+      prevStats: null,
+      playerEmotes: {},
       reconnecting: false,
       reconnectAttempt: 0
     });

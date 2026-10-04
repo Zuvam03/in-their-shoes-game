@@ -6,7 +6,7 @@ import {
 } from '../game/mapData';
 
 export default function CityMap() {
-  const { myPlayer, room, submitAction } = useGameStore();
+  const { myPlayer, room, submitAction, playerEmotes } = useGameStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
   const [transportMode, setTransportMode] = useState<string>('walk');
@@ -481,12 +481,24 @@ export default function CityMap() {
 
                 {/* Other players */}
                 {otherPlayersHere.map((p, i) => (
-                  <circle
-                    key={p.id}
-                    cx={-8 + i * 8} cy={-8} r="4"
-                    fill={`hsl(${p.name.charCodeAt(0) * 7}deg 60% 50%)`}
-                    stroke="var(--bg-primary)" strokeWidth="1"
-                  />
+                  <g key={p.id}>
+                    <circle
+                      cx={-8 + i * 8} cy={-8} r="4"
+                      fill={`hsl(${p.name.charCodeAt(0) * 7}deg 60% 50%)`}
+                      stroke="var(--bg-primary)" strokeWidth="1"
+                    />
+                    {playerEmotes[p.id] && (
+                      <text
+                        x={-8 + i * 8} y={-18}
+                        textAnchor="middle" fontSize="12"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        <animate attributeName="opacity" values="1;1;0" dur="3s" fill="freeze" />
+                        <animate attributeName="y" values="-18;-26" dur="3s" fill="freeze" />
+                        {playerEmotes[p.id].emoji}
+                      </text>
+                    )}
+                  </g>
                 ))}
 
                 {/* Always-visible label with name and tagline */}
