@@ -46,12 +46,15 @@ export function tickCharacterState(state: CharacterState, persona: PersonaDefini
   const s = { ...state };
   const m = persona.modifiers;
 
+  // Progressive difficulty: needs escalate in the final third of the match
+  const urgencyMultiplier = tick > 400 ? 1.3 : tick > 300 ? 1.15 : 1.0;
+
   // Hunger increases over time
-  const hungerIncrease = 0.5 * m.hungerRate;
+  const hungerIncrease = 0.5 * m.hungerRate * urgencyMultiplier;
   s.hunger = Math.min(100, s.hunger + hungerIncrease);
 
   // Hydration increases over time
-  s.hydration = Math.min(100, s.hydration + 0.4);
+  s.hydration = Math.min(100, s.hydration + 0.4 * urgencyMultiplier);
 
   // Overeating penalty decays
   if (s.overeatingPenalty > 0) {

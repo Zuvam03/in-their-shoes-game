@@ -510,16 +510,27 @@ function startGameLoop(io: Server, room: Room): void {
     // Clean up expired interaction requests
     room.pendingInteractions = room.pendingInteractions.filter(r => r.expiresAtTick > room.tick);
 
-    // Generate city events occasionally
-    if (rng.chance(0.008) && room.cityEvents.filter(e => e.startTick + e.duration > room.tick).length < 3) {
+    // Generate city events (more frequent as time runs out)
+    const timeProgress = room.tick / room.matchDuration;
+    const eventChance = timeProgress > 0.75 ? 0.015 : timeProgress > 0.5 ? 0.012 : 0.008;
+    const maxActive = timeProgress > 0.75 ? 4 : 3;
+    if (rng.chance(eventChance) && room.cityEvents.filter(e => e.startTick + e.duration > room.tick).length < maxActive) {
       const event = generateCityEvent(room.tick, rng);
       room.cityEvents.push(event);
       io.to(room.id).emit('cityEvent', event);
       emitNotification(io, room.id, null, 'event', `${event.title}: ${event.description}`, room.tick);
     }
 
+    // Time warnings
+    const remaining = room.matchDuration - room.tick;
+    if (remaining === 60) {
+      emitNotification(io, room.id, null, 'warning', '1 minute remaining! Complete your objectives!', room.tick);
+    } else if (remaining === 30) {
+      emitNotification(io, room.id, null, 'warning', '30 seconds left! Final push!', room.tick);
+    }
+
     // Check match time limit
-    const elapsed = room.tick; // 1 tick = 1 second
+    const elapsed = room.tick;
     if (elapsed >= room.matchDuration) {
       endMatch(io, room);
       clearInterval(interval);

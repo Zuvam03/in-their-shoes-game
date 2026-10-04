@@ -402,6 +402,75 @@ export default function ResultsScreen() {
           ))}
         </div>
 
+        {/* Persona comparison - "Walk in Their Shoes" */}
+        {playerResults.length > 1 && (
+          <div style={{
+            padding: '20px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, rgba(59,130,246,0.08), rgba(168,85,247,0.06))',
+            border: '1px solid rgba(59,130,246,0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+              <span style={{ fontSize: '20px' }}>👟</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '16px' }}>Walk in Their Shoes</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  How did each persona's background shape their journey?
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {playerResults.map(r => (
+                <div key={r.playerId} style={{
+                  padding: '14px', borderRadius: '10px',
+                  background: 'var(--bg-secondary)', border: '1px solid var(--border)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <div>
+                      <span style={{ fontWeight: 700, fontSize: '13px' }}>{r.playerName}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: '8px' }}>as {r.personaName}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <span style={{
+                        padding: '2px 6px', borderRadius: '4px', fontSize: '10px',
+                        background: 'rgba(34,197,94,0.1)', color: 'var(--accent-green)'
+                      }}>
+                        Helped {r.cooperationCount}
+                      </span>
+                      <span style={{
+                        padding: '2px 6px', borderRadius: '4px', fontSize: '10px',
+                        background: 'rgba(59,130,246,0.1)', color: 'var(--accent-blue)'
+                      }}>
+                        Dilemmas {r.dilemmasResolved.length}
+                      </span>
+                    </div>
+                  </div>
+                  {r.dilemmasResolved.length > 0 && (
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {r.dilemmasResolved.map((d, i) => (
+                        <div key={i} style={{
+                          padding: '3px 8px', borderRadius: '12px', fontSize: '10px',
+                          background: 'rgba(251,191,36,0.1)', color: '#fbbf24', fontWeight: 600
+                        }}>
+                          {d.dilemmaTitle}: {d.choiceLabel}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {r.personaLens && r.personaLens.length > 0 && (
+                    <div style={{
+                      marginTop: '8px', fontSize: '11px', color: 'var(--text-secondary)',
+                      fontStyle: 'italic', lineHeight: 1.5,
+                      paddingLeft: '8px', borderLeft: '2px solid rgba(139,92,246,0.3)'
+                    }}>
+                      {r.personaLens[0]}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Highlight events */}
         {highlightEvents.length > 0 && (
           <div style={{
