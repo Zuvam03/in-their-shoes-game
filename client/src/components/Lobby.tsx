@@ -1,7 +1,7 @@
 import { useGameStore } from '../store/gameStore';
 
 export default function Lobby() {
-  const { room, mySocketId, roomId, setReady, startMatch } = useGameStore();
+  const { room, mySocketId, roomId, setReady, startMatch, playAgain } = useGameStore();
   const isHost = room?.hostId === mySocketId;
   const myPlayer = mySocketId ? room?.players[mySocketId] : null;
   const players = room ? Object.values(room.players) : [];
@@ -152,6 +152,17 @@ export default function Lobby() {
             </button>
           )}
         </div>
+
+        <button
+          onClick={playAgain}
+          style={{
+            padding: '10px', borderRadius: '8px',
+            background: 'transparent', border: '1px solid var(--border)',
+            color: 'var(--text-muted)', fontSize: '13px'
+          }}
+        >
+          Leave Room
+        </button>
 
         <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
           Share the room code with friends. Host can start with any number of players.

@@ -10,7 +10,8 @@ export default function CityEventModal() {
     opportunity: '💼',
     npc_request: '🧑',
     crowd: '👥',
-    emergency: '🚨'
+    emergency: '🚨',
+    resource_shortage: '🚰'
   };
 
   return (

@@ -52,6 +52,8 @@ export default function CityMap() {
     walk: 0, bus: 8, metro: 15, tram: 6, taxi: 80
   };
 
+  const pinchDist = useRef(0);
+
   const onMouseDown = (e: React.MouseEvent) => {
     if ((e.target as Element).closest('.location-node')) return;
     dragging.current = true;
@@ -71,6 +73,43 @@ export default function CityMap() {
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     setScale(s => Math.min(2.5, Math.max(0.5, s - e.deltaY * 0.001)));
+  };
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    if ((e.target as Element).closest('.location-node')) return;
+    if (e.touches.length === 1) {
+      dragging.current = true;
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else if (e.touches.length === 2) {
+      dragging.current = false;
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchDist.current = Math.hypot(dx, dy);
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (e.touches.length === 1 && dragging.current) {
+      const dx = e.touches[0].clientX - lastPos.current.x;
+      const dy = e.touches[0].clientY - lastPos.current.y;
+      lastPos.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+    } else if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.hypot(dx, dy);
+      if (pinchDist.current > 0) {
+        const delta = dist / pinchDist.current;
+        setScale(s => Math.min(2.5, Math.max(0.5, s * delta)));
+      }
+      pinchDist.current = dist;
+    }
+  };
+
+  const onTouchEnd = () => {
+    dragging.current = false;
+    pinchDist.current = 0;
   };
 
   const locationsByType = LOCATIONS.reduce<Record<string, LocationInfo[]>>((acc, loc) => {
@@ -228,6 +267,9 @@ export default function CityMap() {
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
         onWheel={onWheel}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}
           style={{ transformOrigin: '320px 320px' }}>

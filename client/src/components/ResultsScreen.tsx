@@ -1,8 +1,15 @@
+import { useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import type { PerformanceInsight } from '../store/gameStore';
+import { playGameEnd } from '../game/sounds';
 
 export default function ResultsScreen() {
-  const { matchResult, mySocketId, playAgain } = useGameStore();
+  const { matchResult, mySocketId, playAgain, soundEnabled } = useGameStore();
+
+  useEffect(() => {
+    if (soundEnabled) playGameEnd();
+  }, []);
+
   if (!matchResult) return null;
 
   const { playerResults, winnerName, highlightEvents } = matchResult;

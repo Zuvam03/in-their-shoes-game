@@ -2,13 +2,13 @@ import { useRef, useEffect } from 'react';
 import { useGameStore, GameNotification } from '../store/gameStore';
 
 const TYPE_CONFIG: Record<GameNotification['type'], { icon: string; color: string }> = {
-  action: { icon: '', color: 'var(--text-secondary)' },
-  event: { icon: '', color: 'var(--accent-blue)' },
-  fortune: { icon: '', color: 'var(--accent-green)' },
-  warning: { icon: '', color: 'var(--accent-red)' },
-  chat: { icon: '', color: 'var(--accent-purple)' },
-  system: { icon: '', color: 'var(--text-muted)' },
-  dilemma: { icon: '', color: 'var(--accent-yellow)' }
+  action: { icon: '▸', color: 'var(--text-secondary)' },
+  event: { icon: '⚡', color: 'var(--accent-blue)' },
+  fortune: { icon: '★', color: 'var(--accent-green)' },
+  warning: { icon: '⚠', color: 'var(--accent-red)' },
+  chat: { icon: '✉', color: 'var(--accent-purple)' },
+  system: { icon: '●', color: 'var(--text-muted)' },
+  dilemma: { icon: '⬥', color: 'var(--accent-yellow)' }
 };
 
 export default function EventFeed() {

@@ -452,6 +452,14 @@ function endMatch(io: Server, room: Room): void {
   room.matchResult = result;
   io.to(room.id).emit('gameEnded', result);
   console.log(`Match ended in room ${room.id}`);
+
+  setTimeout(() => {
+    rooms.delete(room.id);
+    for (const [socketId, rId] of playerToRoom) {
+      if (rId === room.id) playerToRoom.delete(socketId);
+    }
+    console.log(`Room ${room.id} cleaned up`);
+  }, 5 * 60 * 1000);
 }
 
 function addPlayerToRoom(room: Room, socketId: string, name: string): void {

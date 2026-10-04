@@ -8,7 +8,7 @@ import PlayersPanel from './PlayersPanel';
 import ChatPanel from './ChatPanel';
 import EventFeed from './EventFeed';
 import DilemmaModal from './DilemmaModal';
-import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playChat, playDilemma, playFortune } from '../game/sounds';
+import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed';
 
@@ -24,12 +24,42 @@ export default function GameScreen() {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
+  // Warn before closing during active game
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
+
+  // Keyboard shortcuts for tab switching
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'SELECT') return;
+      const tabKeys: Record<string, Tab> = { '1': 'map', '2': 'character', '3': 'mission', '4': 'players', '5': 'chat', '6': 'feed' };
+      if (tabKeys[e.key]) {
+        e.preventDefault();
+        setActiveTab(tabKeys[e.key]);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Play game start sound on mount
+  useEffect(() => {
+    if (soundEnabled) playGameStart();
+  }, []);
+
   // Sound effects
   useEffect(() => {
     if (!soundEnabled || !lastActionResult) return;
     if (lastActionResult.success) {
       if (lastActionResult.changes.cash !== undefined && lastActionResult.changes.cash > (myPlayer?.state.cash || 0)) {
         playCoinEarn();
+      } else if (lastActionResult.changes.cash !== undefined && lastActionResult.changes.cash < (myPlayer?.state.cash || 0)) {
+        playCoinSpend();
       } else {
         playActionSuccess();
       }

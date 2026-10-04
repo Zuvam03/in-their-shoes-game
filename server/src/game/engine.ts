@@ -784,6 +784,69 @@ const CITY_EVENT_TEMPLATES: Array<Omit<CityEvent, 'id' | 'startTick'>> = [
       { target: 'all', stat: 'mood', change: 3 }
     ],
     requiresChoice: false
+  },
+  {
+    type: 'resource_shortage',
+    title: 'Water Supply Disruption',
+    description: 'A burst pipe has cut water supply to several areas. Bottled water prices have surged.',
+    affectedLocations: ['new_market', 'park_street', 'college_street'],
+    duration: 240,
+    effects: [
+      { target: 'all', stat: 'hydration', change: 15 },
+      { target: 'all', stat: 'stress', change: 5 }
+    ],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'buy_water',
+        text: 'Buy expensive bottled water (₹30)',
+        effects: [{ target: 'self', stat: 'cash', change: -30 }, { target: 'self', stat: 'hydration', change: -20 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      },
+      {
+        id: 'share_supply',
+        text: 'Share your water with others nearby',
+        effects: [{ target: 'self', stat: 'hydration', change: 10 }, { target: 'self', stat: 'mood', change: 10 }],
+        karmaEffect: 7, socialTrustEffect: 5, communityImpactEffect: 6
+      },
+      {
+        id: 'endure',
+        text: 'Tough it out and keep moving',
+        effects: [{ target: 'self', stat: 'hydration', change: 12 }, { target: 'self', stat: 'energy', change: -8 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'emergency',
+    title: 'Traffic Accident Ahead',
+    description: 'A serious accident has blocked a major intersection. Emergency services are on scene.',
+    affectedLocations: ['esplanade', 'dalhousie_sq', 'howrah_station'],
+    duration: 180,
+    effects: [
+      { target: 'all', stat: 'stress', change: 10 }
+    ],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'help_injured',
+        text: 'Stop and help the injured until medics arrive',
+        effects: [{ target: 'self', stat: 'energy', change: -20 }, { target: 'self', stat: 'mood', change: 15 }],
+        karmaEffect: 10, socialTrustEffect: 8, communityImpactEffect: 8
+      },
+      {
+        id: 'call_help',
+        text: 'Call emergency services and direct traffic',
+        effects: [{ target: 'self', stat: 'energy', change: -5 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 5, socialTrustEffect: 3, communityImpactEffect: 4
+      },
+      {
+        id: 'detour',
+        text: 'Find an alternate route and move on',
+        effects: [{ target: 'self', stat: 'energy', change: -8 }],
+        karmaEffect: -1, socialTrustEffect: 0, communityImpactEffect: -1
+      }
+    ]
   }
 ];
 
