@@ -16,6 +16,7 @@ import KarmaWheel from './KarmaWheel';
 import DecisionHistory from './DecisionHistory';
 import WellbeingRadar from './WellbeingRadar';
 import TimelineMilestones from './TimelineMilestones';
+import MoralCompass from './MoralCompass';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -283,6 +284,9 @@ export default function CharacterPanel() {
 
       {/* Karma */}
       <KarmaWheel />
+
+      {/* Moral Compass */}
+      <MoralCompass />
 
       {/* Decision History */}
       <DecisionHistory />

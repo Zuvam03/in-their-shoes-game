@@ -48,6 +48,9 @@ import CollaborativeGoals from './CollaborativeGoals';
 import SocialNetwork from './SocialNetwork';
 import DailyChallenge from './DailyChallenge';
 import InequalityIndex from './InequalityIndex';
+import CityPulse from './CityPulse';
+import QuickStats from './QuickStats';
+import MoralCompass from './MoralCompass';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -515,6 +518,7 @@ export default function GameScreen() {
             {activeTab === 'achievements' && <AchievementGallery />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
+                <QuickStats />
                 <EventCountdown />
                 <LocationDetail />
                 <ActionCooldowns />
@@ -544,6 +548,7 @@ export default function GameScreen() {
           <MissionHUD />
           <LiveLeaderboard />
           <WeatherWidget />
+          <CityPulse />
           <DangerZones />
           <QuickActions />
           <ContextualHints />
