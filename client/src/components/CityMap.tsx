@@ -352,6 +352,13 @@ export default function CityMap() {
           <text x="200" y="520" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">South Kolkata</text>
           <text x="420" y="250" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">East Kolkata</text>
 
+          {/* Animated travel path definition */}
+          <defs>
+            <marker id="arrowMarker" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
+              <path d="M0,0 L6,2 L0,4" fill="var(--accent-blue)" />
+            </marker>
+          </defs>
+
           {/* Routes */}
           {ROUTES.map(route => {
             const from = LOCATIONS.find(l => l.id === route.from);
@@ -368,19 +375,40 @@ export default function CityMap() {
                (route.from === currentLocation && isConnectedToSelected(route.to) && selectedLocation === route.to) ||
                (route.to === currentLocation && isConnectedToSelected(route.from) && selectedLocation === route.from));
 
+            const isHoveredRoute = hoveredLocation &&
+              currentLocation &&
+              ((route.from === currentLocation && route.to === hoveredLocation) ||
+               (route.to === currentLocation && route.from === hoveredLocation));
+
             return (
-              <line
-                key={`${route.from}-${route.to}`}
-                x1={from.x} y1={from.y}
-                x2={to.x} y2={to.y}
-                stroke={isCurrentRoute
-                  ? 'var(--accent-blue)'
-                  : isHighlighted
-                    ? 'rgba(59,130,246,0.5)'
-                    : 'rgba(255,255,255,0.12)'}
-                strokeWidth={isCurrentRoute ? 2.5 : isHighlighted ? 2 : 1}
-                strokeDasharray={route.modes.includes('walk') ? undefined : '5,5'}
-              />
+              <g key={`${route.from}-${route.to}`}>
+                <line
+                  x1={from.x} y1={from.y}
+                  x2={to.x} y2={to.y}
+                  stroke={isCurrentRoute
+                    ? 'var(--accent-blue)'
+                    : isHighlighted
+                      ? 'rgba(59,130,246,0.5)'
+                      : isHoveredRoute
+                        ? 'rgba(245,200,66,0.3)'
+                        : 'rgba(255,255,255,0.12)'}
+                  strokeWidth={isCurrentRoute ? 2.5 : isHighlighted || isHoveredRoute ? 2 : 1}
+                  strokeDasharray={route.modes.includes('walk') ? undefined : '5,5'}
+                />
+                {/* Animated travel arrow on selected route */}
+                {isCurrentRoute && (
+                  <line
+                    x1={route.from === currentLocation ? from.x : to.x}
+                    y1={route.from === currentLocation ? from.y : to.y}
+                    x2={route.from === currentLocation ? to.x : from.x}
+                    y2={route.from === currentLocation ? to.y : from.y}
+                    stroke="var(--accent-blue)" strokeWidth="2"
+                    strokeDasharray="8,6" markerEnd="url(#arrowMarker)"
+                  >
+                    <animate attributeName="stroke-dashoffset" from="28" to="0" dur="1s" repeatCount="indefinite" />
+                  </line>
+                )}
+              </g>
             );
           })}
 
@@ -518,25 +546,70 @@ export default function CityMap() {
           position: 'absolute', top: '60px', right: '16px',
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: '10px', padding: '12px 14px',
-          maxWidth: '220px', zIndex: 5
+          maxWidth: '230px', zIndex: 5
         }}>
           {(() => {
             const loc = LOCATIONS.find(l => l.id === hoveredLocation);
             if (!loc) return null;
+            const hoveredRoute = currentLocation ? getRoutesBetween(currentLocation, loc.id) : null;
+            const isCurrent = loc.id === currentLocation;
+            const ambientNote = getAmbientNote(loc, hasWeatherEvent, hasCrowdEvent, isNightTime);
             return (
               <>
                 <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '13px' }}>
                   {LOCATION_ICONS[loc.type]} {loc.name}
+                  {isCurrent && <span style={{ color: 'var(--accent-yellow)', fontSize: '10px', marginLeft: '6px' }}>(here)</span>}
                 </div>
                 <div style={{
                   fontSize: '10px', color: LOCATION_COLORS[loc.type],
-                  marginBottom: '6px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px'
+                  marginBottom: '4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.3px'
                 }}>
                   {loc.type} &middot; {loc.district}
                 </div>
+                {ambientNote && (
+                  <div style={{
+                    fontSize: '10px', color: 'var(--accent-teal)',
+                    marginBottom: '4px', fontStyle: 'italic'
+                  }}>
+                    {ambientNote}
+                  </div>
+                )}
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '8px' }}>
                   {loc.description}
                 </div>
+
+                {/* Travel cost preview */}
+                {hoveredRoute && !isCurrent && (
+                  <div style={{
+                    padding: '6px 8px', borderRadius: '6px',
+                    background: 'rgba(59,130,246,0.08)',
+                    border: '1px solid rgba(59,130,246,0.15)',
+                    marginBottom: '8px'
+                  }}>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent-blue)', marginBottom: '4px' }}>
+                      Travel options:
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      {hoveredRoute.modes.map(mode => (
+                        <span key={mode} style={{
+                          fontSize: '9px', padding: '2px 6px', borderRadius: '8px',
+                          background: 'var(--bg-secondary)', color: 'var(--text-secondary)'
+                        }}>
+                          {modeIcons[mode]} {mode} {TRAVEL_COSTS[mode] === 0 ? '(free)' : `₹${TRAVEL_COSTS[mode]}`}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {!hoveredRoute && !isCurrent && (
+                  <div style={{
+                    fontSize: '10px', color: 'var(--text-muted)',
+                    marginBottom: '8px', fontStyle: 'italic'
+                  }}>
+                    No direct route from here
+                  </div>
+                )}
+
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '6px' }}>
                   {loc.availableActions.slice(0, 3).map((a, i) => (
                     <div key={i} style={{ marginBottom: '2px' }}>
@@ -589,6 +662,45 @@ function getLabelOffset(loc: LocationInfo): { x: number; y: number; anchor: 'sta
     default:
       return { x: 0, y: 18, anchor: 'middle' };
   }
+}
+
+function getAmbientNote(loc: LocationInfo, weather: boolean, crowd: boolean, night: boolean): string | null {
+  const t = loc.type;
+  if (weather && night) {
+    if (t === 'transport') return 'Rain drums on the platform roofs in the dark';
+    if (t === 'shop') return 'Wet tarps glisten under dim bulbs';
+    if (t === 'office') return 'Workers huddle under awnings';
+    if (t === 'food') return 'Steam rises from stalls into the rain';
+    return 'Rain streaks through the lamplight';
+  }
+  if (weather) {
+    if (t === 'transport') return 'Rain patters on the platform roofs';
+    if (t === 'shop') return 'Shoppers duck under stall canopies';
+    if (t === 'residential') return 'Puddles form near the entrance';
+    if (t === 'medical') return 'The queue moves slowly in the drizzle';
+    return 'Umbrellas crowd the pavements';
+  }
+  if (crowd && night) {
+    if (t === 'shop') return 'Night bazaar buzzes with extra crowds';
+    if (t === 'transport') return 'Late rush chokes the platforms';
+    return 'Crowds jostle in the lamplight';
+  }
+  if (crowd) {
+    if (t === 'shop') return 'The lanes are packed shoulder to shoulder';
+    if (t === 'transport') return 'Commuters spill onto the road';
+    if (t === 'medical') return 'The line stretches around the corner';
+    if (t === 'food') return 'Every table is taken; people wait standing';
+    return 'More people than usual here';
+  }
+  if (night) {
+    if (t === 'shop') return 'Shutters rattle down; a few vendors remain';
+    if (t === 'residential') return 'Quiet settles over the sleeping area';
+    if (t === 'transport') return 'Sparse late-night service runs';
+    if (t === 'office') return 'Night shift workers trudge past';
+    if (t === 'food') return 'Late-night dhabas glow in the dark';
+    return 'Streetlights flicker over empty lanes';
+  }
+  return null;
 }
 
 const modeIcons: Record<string, string> = {
