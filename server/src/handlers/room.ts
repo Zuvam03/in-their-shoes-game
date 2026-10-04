@@ -51,13 +51,47 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
   });
 
   socket.on('joinRoom', ({ roomId, playerName }) => {
-    const room = rooms.get(roomId.toUpperCase());
+    const normalizedId = roomId.toUpperCase();
+    const room = rooms.get(normalizedId);
     if (!room) {
       socket.emit('error', 'Room not found. Check the code and try again.');
       return;
     }
+
+    // Reconnection: if game is in progress, find disconnected player by name
+    if (room.phase === 'playing' || room.phase === 'briefing') {
+      const disconnected = Object.values(room.players).find(
+        p => p.name === playerName && !p.isConnected
+      );
+      if (disconnected) {
+        const oldId = disconnected.id;
+        // Migrate player to new socket
+        disconnected.id = socket.id;
+        disconnected.socketId = socket.id;
+        disconnected.isConnected = true;
+        room.players[socket.id] = disconnected;
+        delete room.players[oldId];
+
+        playerToRoom.set(socket.id, normalizedId);
+        socket.join(normalizedId);
+
+        socket.emit('joinedRoom', { roomId: normalizedId });
+        if (room.phase === 'playing') {
+          socket.emit('gameStarted', { yourPlayer: disconnected, room: toPublicRoom(room) });
+          socket.emit('briefingComplete');
+        } else {
+          socket.emit('gameStarted', { yourPlayer: disconnected, room: toPublicRoom(room) });
+        }
+        io.to(normalizedId).emit('roomUpdate', toPublicRoom(room));
+        console.log(`${playerName} reconnected to room ${normalizedId}`);
+        return;
+      }
+      socket.emit('error', 'This match has already started. Enter the same name to reconnect.');
+      return;
+    }
+
     if (room.phase !== 'lobby') {
-      socket.emit('error', 'This match has already started.');
+      socket.emit('error', 'This match has already ended.');
       return;
     }
     if (Object.keys(room.players).length >= 6) {
@@ -66,12 +100,12 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     }
 
     addPlayerToRoom(room, socket.id, playerName);
-    playerToRoom.set(socket.id, roomId);
+    playerToRoom.set(socket.id, normalizedId);
 
-    socket.join(roomId);
-    io.to(roomId).emit('roomUpdate', toPublicRoom(room));
-    socket.emit('joinedRoom', { roomId });
-    console.log(`${playerName} joined room ${roomId}`);
+    socket.join(normalizedId);
+    io.to(normalizedId).emit('roomUpdate', toPublicRoom(room));
+    socket.emit('joinedRoom', { roomId: normalizedId });
+    console.log(`${playerName} joined room ${normalizedId}`);
   });
 
   socket.on('ready', () => {

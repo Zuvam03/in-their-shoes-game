@@ -230,6 +230,17 @@ export default function GameScreen() {
           🏙️ Kolkata City Survival
         </div>
 
+        {room.cityEvents.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 10px', borderRadius: '20px',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+            fontSize: '11px', color: '#f87171', fontWeight: 600
+          }}>
+            ⚠ {room.cityEvents[0].title}
+          </div>
+        )}
+
         <div style={{ flex: 1 }} />
 
         <div style={{
