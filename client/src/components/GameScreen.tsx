@@ -22,6 +22,8 @@ import ActionResultToast from './ActionResultToast';
 import MissionHUD from './MissionHUD';
 import MatchTimeline from './MatchTimeline';
 import LiveLeaderboard from './LiveLeaderboard';
+import ContextualHints from './ContextualHints';
+import WeatherWidget from './WeatherWidget';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -202,6 +204,8 @@ export default function GameScreen() {
             <>
               <CityMap />
               <MissionHUD />
+              <WeatherWidget />
+              <ContextualHints />
             </>
           )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
@@ -497,6 +501,8 @@ export default function GameScreen() {
           <CityMap />
           <MissionHUD />
           <LiveLeaderboard />
+          <WeatherWidget />
+          <ContextualHints />
         </div>
       </div>
 
