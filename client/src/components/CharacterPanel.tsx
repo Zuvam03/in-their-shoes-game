@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import GameStats from './GameStats';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -241,6 +242,8 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Game Stats */}
+      <GameStats />
     </div>
   );
 }
