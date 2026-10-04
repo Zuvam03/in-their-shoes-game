@@ -391,23 +391,27 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     if (!requester) return;
 
     if (accept) {
+      const sameLocation = player.state.location === requester.state.location;
+      const proximityBonus = sameLocation ? 1.5 : 1;
+
       player.state.energy = Math.max(0, player.state.energy - 5);
-      player.socialTrust = Math.min(100, player.socialTrust + 3);
-      player.communityImpact += 2;
+      player.socialTrust = Math.min(100, player.socialTrust + Math.round(3 * proximityBonus));
+      player.communityImpact += Math.round(2 * proximityBonus);
       player.state.helpedOthersCount++;
-      requester.state.mood = Math.min(100, requester.state.mood + 10);
+      requester.state.mood = Math.min(100, requester.state.mood + Math.round(10 * proximityBonus));
       requester.state.receivedHelpCount++;
 
+      const bonusText = sameLocation ? ' (proximity bonus!)' : '';
       io.to(request.fromPlayerId).emit('actionResult', {
         success: true,
-        message: `${player.name} accepted your help request!`,
+        message: `${player.name} accepted your help request!${bonusText}`,
         changes: { mood: requester.state.mood }
       });
       io.to(request.fromPlayerId).emit('playerUpdate', requester);
       io.to(socket.id).emit('playerUpdate', player);
 
-      emitNotification(io, roomId, request.fromPlayerId, 'action', `${player.name} helped you!`, room.tick, socket.id, player.name);
-      emitNotification(io, roomId, socket.id, 'action', `You helped ${requester.name}.`, room.tick, socket.id, player.name);
+      emitNotification(io, roomId, request.fromPlayerId, 'action', `${player.name} helped you!${bonusText}`, room.tick, socket.id, player.name);
+      emitNotification(io, roomId, socket.id, 'action', `You helped ${requester.name}.${bonusText}`, room.tick, socket.id, player.name);
     } else {
       io.to(request.fromPlayerId).emit('actionResult', {
         success: false,

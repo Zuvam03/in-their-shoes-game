@@ -115,6 +115,9 @@ export default function GameScreen() {
     + Math.round(myPlayer.communityImpact)
   ));
 
+  const nearbyPlayers = Object.values(room.players)
+    .filter(p => p.id !== myPlayer.id && p.state.location === myPlayer.state.location && p.isConnected);
+
   const tabs: { key: Tab; icon: string; label: string; badge?: number }[] = [
     { key: 'map', icon: '🗺️', label: 'Map' },
     { key: 'character', icon: '👤', label: 'Stats' },
@@ -284,6 +287,17 @@ export default function GameScreen() {
             fontSize: '11px', color: '#f87171', fontWeight: 600
           }}>
             ⚠ {room.cityEvents[0].title}
+          </div>
+        )}
+
+        {nearbyPlayers.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 10px', borderRadius: '20px',
+            background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)',
+            fontSize: '11px', color: 'var(--accent-green)', fontWeight: 600
+          }}>
+            👥 {nearbyPlayers.map(p => p.name).join(', ')} nearby
           </div>
         )}
 
