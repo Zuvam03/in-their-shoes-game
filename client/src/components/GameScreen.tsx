@@ -20,6 +20,8 @@ import StatusEffectsBar from './StatusEffectsBar';
 import FloatingNumbers from './FloatingNumbers';
 import ActionResultToast from './ActionResultToast';
 import MissionHUD from './MissionHUD';
+import MatchTimeline from './MatchTimeline';
+import LiveLeaderboard from './LiveLeaderboard';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -185,6 +187,9 @@ export default function GameScreen() {
             ⚙️
           </button>
         </div>
+
+        {/* Match timeline */}
+        <MatchTimeline />
 
         {/* Status effects */}
         <div style={{ padding: '0 8px' }}>
@@ -393,6 +398,9 @@ export default function GameScreen() {
         </button>
       </div>
 
+      {/* Match timeline */}
+      <MatchTimeline />
+
       {/* Main content */}
       <div style={{
         flex: 1, display: 'flex', overflow: 'hidden'
@@ -488,6 +496,7 @@ export default function GameScreen() {
           </button>
           <CityMap />
           <MissionHUD />
+          <LiveLeaderboard />
         </div>
       </div>
 
