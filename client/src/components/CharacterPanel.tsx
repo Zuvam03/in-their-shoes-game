@@ -26,6 +26,7 @@ import ResilienceTracker from './ResilienceTracker';
 import SafetyNet from './SafetyNet';
 import LifeBalance from './LifeBalance';
 import ImpactRipple from './ImpactRipple';
+import EmpathyMap from './EmpathyMap';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -332,6 +333,9 @@ export default function CharacterPanel() {
 
       {/* Day Recap */}
       <DayRecap />
+
+      {/* Empathy Map */}
+      <EmpathyMap />
 
       {/* Perspective Shift */}
       <PerspectiveShift />
