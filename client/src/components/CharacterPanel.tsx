@@ -17,6 +17,8 @@ import DecisionHistory from './DecisionHistory';
 import WellbeingRadar from './WellbeingRadar';
 import TimelineMilestones from './TimelineMilestones';
 import MoralCompass from './MoralCompass';
+import EndgamePreview from './EndgamePreview';
+import DayRecap from './DayRecap';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -305,6 +307,12 @@ export default function CharacterPanel() {
 
       {/* Relationships */}
       <RelationshipTracker />
+
+      {/* Day Recap */}
+      <DayRecap />
+
+      {/* Endgame Preview */}
+      <EndgamePreview />
 
       {/* Game Stats */}
       <GameStats />

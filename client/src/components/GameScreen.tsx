@@ -54,6 +54,9 @@ import MoralCompass from './MoralCompass';
 import SurvivalJournal from './SurvivalJournal';
 import TrustMap from './TrustMap';
 import RiskAssessment from './RiskAssessment';
+import EndgamePreview from './EndgamePreview';
+import PersonaCompatibility from './PersonaCompatibility';
+import DayRecap from './DayRecap';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -243,7 +246,7 @@ export default function GameScreen() {
           )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
-          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><DailyChallenge /><CommunityBoard /><CollaborativeGoals /><TrustMap /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><DailyChallenge /><CommunityBoard /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
           {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><SurvivalJournal /><NarrativeJournal /></div>}
@@ -514,7 +517,7 @@ export default function GameScreen() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <><DailyChallenge /><CommunityBoard /><CollaborativeGoals /><TrustMap /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></>}
+            {activeTab === 'players' && <><DailyChallenge /><CommunityBoard /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'journey' && <><SurvivalJournal /><NarrativeJournal /></>}
