@@ -159,6 +159,24 @@ export default function Briefing() {
           </div>
         </div>
 
+        {/* Quick Tips */}
+        <div style={{
+          padding: '16px', borderRadius: '10px',
+          background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.2)'
+        }}>
+          <div style={{ fontWeight: 600, color: 'var(--accent-blue)', fontSize: '13px', marginBottom: '10px' }}>
+            Quick Tips
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
+            <div>Press <b>1-6</b> to switch tabs</div>
+            <div>Keep hunger and hydration low</div>
+            <div>Click map locations to travel</div>
+            <div>Help others to build trust</div>
+            <div>Watch your cash and energy</div>
+            <div>Chat with other players</div>
+          </div>
+        </div>
+
         <button
           onClick={dismissBriefing}
           style={{

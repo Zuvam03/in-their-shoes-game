@@ -1,8 +1,21 @@
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { LOCATIONS } from '../game/mapData';
 
 export default function ActionPanel() {
-  const { myPlayer, submitAction } = useGameStore();
+  const { myPlayer, submitAction, lastActionResult } = useGameStore();
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (lastActionResult) setPendingAction(null);
+  }, [lastActionResult]);
+
+  useEffect(() => {
+    if (!pendingAction) return;
+    const t = setTimeout(() => setPendingAction(null), 3000);
+    return () => clearTimeout(t);
+  }, [pendingAction]);
+
   if (!myPlayer) return null;
 
   const currentLoc = LOCATIONS.find(l => l.id === myPlayer.state.location);
@@ -33,8 +46,8 @@ export default function ActionPanel() {
           return (
             <button
               key={action.id}
-              onClick={() => submitAction(action.actionType as never, action.payload)}
-              disabled={!canAfford}
+              onClick={() => { setPendingAction(action.id); submitAction(action.actionType as never, action.payload); }}
+              disabled={!canAfford || pendingAction !== null}
               title={action.description}
               style={{
                 padding: '9px 12px',
@@ -51,8 +64,8 @@ export default function ActionPanel() {
               }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span>{action.icon}</span>
-                <span>{action.label}</span>
+                <span>{pendingAction === action.id ? '⏳' : action.icon}</span>
+                <span>{pendingAction === action.id ? 'Working...' : action.label}</span>
               </span>
               {action.cost && (
                 <span style={{
@@ -68,7 +81,8 @@ export default function ActionPanel() {
 
         {/* Rest action (available anywhere) */}
         <button
-          onClick={() => submitAction('rest', { duration: 120 })}
+          onClick={() => { setPendingAction('rest'); submitAction('rest', { duration: 120 }); }}
+          disabled={pendingAction !== null}
           style={{
             padding: '9px 12px', borderRadius: '8px',
             background: 'var(--bg-secondary)', border: '1px solid var(--border)',

@@ -21,6 +21,12 @@ export default function CityMap() {
   const otherPlayers = room
     ? Object.values(room.players).filter(p => p.id !== myPlayer?.id)
     : [];
+  const activeCityEvents = room?.cityEvents || [];
+
+  const isLocationAffected = (locId: string): boolean =>
+    activeCityEvents.some(e =>
+      e.affectedLocations.includes('all') || e.affectedLocations.includes(locId)
+    );
 
   const connected = selectedLocation ? getConnectedLocations(selectedLocation) : [];
   const isConnectedToSelected = (id: string) => connected.includes(id);
@@ -348,6 +354,7 @@ export default function CityMap() {
             const isHovered = loc.id === hoveredLocation;
             const otherPlayersHere = otherPlayers.filter(p => p.state.location === loc.id);
             const color = LOCATION_COLORS[loc.type];
+            const affected = isLocationAffected(loc.id);
 
             const labelOffset = getLabelOffset(loc);
 
@@ -361,6 +368,14 @@ export default function CityMap() {
                 onMouseLeave={() => setHoveredLocation(null)}
                 style={{ cursor: 'pointer' }}
               >
+                {/* City event warning ring */}
+                {affected && !isCurrent && (
+                  <circle r="18" fill="none" stroke="#ef4444" strokeWidth="1.5" opacity="0.5"
+                    strokeDasharray="4,3">
+                    <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
+                  </circle>
+                )}
+
                 {/* Glow ring for current location */}
                 {isCurrent && (
                   <circle r="20" fill="none" stroke={color} strokeWidth="1.5" opacity="0.3" />
@@ -436,6 +451,28 @@ export default function CityMap() {
           })}
         </g>
       </svg>
+
+      {/* Active city events */}
+      {activeCityEvents.length > 0 && !hoveredLocation && (
+        <div style={{
+          position: 'absolute', top: '60px', right: '16px',
+          zIndex: 5, display: 'flex', flexDirection: 'column', gap: '4px',
+          maxWidth: '200px'
+        }}>
+          {activeCityEvents.map(evt => (
+            <div key={evt.id} style={{
+              padding: '6px 10px', borderRadius: '8px',
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)',
+              fontSize: '10px', color: '#f87171'
+            }}>
+              <div style={{ fontWeight: 700 }}>{evt.title}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '9px', marginTop: '2px' }}>
+                {evt.affectedLocations.includes('all') ? 'Citywide' : evt.affectedLocations.length + ' areas'}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Hover detail tooltip */}
       {hoveredLocation && (
