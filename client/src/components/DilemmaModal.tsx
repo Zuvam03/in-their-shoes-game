@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 
 const DILEMMA_TYPE_LABELS: Record<string, string> = {
@@ -20,14 +20,28 @@ const DILEMMA_TYPE_COLORS: Record<string, string> = {
 };
 
 export default function DilemmaModal() {
-  const { pendingDilemma, respondToDilemma, myPlayer } = useGameStore();
+  const { pendingDilemma, respondToDilemma, myPlayer, room } = useGameStore();
   const [hoveredChoice, setHoveredChoice] = useState<string | null>(null);
+  const [timeLeft, setTimeLeft] = useState(100);
+
+  useEffect(() => {
+    if (!pendingDilemma || !room) return;
+    const update = () => {
+      const remaining = pendingDilemma.expiresAtTick - (room.tick || 0);
+      const total = pendingDilemma.expiresAtTick - pendingDilemma.tick;
+      setTimeLeft(Math.max(0, Math.min(100, (remaining / total) * 100)));
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [pendingDilemma, room?.tick]);
 
   if (!pendingDilemma) return null;
 
   const accentColor = DILEMMA_TYPE_COLORS[pendingDilemma.dilemmaType] || '#f59e0b';
   const personaId = myPlayer?.persona.id || '';
   const personaContext = pendingDilemma.personaContext[personaId];
+  const isUrgent = timeLeft < 30;
 
   return (
     <div style={{
@@ -56,9 +70,23 @@ export default function DilemmaModal() {
           </span>
         </div>
 
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#f1f5f9', marginBottom: '14px', lineHeight: 1.3 }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#f1f5f9', marginBottom: '10px', lineHeight: 1.3 }}>
           {pendingDilemma.title}
         </h2>
+
+        {/* Timer bar */}
+        <div style={{
+          height: '3px', background: '#1e2130', borderRadius: '2px',
+          marginBottom: '14px', overflow: 'hidden'
+        }}>
+          <div style={{
+            height: '100%', borderRadius: '2px',
+            width: `${timeLeft}%`,
+            background: isUrgent ? '#ef4444' : accentColor,
+            transition: 'width 1s linear, background 0.3s ease',
+            ...(isUrgent ? { animation: 'pulse 1s infinite' } : {})
+          }} />
+        </div>
 
         {/* Setup */}
         <p style={{
@@ -120,9 +148,17 @@ export default function DilemmaModal() {
                     {resonance === 'natural' ? 'feels natural' : 'against instinct'}
                   </span>
                 )}
-                <div style={{ fontWeight: 600, marginBottom: '6px', paddingRight: resonanceColor ? '100px' : '0' }}>
+                <div style={{ fontWeight: 600, marginBottom: '4px', paddingRight: resonanceColor ? '100px' : '0' }}>
                   {choice.text}
                 </div>
+                {isHovered && choice.narrativeOutcome && (
+                  <div style={{
+                    fontSize: '11px', color: '#64748b', fontStyle: 'italic',
+                    marginBottom: '6px', lineHeight: 1.4
+                  }}>
+                    → {choice.narrativeOutcome}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   {choice.karmaChange !== 0 && (
                     <Pip label={`karma ${choice.karmaChange > 0 ? '+' : ''}${choice.karmaChange}`}
@@ -145,8 +181,16 @@ export default function DilemmaModal() {
           })}
         </div>
 
-        <div style={{ marginTop: '14px', fontSize: '11px', color: '#475569', textAlign: 'center' }}>
-          This choice will shape your persona's story. There is no objectively right answer.
+        <div style={{
+          marginTop: '14px', fontSize: '11px', color: '#475569', textAlign: 'center',
+          display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center'
+        }}>
+          <span>This choice will shape your persona's story. There is no objectively right answer.</span>
+          {isUrgent && (
+            <span style={{ color: '#ef4444', fontWeight: 600, fontSize: '10px' }}>
+              Time is running out — decide now!
+            </span>
+          )}
         </div>
       </div>
     </div>
