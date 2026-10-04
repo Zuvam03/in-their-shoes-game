@@ -24,6 +24,8 @@ import MatchTimeline from './MatchTimeline';
 import LiveLeaderboard from './LiveLeaderboard';
 import ContextualHints from './ContextualHints';
 import WeatherWidget from './WeatherWidget';
+import QuickActions from './QuickActions';
+import KeyboardShortcuts from './KeyboardShortcuts';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -502,6 +504,7 @@ export default function GameScreen() {
           <MissionHUD />
           <LiveLeaderboard />
           <WeatherWidget />
+          <QuickActions />
           <ContextualHints />
         </div>
       </div>
@@ -512,6 +515,7 @@ export default function GameScreen() {
       <InteractionModal />
       <AchievementToast />
       <TutorialOverlay />
+      <KeyboardShortcuts />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
