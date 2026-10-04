@@ -8,6 +8,8 @@ import PlayersPanel from './PlayersPanel';
 import ChatPanel from './ChatPanel';
 import EventFeed from './EventFeed';
 import DilemmaModal from './DilemmaModal';
+import SettingsPanel from './SettingsPanel';
+import AchievementToast from './AchievementToast';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed';
@@ -17,6 +19,7 @@ export default function GameScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('map');
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 768);
@@ -141,11 +144,11 @@ export default function GameScreen() {
             ₹{myPlayer.state.cash}
           </div>
 
-          <button onClick={toggleSound} style={{
+          <button onClick={() => setShowSettings(true)} style={{
             background: 'none', border: 'none', fontSize: '14px',
-            color: soundEnabled ? 'var(--text-primary)' : 'var(--text-muted)', padding: '2px'
+            color: 'var(--text-secondary)', padding: '2px'
           }}>
-            {soundEnabled ? '🔊' : '🔇'}
+            ⚙️
           </button>
         </div>
 
@@ -206,6 +209,8 @@ export default function GameScreen() {
         </div>
 
         <DilemmaModal />
+        <AchievementToast />
+        {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
       </div>
     );
   }
@@ -295,6 +300,14 @@ export default function GameScreen() {
           color: soundEnabled ? 'var(--text-primary)' : 'var(--text-muted)'
         }}>
           {soundEnabled ? '🔊' : '🔇'}
+        </button>
+
+        <button onClick={() => setShowSettings(true)} style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: '6px', padding: '5px 8px', fontSize: '14px',
+          color: 'var(--text-secondary)'
+        }}>
+          ⚙️
         </button>
       </div>
 
@@ -389,6 +402,8 @@ export default function GameScreen() {
       </div>
 
       <DilemmaModal />
+      <AchievementToast />
+      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

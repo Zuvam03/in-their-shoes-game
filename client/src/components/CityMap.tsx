@@ -123,8 +123,46 @@ export default function CityMap() {
     return acc;
   }, {});
 
+  const hasWeatherEvent = activeCityEvents.some(e => e.type === 'weather');
+  const hasCrowdEvent = activeCityEvents.some(e => e.type === 'crowd');
+  const tick = room?.tick || 0;
+  const isNightTime = tick > 0 && ((tick % 600) > 400);
+
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: '#0a0d14' }}>
+    <div style={{
+      width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
+      background: isNightTime ? '#060810' : '#0a0d14',
+      transition: 'background 2s ease'
+    }}>
+      {/* Weather overlay */}
+      {hasWeatherEvent && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+          background: 'linear-gradient(180deg, rgba(30,60,100,0.15) 0%, rgba(20,40,70,0.08) 100%)',
+          animation: 'fadeIn 1s ease'
+        }}>
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              left: `${(i * 37 + 13) % 100}%`,
+              top: `-${(i * 7) % 20}px`,
+              width: '1px', height: `${12 + (i % 8)}px`,
+              background: 'rgba(100,150,220,0.3)',
+              animation: `rainDrop ${0.4 + (i % 5) * 0.1}s linear infinite`,
+              animationDelay: `${(i * 0.07)}s`
+            }} />
+          ))}
+        </div>
+      )}
+
+      {/* Night overlay */}
+      {isNightTime && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,10,0.3) 100%)'
+        }} />
+      )}
+
       {/* Map controls */}
       <div style={{
         position: 'absolute', bottom: '16px', right: '16px',

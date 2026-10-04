@@ -1,16 +1,21 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
-import type { PerformanceInsight } from '../store/gameStore';
+import type { PerformanceInsight, Player } from '../store/gameStore';
 import { playGameEnd } from '../game/sounds';
+import { ACHIEVEMENTS } from '../game/achievements';
 
 export default function ResultsScreen() {
-  const { matchResult, mySocketId, playAgain, soundEnabled } = useGameStore();
+  const { matchResult, mySocketId, myPlayer, room, playAgain, soundEnabled } = useGameStore();
 
   useEffect(() => {
     if (soundEnabled) playGameEnd();
   }, []);
 
   if (!matchResult) return null;
+
+  const earnedAchievements = myPlayer ? ACHIEVEMENTS.filter(a => {
+    try { return a.check(myPlayer, room?.tick || matchResult.totalTicks); } catch { return false; }
+  }) : [];
 
   const { playerResults, winnerName, highlightEvents } = matchResult;
   const myResult = playerResults.find(r => r.playerId === mySocketId);
@@ -215,6 +220,46 @@ export default function ResultsScreen() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Achievements earned */}
+        {earnedAchievements.length > 0 && (
+          <div style={{
+            padding: '20px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, rgba(245,200,66,0.08), rgba(168,85,247,0.06))',
+            border: '1px solid rgba(245,200,66,0.2)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '20px' }}>🏅</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '16px' }}>Achievements Earned</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  {earnedAchievements.length} of {ACHIEVEMENTS.length} unlocked
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
+              {earnedAchievements.map(a => (
+                <div key={a.id} style={{
+                  padding: '10px 12px', borderRadius: '10px',
+                  background: 'rgba(245,200,66,0.08)',
+                  border: '1px solid rgba(245,200,66,0.15)',
+                  display: 'flex', alignItems: 'center', gap: '8px'
+                }}>
+                  <span style={{ fontSize: '18px' }}>{a.icon}</span>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 600 }}>{a.title}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{a.description}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {earnedAchievements.length < ACHIEVEMENTS.length && (
+              <div style={{ marginTop: '10px', fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                {ACHIEVEMENTS.length - earnedAchievements.length} more to discover...
+              </div>
+            )}
           </div>
         )}
 

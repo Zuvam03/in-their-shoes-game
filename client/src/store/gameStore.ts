@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
+import { setVolume as setSoundVolume } from '../game/sounds';
 
 // Types (mirrored from server — safe to duplicate since they're purely structural)
 export type TransportMode = 'walk' | 'bus' | 'metro' | 'tram' | 'taxi';
@@ -289,12 +290,29 @@ export type UIScreen = 'landing' | 'lobby' | 'briefing' | 'game' | 'results';
 
 const MAX_NOTIFICATIONS = 50;
 const MAX_CHAT_MESSAGES = 100;
+const RECONNECT_MAX_ATTEMPTS = 5;
+const RECONNECT_BASE_DELAY = 2000;
+
+function saveSession(roomId: string, playerName: string) {
+  try { sessionStorage.setItem('its_session', JSON.stringify({ roomId, playerName })); } catch {}
+}
+function loadSession(): { roomId: string; playerName: string } | null {
+  try {
+    const raw = sessionStorage.getItem('its_session');
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function clearSession() {
+  try { sessionStorage.removeItem('its_session'); } catch {}
+}
 
 interface GameState {
   // Connection
   socket: Socket | null;
   connected: boolean;
   mySocketId: string | null;
+  reconnecting: boolean;
+  reconnectAttempt: number;
 
   // Room
   roomId: string | null;
@@ -324,6 +342,7 @@ interface GameState {
 
   // Settings
   soundEnabled: boolean;
+  volume: number;
 
   // Actions
   connect: () => void;
@@ -341,6 +360,7 @@ interface GameState {
   markChatRead: () => void;
   markNotifsRead: () => void;
   toggleSound: () => void;
+  setVolume: (v: number) => void;
   playAgain: () => void;
 }
 
@@ -350,6 +370,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   socket: null,
   connected: false,
   mySocketId: null,
+  reconnecting: false,
+  reconnectAttempt: 0,
   roomId: null,
   room: null,
   myPlayer: null,
@@ -365,22 +387,53 @@ export const useGameStore = create<GameState>((set, get) => ({
   notifications: [],
   unreadNotifCount: 0,
   soundEnabled: true,
+  volume: 0.7,
 
   connect: () => {
     if (get().socket?.connected) return;
 
-    const socket = io(SERVER_URL, { autoConnect: true, transports: ['websocket', 'polling'] });
+    const socket = io(SERVER_URL, {
+      autoConnect: true,
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: RECONNECT_MAX_ATTEMPTS,
+      reconnectionDelay: RECONNECT_BASE_DELAY,
+      reconnectionDelayMax: 10000
+    });
 
     socket.on('connect', () => {
-      set({ connected: true, mySocketId: socket.id || null });
+      const state = get();
+      set({ connected: true, mySocketId: socket.id || null, reconnecting: false, reconnectAttempt: 0 });
+
+      if (state.reconnecting && state.screen !== 'landing' && state.screen !== 'results') {
+        const session = loadSession();
+        if (session) {
+          socket.emit('joinRoom', { roomId: session.roomId, playerName: session.playerName });
+        }
+      }
     });
 
     socket.on('disconnect', () => {
-      set({ connected: false });
+      const state = get();
+      if (state.screen === 'game' || state.screen === 'briefing' || state.screen === 'lobby') {
+        set({ connected: false, reconnecting: true });
+      } else {
+        set({ connected: false });
+      }
+    });
+
+    socket.io.on('reconnect_attempt', (attempt: number) => {
+      set({ reconnectAttempt: attempt });
+    });
+
+    socket.io.on('reconnect_failed', () => {
+      set({ reconnecting: false, reconnectAttempt: 0 });
     });
 
     socket.on('joinedRoom', ({ roomId }: { roomId: string }) => {
       set({ roomId, screen: 'lobby' });
+      const session = loadSession();
+      if (session) saveSession(roomId, session.playerName);
     });
 
     socket.on('roomUpdate', (room: PublicRoom) => {
@@ -447,12 +500,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { socket } = get();
     if (!socket) return;
     socket.emit('createRoom', { playerName: name, matchDuration: duration });
+    saveSession('pending', name);
   },
 
   joinRoom: (roomId, name) => {
     const { socket } = get();
     if (!socket) return;
-    socket.emit('joinRoom', { roomId: roomId.toUpperCase(), playerName: name });
+    const normalized = roomId.toUpperCase();
+    socket.emit('joinRoom', { roomId: normalized, playerName: name });
+    saveSession(normalized, name);
   },
 
   setReady: () => {
@@ -505,7 +561,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   toggleSound: () => set(s => ({ soundEnabled: !s.soundEnabled })),
 
+  setVolume: (v) => {
+    set({ volume: v });
+    setSoundVolume(v);
+  },
+
   playAgain: () => {
+    clearSession();
     set({
       roomId: null,
       room: null,
@@ -520,7 +582,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       chatMessages: [],
       notifications: [],
       unreadChatCount: 0,
-      unreadNotifCount: 0
+      unreadNotifCount: 0,
+      reconnecting: false,
+      reconnectAttempt: 0
     });
   }
 }));

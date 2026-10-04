@@ -4,7 +4,7 @@ import type {
   CityEvent, EventChoice, MissionObjective, InteractionRequest,
   SocialDilemma, DilemmaEvent, DilemmaRecord
 } from './types';
-import { getRoute, getLocation, findShortestPath } from './map';
+import { getRoute, getLocation } from './map';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Seeded RNG ---

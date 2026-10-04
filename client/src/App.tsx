@@ -8,9 +8,10 @@ import ResultsScreen from './components/ResultsScreen';
 import CityEventModal from './components/CityEventModal';
 import DilemmaModal from './components/DilemmaModal';
 import FeedbackToast from './components/FeedbackToast';
+import ConnectionOverlay from './components/ConnectionOverlay';
 
 export default function App() {
-  const { screen, connect, connected, pendingCityEvent, pendingDilemma } = useGameStore();
+  const { screen, connect, pendingCityEvent, pendingDilemma } = useGameStore();
 
   useEffect(() => {
     connect();
@@ -28,6 +29,7 @@ export default function App() {
       {pendingCityEvent && <CityEventModal />}
       {pendingDilemma && <DilemmaModal />}
       <FeedbackToast />
+      <ConnectionOverlay />
     </div>
   );
 }
