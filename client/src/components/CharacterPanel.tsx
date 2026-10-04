@@ -23,6 +23,9 @@ import PerspectiveShift from './PerspectiveShift';
 import PrivilegeMeter from './PrivilegeMeter';
 import ChoiceConsequences from './ChoiceConsequences';
 import ResilienceTracker from './ResilienceTracker';
+import SafetyNet from './SafetyNet';
+import LifeBalance from './LifeBalance';
+import ImpactRipple from './ImpactRipple';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -299,6 +302,15 @@ export default function CharacterPanel() {
 
       {/* Resilience */}
       <ResilienceTracker />
+
+      {/* Safety Net */}
+      <SafetyNet />
+
+      {/* Life Balance */}
+      <LifeBalance />
+
+      {/* Impact Ripple */}
+      <ImpactRipple />
 
       {/* Decision History */}
       <DecisionHistory />

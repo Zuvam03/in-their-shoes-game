@@ -63,6 +63,9 @@ import PrivilegeMeter from './PrivilegeMeter';
 import ChoiceConsequences from './ChoiceConsequences';
 import SystemicInsights from './SystemicInsights';
 import ResilienceTracker from './ResilienceTracker';
+import SafetyNet from './SafetyNet';
+import LifeBalance from './LifeBalance';
+import ImpactRipple from './ImpactRipple';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
