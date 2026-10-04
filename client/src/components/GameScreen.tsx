@@ -36,6 +36,8 @@ import DaySummary from './DaySummary';
 import NarrativeJournal from './NarrativeJournal';
 import TradePanel from './TradePanel';
 import MoodRing from './MoodRing';
+import CommunityBoard from './CommunityBoard';
+import StreetWisdom from './StreetWisdom';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -225,7 +227,7 @@ export default function GameScreen() {
           )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
-          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayersPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><CommunityBoard /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
           {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><NarrativeJournal /></div>}
@@ -494,7 +496,7 @@ export default function GameScreen() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <PlayersPanel />}
+            {activeTab === 'players' && <><CommunityBoard /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'journey' && <NarrativeJournal />}
@@ -505,6 +507,7 @@ export default function GameScreen() {
                 <QuickEmoteBar />
                 <ActionPanel />
                 <TradePanel />
+                <StreetWisdom />
               </div>
             )}
           </div>

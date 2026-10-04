@@ -8,6 +8,7 @@ import SocialDynamics from './SocialDynamics';
 import SurvivalTips from './SurvivalTips';
 import LocationMemory from './LocationMemory';
 import MoodRing from './MoodRing';
+import ResourceForecast from './ResourceForecast';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -252,6 +253,9 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Resource Forecast */}
+      <ResourceForecast />
+
       {/* Survival Tips */}
       <SurvivalTips />
 
