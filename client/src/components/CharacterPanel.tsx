@@ -9,6 +9,7 @@ import SurvivalTips from './SurvivalTips';
 import LocationMemory from './LocationMemory';
 import MoodRing from './MoodRing';
 import ResourceForecast from './ResourceForecast';
+import StrategyAdvisor from './StrategyAdvisor';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -261,6 +262,9 @@ export default function CharacterPanel() {
 
       {/* Trait Effects */}
       <SocialDynamics />
+
+      {/* Persona Strategy */}
+      <StrategyAdvisor />
 
       {/* Conscience Meter */}
       <ConscienceMeter />

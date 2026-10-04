@@ -40,6 +40,8 @@ import CommunityBoard from './CommunityBoard';
 import StreetWisdom from './StreetWisdom';
 import DangerZones from './DangerZones';
 import NotificationCenter from './NotificationCenter';
+import ActionCooldowns from './ActionCooldowns';
+import EventCountdown from './EventCountdown';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -506,7 +508,9 @@ export default function GameScreen() {
             {activeTab === 'achievements' && <AchievementGallery />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
+                <EventCountdown />
                 <LocationDetail />
+                <ActionCooldowns />
                 <QuickEmoteBar />
                 <ActionPanel />
                 <TradePanel />
