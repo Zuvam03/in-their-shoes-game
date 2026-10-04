@@ -375,6 +375,178 @@ export function getLocationById(id: string): LocationInfo | undefined {
   return LOCATIONS.find(l => l.id === id);
 }
 
+export interface AmbientDescription {
+  day: string;
+  evening: string;
+  night: string;
+  rain: string;
+  heat: string;
+  crowd: string;
+}
+
+export const LOCATION_AMBIENCE: Record<string, AmbientDescription> = {
+  howrah_station: {
+    day: 'Porters weave through the crowd, calling out destinations. The announcement board flickers.',
+    evening: 'The rush hour tide of office workers streams toward platforms. Vendors hawk chai.',
+    night: 'The station thins out. Families sleep on benches. A lone dog trots past.',
+    rain: 'Water drips from the station canopy. Commuters huddle under the awning.',
+    heat: 'Heat shimmers off the tracks. Everyone moves slower, fanning themselves.',
+    crowd: 'The station is packed — shoulder to shoulder, bags bumping, voices echoing.'
+  },
+  esplanade: {
+    day: 'Buses, trams, and taxis jostle for space. A puchka vendor calls out prices.',
+    evening: 'Neon signs flicker on. The crowd shifts from workers to evening strollers.',
+    night: 'The crossroads quiets. A lone tram rattles through. Street lights cast long shadows.',
+    rain: 'Puddles form on broken pavement. Umbrellas bloom like dark flowers.',
+    heat: 'The asphalt radiates heat. Pedestrians hug the shaded side of the road.',
+    crowd: 'A sea of people — you can barely move. Someone bumps your shoulder.'
+  },
+  sealdah_station: {
+    day: 'Suburban trains arrive and depart in waves. The food stall smells of rice and dal.',
+    evening: 'Homeward-bound commuters pour out. The station echoes with announcements.',
+    night: 'Platform lights flicker. A few late travelers wait in silence.',
+    rain: 'Rain drums on the tin roof. The platforms are slick and treacherous.',
+    heat: 'The station is an oven. Fans spin lazily overhead, barely moving the air.',
+    crowd: 'Every platform is packed. You have to push to move forward.'
+  },
+  college_street: {
+    day: 'Students browse towering stacks of books. The smell of old paper fills the air.',
+    evening: 'The Coffee House buzzes with debate. Amber light spills from its windows.',
+    night: 'Closed bookshops stand like silent sentinels. A cat crosses the empty road.',
+    rain: 'Vendors cover their books in plastic. Puddles reflect the building facades.',
+    heat: 'The narrow lane traps the heat. Readers retreat into air-cooled shops.',
+    crowd: 'Students and book-hunters jostle through the narrow lanes.'
+  },
+  park_street: {
+    day: 'The scent of biriyani drifts from a restaurant. Cars honk in pleasant traffic.',
+    evening: 'Restaurants light up. Couples stroll. The smell of kathi rolls is irresistible.',
+    night: 'Park Street comes alive — music, laughter, the clinking of glasses from bars.',
+    rain: 'Diners peer out through fogged restaurant windows. The road gleams.',
+    heat: 'Air conditioning beckons from every doorway. The pavement sizzles.',
+    crowd: 'Weekend crowds fill the pavements. Every restaurant has a queue.'
+  },
+  maidan: {
+    day: 'Cricketers play on the vast green. A cool breeze carries the scent of grass.',
+    evening: 'Joggers circle the paths. The sky turns pink behind Victoria Memorial.',
+    night: 'The Maidan is dark and empty. Distant sounds of the city feel far away.',
+    rain: 'The fields are waterlogged. A few brave souls walk with umbrellas.',
+    heat: 'Even the open ground feels oppressive. Not a patch of shade in sight.',
+    crowd: 'Festival-goers have filled the Maidan. Temporary stalls and music everywhere.'
+  },
+  victoria_memorial: {
+    day: 'The white marble gleams. Tourists photograph the gardens. Peaceful.',
+    evening: 'Golden light bathes the memorial. Horse carriages clip-clop past.',
+    night: 'The memorial is illuminated, ghostly white against the dark sky.',
+    rain: 'Rain patters on the gardens. The marble glistens. Few visitors linger.',
+    heat: 'The gardens offer some shade, but the heat is inescapable.',
+    crowd: 'Tour groups cluster around the entrance. The lawn is full of families.'
+  },
+  new_market: {
+    day: 'Haggling echoes through the corridors. Colorful wares spill onto the pavement.',
+    evening: 'Shopkeepers begin pulling down shutters. Last-minute bargains await.',
+    night: 'The market is closed and quiet. Stray cats prowl the empty lanes.',
+    rain: 'The covered market shelters everyone. Inside, the crowd is twice as thick.',
+    heat: 'The enclosed market traps the heat. Fans battle the stifling air.',
+    crowd: 'Elbow-to-elbow crowds. Vendors shout over each other. Watch your wallet.'
+  },
+  gariahat: {
+    day: 'South Kolkata\'s market hums with life. Sarees hang like colorful waterfalls.',
+    evening: 'Street food vendors set up their stalls. The smell of ghee fills the air.',
+    night: 'Most shops are closed. A few food stalls glow under fluorescent tubes.',
+    rain: 'The open-air market gets muddy. Shoppers skip between puddles.',
+    heat: 'The narrow lanes trap the humidity. Everyone looks tired.',
+    crowd: 'Weekend shoppers pack the market. Every auto-rickshaw is full.'
+  },
+  shyambazar: {
+    day: 'The old neighbourhood is alive with the sound of rickshaws and chai stalls.',
+    evening: 'The famous puchka stalls light up. Families come out for an evening snack.',
+    night: 'The residential lanes are quiet. Only the sound of distant TVs.',
+    rain: 'Water collects in the lanes. An old umbrella seller does brisk business.',
+    heat: 'North Kolkata\'s narrow lanes offer shade but trap the humidity.',
+    crowd: 'Puja season transforms the neighbourhood — pandal-hoppers everywhere.'
+  },
+  lake_gardens: {
+    day: 'A quiet residential pocket. Birds sing in the trees. Children play cricket.',
+    evening: 'Families gather on rooftops. The local dhaba starts its dinner service.',
+    night: 'Peaceful. Crickets chirp. Street lights cast gentle pools of yellow.',
+    rain: 'Rain on tin roofs — a rhythmic lullaby. The lanes are empty.',
+    heat: 'The tree cover helps, but the humidity is unforgiving.',
+    crowd: 'Unusually busy — a local festival or cricket match, perhaps.'
+  },
+  bhawanipore: {
+    day: 'A quiet residential area. The dhaba owner waves hello from behind his counter.',
+    evening: 'Evening prayers drift from the local temple. The air smells of incense.',
+    night: 'Street lights hum. A dog barks in the distance. Everything is still.',
+    rain: 'The lanes flood quickly here. Residents wade through ankle-deep water.',
+    heat: 'Old buildings trap the heat. Everyone retreats to their fans.',
+    crowd: 'A wedding procession winds through the neighbourhood, brass band and all.'
+  },
+  kumartuli: {
+    day: 'Artisans shape clay into gods. Straw frameworks and half-finished idols everywhere.',
+    evening: 'The potters finish their day\'s work. The smell of wet clay hangs in the air.',
+    night: 'The workshop lanes are eerily quiet. Unfinished idols stare from the shadows.',
+    rain: 'The artisans cover their clay work with tarpaulins. A worried energy fills the air.',
+    heat: 'The clay dries too fast. Artisans spray water on their work constantly.',
+    crowd: 'Festival buyers crowd the narrow lanes, inspecting nearly-finished idols.'
+  },
+  street_food_row: {
+    day: 'Sizzling pans and the fragrant smell of spices. The best street food in the city.',
+    evening: 'Peak hour — every stall has a queue. Biryani pots open with a burst of steam.',
+    night: 'A few stalls still glow. Late-night roll makers serve the last customers.',
+    rain: 'Vendors shelter their stoves under sheets. The smell of rain meets spice.',
+    heat: 'The heat from cooking stoves and the weather merge into a wall of warmth.',
+    crowd: 'Every stall is three-deep with customers. You have to squeeze in to order.'
+  },
+  dalhousie_sq: {
+    day: 'Office workers in pressed shirts hurry past colonial buildings. Taxis queue.',
+    evening: 'The offices empty. The square takes on a ghostly grandeur.',
+    night: 'Heritage buildings stand illuminated but empty. Security guards pace.',
+    rain: 'Workers shelter under awnings. The colonial buildings look dramatic in the downpour.',
+    heat: 'The concrete plaza amplifies the heat. Everyone ducks into air-conditioned buildings.',
+    crowd: 'A protest or rally fills the square. Slogans echo off the old facades.'
+  },
+  salt_lake: {
+    day: 'Glass towers reflect sunlight. IT workers carry laptop bags. Modern, organized.',
+    evening: 'Office lights go out floor by floor. The food court starts buzzing.',
+    night: 'The IT Park is quiet. Only night-shift workers in the illuminated towers.',
+    rain: 'Well-drained roads and covered walkways — rain barely slows things here.',
+    heat: 'Central AC keeps the offices cool, but stepping outside is brutal.',
+    crowd: 'A tech conference has doubled the usual crowd. Parking is impossible.'
+  },
+  pg_hospital: {
+    day: 'The hospital hums with urgency. Patients, doctors, and worried families.',
+    evening: 'Visiting hours end. Relatives linger outside. Medicine shops stay open.',
+    night: 'The emergency ward glows. Ambulance sirens punctuate the quiet.',
+    rain: 'The hospital courtyard fills with puddles. Patients shelter under the portico.',
+    heat: 'The wards are uncomfortably warm. Fans work overtime.',
+    crowd: 'The outpatient department is overwhelmed. The queue stretches outside.'
+  },
+  local_clinic: {
+    day: 'A small, tidy clinic. The doctor greets patients one by one. Comforting.',
+    evening: 'The clinic is about to close. The doctor sees one last patient.',
+    night: 'Closed. A small sign says "Emergency — call this number."',
+    rain: 'Patients drip water on the waiting room floor. The nurse offers towels.',
+    heat: 'A single ceiling fan struggles. The waiting room is warm but bearable.',
+    crowd: 'An unusually long queue — a stomach bug is going around the neighbourhood.'
+  },
+  hooghly_bank: {
+    day: 'The river glitters. A ferry crosses slowly. Tea stalls line the ghat.',
+    evening: 'Sunset paints the Hooghly gold. People sit in quiet contemplation.',
+    night: 'The river is black and silent. Distant lights from Howrah reflect off the water.',
+    rain: 'The river rises. The ghat steps are slippery. Nobody is selling chai.',
+    heat: 'A breeze comes off the river — the only relief in the city.',
+    crowd: 'A religious gathering fills the ghat. Chanting and the smell of flowers.'
+  },
+  kalighat: {
+    day: 'Devotees stream toward the temple. Flower sellers call out. Sacred energy.',
+    evening: 'The evening aarti bells ring. Incense smoke curls into the twilight.',
+    night: 'The temple gates close. The lane is quiet except for stray dogs.',
+    rain: 'Devotees hurry through the rain. The temple steps are dangerously slick.',
+    heat: 'The temple compound traps the heat. Devotees fan themselves with prayer books.',
+    crowd: 'A major puja day — the queue to enter the temple winds around the block.'
+  }
+};
+
 export function getConnectedLocations(locationId: string): string[] {
   const connected = new Set<string>();
   for (const route of ROUTES) {

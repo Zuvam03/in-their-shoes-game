@@ -27,6 +27,7 @@ import WeatherWidget from './WeatherWidget';
 import QuickActions from './QuickActions';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import ConnectionStatus from './ConnectionStatus';
+import AmbientOverlay from './AmbientOverlay';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -268,6 +269,7 @@ export default function GameScreen() {
 
         <FloatingNumbers />
         <ActionResultToast />
+        <AmbientOverlay />
         <DilemmaModal />
         <InteractionModal />
         <AchievementToast />
@@ -513,6 +515,7 @@ export default function GameScreen() {
 
       <FloatingNumbers />
       <ActionResultToast />
+      <AmbientOverlay />
       <DilemmaModal />
       <InteractionModal />
       <AchievementToast />
