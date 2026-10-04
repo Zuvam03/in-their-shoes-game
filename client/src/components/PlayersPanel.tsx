@@ -1,18 +1,7 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getLocationById, getConnectedLocations } from '../game/mapData';
-
-const REPUTATION_TIERS = [
-  { min: 80, label: 'Leader', color: '#f5c842', icon: '👑' },
-  { min: 60, label: 'Respected', color: '#22c55e', icon: '⭐' },
-  { min: 40, label: 'Trusted', color: '#3b82f6', icon: '🤝' },
-  { min: 20, label: 'Known', color: '#8b92a8', icon: '👤' },
-  { min: 0, label: 'Newcomer', color: '#6b7280', icon: '🌱' },
-];
-
-function getRepTier(trust: number) {
-  return REPUTATION_TIERS.find(t => trust >= t.min) || REPUTATION_TIERS[REPUTATION_TIERS.length - 1];
-}
+import ReputationBadge from './ReputationBadge';
 
 type Proximity = 'same' | 'nearby' | 'far';
 
@@ -100,7 +89,6 @@ export default function PlayersPanel() {
         const isTransferring = transferTarget === player.id;
         const proximity = getProximity(myLoc, player.state.location);
         const proxCfg = PROXIMITY_CONFIG[proximity];
-        const repTier = getRepTier(player.socialTrust);
         const isExpanded = expandedPlayer === player.id;
         const emote = playerEmotes[player.id];
         const isSameLocation = proximity === 'same';
@@ -175,14 +163,7 @@ export default function PlayersPanel() {
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px'
               }}>
-                <div style={{
-                  padding: '2px 8px', borderRadius: '10px', fontSize: '10px',
-                  fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px',
-                  background: `${repTier.color}15`, color: repTier.color,
-                  border: `1px solid ${repTier.color}30`
-                }}>
-                  {repTier.icon} {repTier.label}
-                </div>
+                <ReputationBadge trust={player.socialTrust} size="small" />
                 <div style={{
                   padding: '2px 6px', borderRadius: '8px', fontSize: '9px',
                   fontWeight: 600, display: 'flex', alignItems: 'center', gap: '3px',

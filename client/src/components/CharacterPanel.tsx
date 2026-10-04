@@ -4,6 +4,7 @@ import GameStats from './GameStats';
 import ConscienceMeter from './ConscienceMeter';
 import ExplorationTracker from './ExplorationTracker';
 import RelationshipTracker from './RelationshipTracker';
+import SocialDynamics from './SocialDynamics';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -245,6 +246,9 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Trait Effects */}
+      <SocialDynamics />
+
       {/* Conscience Meter */}
       <ConscienceMeter />
 
