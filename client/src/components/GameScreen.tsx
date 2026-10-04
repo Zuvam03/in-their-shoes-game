@@ -38,6 +38,8 @@ import TradePanel from './TradePanel';
 import MoodRing from './MoodRing';
 import CommunityBoard from './CommunityBoard';
 import StreetWisdom from './StreetWisdom';
+import DangerZones from './DangerZones';
+import NotificationCenter from './NotificationCenter';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -290,6 +292,7 @@ export default function GameScreen() {
         <InteractionModal />
         <AchievementToast />
         <TutorialOverlay />
+        <NotificationCenter />
         <ConnectionStatus />
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
       </div>
@@ -530,6 +533,7 @@ export default function GameScreen() {
           <MissionHUD />
           <LiveLeaderboard />
           <WeatherWidget />
+          <DangerZones />
           <QuickActions />
           <ContextualHints />
           <ProgressSummary />
@@ -545,6 +549,7 @@ export default function GameScreen() {
       <InteractionModal />
       <AchievementToast />
       <TutorialOverlay />
+      <NotificationCenter />
       <KeyboardShortcuts />
       <ConnectionStatus />
       {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
