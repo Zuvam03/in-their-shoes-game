@@ -23,6 +23,10 @@ export default function PlayersPanel() {
     submitAction('help_player', { targetPlayerId: playerId, helpType: 'general' });
   };
 
+  const handleRequestHelp = (playerId: string) => {
+    submitAction('request_help', { targetPlayerId: playerId });
+  };
+
   const handleShareInfo = (playerId: string) => {
     submitAction('share_info', { targetPlayerId: playerId, info: 'route_tip' });
   };
@@ -118,6 +122,16 @@ export default function PlayersPanel() {
                 }}
               >
                 🤝 Help
+              </button>
+              <button
+                onClick={() => handleRequestHelp(player.id)}
+                style={{
+                  flex: 1, padding: '6px 8px', borderRadius: '6px',
+                  background: 'rgba(168,85,247,0.1)', border: '1px solid rgba(168,85,247,0.2)',
+                  color: 'var(--accent-purple)', fontSize: '11px', fontWeight: 600
+                }}
+              >
+                🙏 Ask
               </button>
               <button
                 onClick={() => handleShareInfo(player.id)}

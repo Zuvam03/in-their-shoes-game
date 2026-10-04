@@ -12,6 +12,8 @@ import SettingsPanel from './SettingsPanel';
 import AchievementToast from './AchievementToast';
 import TutorialOverlay from './TutorialOverlay';
 import InteractionModal from './InteractionModal';
+import Minimap from './Minimap';
+import LocationDetail from './LocationDetail';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed';
@@ -329,7 +331,10 @@ export default function GameScreen() {
           overflow: 'hidden',
           transition: 'width 0.2s ease, min-width 0.2s ease'
         }}>
-          {/* Stat bars */}
+          {/* Minimap + Stat bars */}
+          <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+            <Minimap />
+          </div>
           <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
             <StatBar label="Health" value={myPlayer.state.health} color="var(--accent-red)" icon="❤️" />
             <StatBar label="Energy" value={myPlayer.state.energy} color="var(--accent-yellow)" icon="⚡" />
@@ -382,6 +387,7 @@ export default function GameScreen() {
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
+                <LocationDetail />
                 <ActionPanel />
               </div>
             )}
