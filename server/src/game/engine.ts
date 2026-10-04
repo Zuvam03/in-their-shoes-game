@@ -652,16 +652,46 @@ export function checkForUnexpectedFortune(
 
   if (!rng.chance(probability)) return null;
 
-  // Even low-karma players can have fortune (just less likely)
+  const isNight = tick > 0 && ((tick % 600) > 400);
+
   const fortunes = [
     { desc: 'A stranger offers you directions that save precious time.', stat: 'mood', change: 5 },
     { desc: 'You find a few rupees on the ground. Small luck.', stat: 'cash', change: 20 },
     { desc: 'A kind vendor gives you a free glass of water.', stat: 'hydration', change: -25 },
     { desc: 'The bus arrives just as you reach the stop. Lucky timing.', stat: 'energy', change: 5 },
-    { desc: 'A brief rest spot opens up just when you need it.', stat: 'stress', change: -8 }
+    { desc: 'A brief rest spot opens up just when you need it.', stat: 'stress', change: -8 },
+    { desc: 'Someone shares their lunch with you. A kind gesture.', stat: 'hunger', change: -20 },
+    { desc: 'A passerby drops a hundred-rupee note. Your lucky day!', stat: 'cash', change: 100 },
+    { desc: 'A cool breeze lifts your spirits unexpectedly.', stat: 'mood', change: 10 },
+    { desc: 'You find a shaded spot to catch your breath.', stat: 'energy', change: 8 },
+    { desc: 'A street musician plays a melody that lifts your mood.', stat: 'mood', change: 7 },
   ];
 
-  const fortune = fortunes[rng.between(0, fortunes.length - 1)];
+  const misfortunes = [
+    { desc: 'You step in a puddle and twist your ankle slightly.', stat: 'health', change: -5 },
+    { desc: 'A pickpocket bumps into you — check your pockets!', stat: 'cash', change: -15 },
+    { desc: 'The heat makes you feel dizzy for a moment.', stat: 'energy', change: -8 },
+    { desc: 'You witness an argument that raises your stress.', stat: 'stress', change: 10 },
+    { desc: 'A stray dog chases you down the street.', stat: 'energy', change: -6 },
+    { desc: 'You realize you dropped some money earlier.', stat: 'cash', change: -25 },
+    { desc: 'The crowd jostles you hard. You feel a bruise forming.', stat: 'health', change: -4 },
+    { desc: 'A sudden noise startles you badly.', stat: 'stress', change: 8 },
+  ];
+
+  if (isNight) {
+    misfortunes.push(
+      { desc: 'A shadow moves in the alley. Your heart races.', stat: 'stress', change: 12 },
+      { desc: 'You stumble on an uneven road in the dark.', stat: 'health', change: -6 }
+    );
+  }
+
+  const isGoodFortune = karma > 0
+    ? rng.chance(0.6 + karma / 200)
+    : rng.chance(0.4 + karma / 200);
+
+  const pool = isGoodFortune ? fortunes : misfortunes;
+
+  const fortune = pool[rng.between(0, pool.length - 1)];
   const currentVal = (player.state as unknown as Record<string, number>)[fortune.stat] ?? 0;
   const isCash = fortune.stat === 'cash';
   const newVal = isCash
