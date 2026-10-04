@@ -19,6 +19,7 @@ import QuickEmoteBar from './QuickEmoteBar';
 import StatusEffectsBar from './StatusEffectsBar';
 import FloatingNumbers from './FloatingNumbers';
 import ActionResultToast from './ActionResultToast';
+import MissionHUD from './MissionHUD';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -192,7 +193,12 @@ export default function GameScreen() {
 
         {/* Content area */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          {activeTab === 'map' && <CityMap />}
+          {activeTab === 'map' && (
+            <>
+              <CityMap />
+              <MissionHUD />
+            </>
+          )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
           {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayersPanel /></div>}
@@ -481,6 +487,7 @@ export default function GameScreen() {
             {showSidebar ? '◀ Hide' : '▶ Show'} Panel
           </button>
           <CityMap />
+          <MissionHUD />
         </div>
       </div>
 

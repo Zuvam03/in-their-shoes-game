@@ -128,6 +128,7 @@ export interface MissionDefinition {
   title: string;
   narrative: string;
   primaryObjective: string;
+  deadline: number;
   complications: string[];
   alternativePaths: string[];
   partialSuccessCondition?: string;
