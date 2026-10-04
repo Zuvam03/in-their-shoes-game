@@ -12,6 +12,7 @@ import ResourceForecast from './ResourceForecast';
 import StrategyAdvisor from './StrategyAdvisor';
 import EmpathyScore from './EmpathyScore';
 import HelpBeacon from './HelpBeacon';
+import KarmaWheel from './KarmaWheel';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -273,6 +274,9 @@ export default function CharacterPanel() {
 
       {/* Empathy Score */}
       <EmpathyScore />
+
+      {/* Karma */}
+      <KarmaWheel />
 
       {/* Conscience Meter */}
       <ConscienceMeter />
