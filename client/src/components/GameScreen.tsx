@@ -68,6 +68,9 @@ import LifeBalance from './LifeBalance';
 import ImpactRipple from './ImpactRipple';
 import StoryArc from './StoryArc';
 import EmpathyMap from './EmpathyMap';
+import CulturalContext from './CulturalContext';
+import GratitudeLog from './GratitudeLog';
+import CollectiveMemory from './CollectiveMemory';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -260,7 +263,7 @@ export default function GameScreen() {
           {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
-          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><SystemicInsights /><NarrativeJournal /></div>}
+          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><CollectiveMemory /><SystemicInsights /><NarrativeJournal /></div>}
           {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementGallery /></div>}
           {activeTab === 'map' && (
             <div style={{
@@ -531,7 +534,7 @@ export default function GameScreen() {
             {activeTab === 'players' && <><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
-            {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><SystemicInsights /><NarrativeJournal /></>}
+            {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><CollectiveMemory /><SystemicInsights /><NarrativeJournal /></>}
             {activeTab === 'achievements' && <AchievementGallery />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
@@ -542,6 +545,7 @@ export default function GameScreen() {
                 <QuickEmoteBar />
                 <ActionPanel />
                 <RiskAssessment />
+                <CulturalContext />
                 <TradePanel />
                 <StreetWisdom />
               </div>
