@@ -30,6 +30,7 @@ import ConnectionStatus from './ConnectionStatus';
 import AmbientOverlay from './AmbientOverlay';
 import DayNightCycle from './DayNightCycle';
 import PersonaInsights from './PersonaInsights';
+import ProgressSummary from './ProgressSummary';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -517,6 +518,7 @@ export default function GameScreen() {
           <WeatherWidget />
           <QuickActions />
           <ContextualHints />
+          <ProgressSummary />
         </div>
       </div>
 
