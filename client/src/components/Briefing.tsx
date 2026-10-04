@@ -159,6 +159,76 @@ export default function Briefing() {
           </div>
         </div>
 
+        {/* Social Context */}
+        {persona.socialContext && (
+          <div style={{
+            padding: '20px', borderRadius: '12px',
+            background: 'rgba(168,85,247,0.04)', border: '1px solid rgba(168,85,247,0.2)'
+          }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-purple)', fontSize: '13px', marginBottom: '10px' }}>
+              🎭 Social Context
+            </div>
+            <div style={{
+              display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px',
+              marginBottom: '12px'
+            }}>
+              <div style={{
+                padding: '8px 12px', borderRadius: '8px',
+                background: 'rgba(168,85,247,0.06)'
+              }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>Class</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {persona.socialContext.class}
+                </div>
+              </div>
+              <div style={{
+                padding: '8px 12px', borderRadius: '8px',
+                background: 'rgba(168,85,247,0.06)'
+              }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '2px' }}>Community</div>
+                <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {persona.socialContext.communityIdentity}
+                </div>
+              </div>
+            </div>
+            {persona.socialContext.insightLines && persona.socialContext.insightLines.length > 0 && (
+              <div style={{
+                padding: '10px 12px', borderRadius: '8px',
+                background: 'rgba(0,0,0,0.15)', fontSize: '12px',
+                color: 'var(--text-secondary)', lineHeight: 1.6,
+                fontStyle: 'italic'
+              }}>
+                "{persona.socialContext.insightLines[0]}"
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Trait Interactions */}
+        {persona.traitInteractions && persona.traitInteractions.length > 0 && (
+          <div style={{
+            padding: '16px', borderRadius: '10px',
+            background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.2)'
+          }}>
+            <div style={{ fontWeight: 600, color: 'var(--accent-blue)', fontSize: '13px', marginBottom: '10px' }}>
+              ⚡ Trait Dynamics
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {persona.traitInteractions.slice(0, 3).map((t, i) => (
+                <div key={i} style={{
+                  fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5,
+                  padding: '6px 10px', borderRadius: '6px',
+                  background: 'rgba(59,130,246,0.04)',
+                  display: 'flex', alignItems: 'flex-start', gap: '6px'
+                }}>
+                  <span style={{ color: 'var(--accent-blue)', flexShrink: 0 }}>•</span>
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Quick Tips */}
         <div style={{
           padding: '16px', borderRadius: '10px',
@@ -168,7 +238,7 @@ export default function Briefing() {
             Quick Tips
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-            <div>Press <b>1-6</b> to switch tabs</div>
+            <div>Press <b>1-7</b> to switch tabs</div>
             <div>Keep hunger and hydration low</div>
             <div>Click map locations to travel</div>
             <div>Help others to build trust</div>

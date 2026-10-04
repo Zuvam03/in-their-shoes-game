@@ -28,6 +28,8 @@ import QuickActions from './QuickActions';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import ConnectionStatus from './ConnectionStatus';
 import AmbientOverlay from './AmbientOverlay';
+import DayNightCycle from './DayNightCycle';
+import PersonaInsights from './PersonaInsights';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -165,6 +167,8 @@ export default function GameScreen() {
             ⏱ {timeMin}:{timeSec.toString().padStart(2, '0')}
           </div>
 
+          <DayNightCycle />
+
           <div style={{ flex: 1 }} />
 
           <MiniStatBar label="HP" value={myPlayer.state.health} color="var(--accent-red)" />
@@ -270,6 +274,7 @@ export default function GameScreen() {
         <FloatingNumbers />
         <ActionResultToast />
         <AmbientOverlay />
+        <PersonaInsights />
         <DilemmaModal />
         <InteractionModal />
         <AchievementToast />
@@ -309,6 +314,8 @@ export default function GameScreen() {
             </span>
           )}
         </div>
+
+        <DayNightCycle />
 
         {room.cityEvents.length > 0 && (
           <div style={{
@@ -516,6 +523,7 @@ export default function GameScreen() {
       <FloatingNumbers />
       <ActionResultToast />
       <AmbientOverlay />
+      <PersonaInsights />
       <DilemmaModal />
       <InteractionModal />
       <AchievementToast />
