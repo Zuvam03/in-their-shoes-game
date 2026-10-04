@@ -19,6 +19,8 @@ import TimelineMilestones from './TimelineMilestones';
 import MoralCompass from './MoralCompass';
 import EndgamePreview from './EndgamePreview';
 import DayRecap from './DayRecap';
+import PerspectiveShift from './PerspectiveShift';
+import PrivilegeMeter from './PrivilegeMeter';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -310,6 +312,12 @@ export default function CharacterPanel() {
 
       {/* Day Recap */}
       <DayRecap />
+
+      {/* Perspective Shift */}
+      <PerspectiveShift />
+
+      {/* Privilege Meter */}
+      <PrivilegeMeter />
 
       {/* Endgame Preview */}
       <EndgamePreview />
