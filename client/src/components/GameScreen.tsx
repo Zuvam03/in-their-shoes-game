@@ -42,6 +42,7 @@ import DangerZones from './DangerZones';
 import NotificationCenter from './NotificationCenter';
 import ActionCooldowns from './ActionCooldowns';
 import EventCountdown from './EventCountdown';
+import ReflectionPrompt from './ReflectionPrompt';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -294,6 +295,7 @@ export default function GameScreen() {
         <InteractionModal />
         <AchievementToast />
         <TutorialOverlay />
+        <ReflectionPrompt />
         <NotificationCenter />
         <ConnectionStatus />
         {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
@@ -553,6 +555,7 @@ export default function GameScreen() {
       <InteractionModal />
       <AchievementToast />
       <TutorialOverlay />
+      <ReflectionPrompt />
       <NotificationCenter />
       <KeyboardShortcuts />
       <ConnectionStatus />

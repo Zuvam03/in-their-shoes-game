@@ -10,6 +10,8 @@ import LocationMemory from './LocationMemory';
 import MoodRing from './MoodRing';
 import ResourceForecast from './ResourceForecast';
 import StrategyAdvisor from './StrategyAdvisor';
+import EmpathyScore from './EmpathyScore';
+import HelpBeacon from './HelpBeacon';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -265,6 +267,12 @@ export default function CharacterPanel() {
 
       {/* Persona Strategy */}
       <StrategyAdvisor />
+
+      {/* Help Beacon */}
+      <HelpBeacon />
+
+      {/* Empathy Score */}
+      <EmpathyScore />
 
       {/* Conscience Meter */}
       <ConscienceMeter />
