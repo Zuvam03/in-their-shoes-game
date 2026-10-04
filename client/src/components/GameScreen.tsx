@@ -35,6 +35,7 @@ import AchievementGallery from './AchievementGallery';
 import DaySummary from './DaySummary';
 import NarrativeJournal from './NarrativeJournal';
 import TradePanel from './TradePanel';
+import MoodRing from './MoodRing';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -324,6 +325,7 @@ export default function GameScreen() {
         </div>
 
         <DayNightCycle />
+        <MoodRing />
 
         {room.cityEvents.length > 0 && (
           <div style={{

@@ -5,6 +5,9 @@ import ConscienceMeter from './ConscienceMeter';
 import ExplorationTracker from './ExplorationTracker';
 import RelationshipTracker from './RelationshipTracker';
 import SocialDynamics from './SocialDynamics';
+import SurvivalTips from './SurvivalTips';
+import LocationMemory from './LocationMemory';
+import MoodRing from './MoodRing';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -78,6 +81,9 @@ export default function CharacterPanel() {
           </div>
         )}
       </div>
+
+      {/* Mood Ring */}
+      <MoodRing />
 
       {/* Vital Stats with Trends */}
       <div style={{
@@ -246,6 +252,9 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Survival Tips */}
+      <SurvivalTips />
+
       {/* Trait Effects */}
       <SocialDynamics />
 
@@ -254,6 +263,9 @@ export default function CharacterPanel() {
 
       {/* Exploration */}
       <ExplorationTracker />
+
+      {/* Location Memory */}
+      <LocationMemory />
 
       {/* Relationships */}
       <RelationshipTracker />

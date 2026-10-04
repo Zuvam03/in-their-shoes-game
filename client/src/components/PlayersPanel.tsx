@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 import { getLocationById, getConnectedLocations } from '../game/mapData';
 import ReputationBadge from './ReputationBadge';
+import PlayerComparison from './PlayerComparison';
 
 type Proximity = 'same' | 'nearby' | 'far';
 
@@ -23,6 +24,7 @@ export default function PlayersPanel() {
   const [transferTarget, setTransferTarget] = useState<string | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
+  const [comparePlayer, setComparePlayer] = useState<string | null>(null);
 
   if (!room) return null;
 
@@ -291,6 +293,17 @@ export default function PlayersPanel() {
               >
                 💰 Send
               </button>
+              <button
+                onClick={() => setComparePlayer(player.id)}
+                style={{
+                  padding: '6px 8px', borderRadius: '6px',
+                  background: 'rgba(139,146,168,0.1)',
+                  border: '1px solid rgba(139,146,168,0.2)',
+                  color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600
+                }}
+              >
+                📊
+              </button>
             </div>
 
             {/* Proximity bonus hint */}
@@ -339,6 +352,10 @@ export default function PlayersPanel() {
           </div>
         );
       })}
+
+      {comparePlayer && (
+        <PlayerComparison playerId={comparePlayer} onClose={() => setComparePlayer(null)} />
+      )}
     </div>
   );
 }
