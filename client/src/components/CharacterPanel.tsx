@@ -13,6 +13,9 @@ import StrategyAdvisor from './StrategyAdvisor';
 import EmpathyScore from './EmpathyScore';
 import HelpBeacon from './HelpBeacon';
 import KarmaWheel from './KarmaWheel';
+import DecisionHistory from './DecisionHistory';
+import WellbeingRadar from './WellbeingRadar';
+import TimelineMilestones from './TimelineMilestones';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -257,6 +260,9 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Wellbeing Radar */}
+      <WellbeingRadar />
+
       {/* Resource Forecast */}
       <ResourceForecast />
 
@@ -277,6 +283,12 @@ export default function CharacterPanel() {
 
       {/* Karma */}
       <KarmaWheel />
+
+      {/* Decision History */}
+      <DecisionHistory />
+
+      {/* Milestones */}
+      <TimelineMilestones />
 
       {/* Conscience Meter */}
       <ConscienceMeter />

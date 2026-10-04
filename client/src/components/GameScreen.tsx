@@ -45,6 +45,9 @@ import EventCountdown from './EventCountdown';
 import ReflectionPrompt from './ReflectionPrompt';
 import CityEconomy from './CityEconomy';
 import CollaborativeGoals from './CollaborativeGoals';
+import SocialNetwork from './SocialNetwork';
+import DailyChallenge from './DailyChallenge';
+import InequalityIndex from './InequalityIndex';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -234,7 +237,7 @@ export default function GameScreen() {
           )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
-          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><CommunityBoard /><CollaborativeGoals /><CityEconomy /><PlayersPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><DailyChallenge /><CommunityBoard /><CollaborativeGoals /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
           {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><NarrativeJournal /></div>}
@@ -505,7 +508,7 @@ export default function GameScreen() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <><CommunityBoard /><CollaborativeGoals /><CityEconomy /><PlayersPanel /></>}
+            {activeTab === 'players' && <><DailyChallenge /><CommunityBoard /><CollaborativeGoals /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'journey' && <NarrativeJournal />}
