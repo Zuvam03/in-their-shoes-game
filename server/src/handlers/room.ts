@@ -515,7 +515,8 @@ function startGameLoop(io: Server, room: Room): void {
     const eventChance = timeProgress > 0.75 ? 0.015 : timeProgress > 0.5 ? 0.012 : 0.008;
     const maxActive = timeProgress > 0.75 ? 4 : 3;
     if (rng.chance(eventChance) && room.cityEvents.filter(e => e.startTick + e.duration > room.tick).length < maxActive) {
-      const event = generateCityEvent(room.tick, rng);
+      const activePlayers = Object.values(room.players).filter(p => p.isConnected);
+      const event = generateCityEvent(room.tick, rng, activePlayers);
       room.cityEvents.push(event);
       io.to(room.id).emit('cityEvent', event);
       emitNotification(io, room.id, null, 'event', `${event.title}: ${event.description}`, room.tick);

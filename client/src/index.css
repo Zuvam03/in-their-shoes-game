@@ -132,3 +132,12 @@ select {
   50% { transform: translateY(-4px) scale(1.05); }
   100% { transform: translateY(0) scale(1); opacity: 1; }
 }
+
+@keyframes urgentGlow {
+  0%, 100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 16px rgba(239, 68, 68, 0.6); }
+}
+
+@keyframes barFill {
+  from { width: 0%; }
+}

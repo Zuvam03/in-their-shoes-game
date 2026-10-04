@@ -923,8 +923,25 @@ const CITY_EVENT_TEMPLATES: Array<Omit<CityEvent, 'id' | 'startTick'>> = [
   }
 ];
 
-export function generateCityEvent(tick: number, rng: SeededRng): CityEvent {
-  const template = CITY_EVENT_TEMPLATES[rng.between(0, CITY_EVENT_TEMPLATES.length - 1)];
+export function generateCityEvent(tick: number, rng: SeededRng, players?: Player[]): CityEvent {
+  let pool = [...CITY_EVENT_TEMPLATES];
+
+  // Contextual weighting: prefer relevant events based on player states
+  if (players && players.length > 0) {
+    const avgHunger = players.reduce((s, p) => s + p.state.hunger, 0) / players.length;
+    const avgHydration = players.reduce((s, p) => s + p.state.hydration, 0) / players.length;
+
+    if (avgHunger > 60) {
+      const foodEvents = pool.filter(e => e.type === 'market' || e.type === 'opportunity');
+      pool = [...pool, ...foodEvents];
+    }
+    if (avgHydration > 60) {
+      const waterEvents = pool.filter(e => e.type === 'resource_shortage' || e.type === 'heat');
+      pool = [...pool, ...waterEvents];
+    }
+  }
+
+  const template = pool[rng.between(0, pool.length - 1)];
   return {
     ...template,
     id: uuidv4(),

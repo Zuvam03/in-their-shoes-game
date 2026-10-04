@@ -493,17 +493,49 @@ export default function ResultsScreen() {
           </div>
         )}
 
-        <button
-          onClick={playAgain}
-          style={{
-            padding: '14px', borderRadius: '12px',
-            background: 'linear-gradient(135deg, #f5c842, #f97316)',
-            color: '#000', fontWeight: 700, fontSize: '15px',
-            marginBottom: '24px'
-          }}
-        >
-          Play Again
-        </button>
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+          <button
+            onClick={() => {
+              if (!myResult) return;
+              const text = [
+                `🏙️ Kolkata City Survival — Results`,
+                ``,
+                `I played as ${myResult.personaName}`,
+                `Mission: ${myResult.missionTitle} (${myResult.missionStatus})`,
+                `Score: ${myResult.score}/100 | Rank: #${myResult.rank}/${playerResults.length}`,
+                `Social Trust: ${myResult.socialTrust} | Community: ${myResult.communityImpact >= 0 ? '+' : ''}${myResult.communityImpact}`,
+                `Helped ${myResult.cooperationCount} player(s) | Faced ${myResult.dilemmasResolved.length} dilemma(s)`,
+                ``,
+                myResult.dilemmasResolved.length > 0
+                  ? `Dilemma choices: ${myResult.dilemmasResolved.map(d => `${d.dilemmaTitle} → ${d.choiceLabel}`).join(', ')}`
+                  : '',
+                ``,
+                `"${myResult.narrative}"`,
+                ``,
+                `🎮 In Their Shoes — Walk a mile in someone else's life`
+              ].filter(Boolean).join('\n');
+              navigator.clipboard?.writeText(text);
+            }}
+            style={{
+              flex: 1, padding: '14px', borderRadius: '12px',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
+              color: 'var(--text-secondary)', fontWeight: 600, fontSize: '14px'
+            }}
+          >
+            📋 Copy Results
+          </button>
+          <button
+            onClick={playAgain}
+            style={{
+              flex: 2, padding: '14px', borderRadius: '12px',
+              background: 'linear-gradient(135deg, #f5c842, #f97316)',
+              color: '#000', fontWeight: 700, fontSize: '15px'
+            }}
+          >
+            Play Again
+          </button>
+        </div>
       </div>
     </div>
   );
