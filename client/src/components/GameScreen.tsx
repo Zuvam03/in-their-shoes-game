@@ -17,6 +17,8 @@ import LocationDetail from './LocationDetail';
 import JourneyTimeline from './JourneyTimeline';
 import QuickEmoteBar from './QuickEmoteBar';
 import StatusEffectsBar from './StatusEffectsBar';
+import FloatingNumbers from './FloatingNumbers';
+import ActionResultToast from './ActionResultToast';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
@@ -246,6 +248,8 @@ export default function GameScreen() {
           ))}
         </div>
 
+        <FloatingNumbers />
+        <ActionResultToast />
         <DilemmaModal />
         <InteractionModal />
         <AchievementToast />
@@ -480,6 +484,8 @@ export default function GameScreen() {
         </div>
       </div>
 
+      <FloatingNumbers />
+      <ActionResultToast />
       <DilemmaModal />
       <InteractionModal />
       <AchievementToast />
