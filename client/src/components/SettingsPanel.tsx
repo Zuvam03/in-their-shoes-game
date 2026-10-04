@@ -145,6 +145,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
               ['5', 'Chat'],
               ['6', 'Event Feed'],
               ['7', 'Journey'],
+              ['8', 'Achievements'],
               ['?', 'Shortcuts overlay']
             ].map(([key, label]) => (
               <div key={key} style={{

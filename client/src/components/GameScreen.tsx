@@ -31,9 +31,10 @@ import AmbientOverlay from './AmbientOverlay';
 import DayNightCycle from './DayNightCycle';
 import PersonaInsights from './PersonaInsights';
 import ProgressSummary from './ProgressSummary';
+import AchievementGallery from './AchievementGallery';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
-type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey';
+type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
 
 export default function GameScreen() {
   const { room, myPlayer, unreadChatCount, unreadNotifCount, soundEnabled, toggleSound, notifications, chatMessages, lastActionResult, pendingDilemma } = useGameStore();
@@ -61,7 +62,7 @@ export default function GameScreen() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'SELECT') return;
-      const tabKeys: Record<string, Tab> = { '1': 'map', '2': 'character', '3': 'mission', '4': 'players', '5': 'chat', '6': 'feed', '7': 'journey' };
+      const tabKeys: Record<string, Tab> = { '1': 'map', '2': 'character', '3': 'mission', '4': 'players', '5': 'chat', '6': 'feed', '7': 'journey', '8': 'achievements' };
       if (tabKeys[e.key]) {
         e.preventDefault();
         setActiveTab(tabKeys[e.key]);
@@ -140,7 +141,8 @@ export default function GameScreen() {
     { key: 'players', icon: '👥', label: 'Players' },
     { key: 'chat', icon: '💬', label: 'Chat', badge: unreadChatCount },
     { key: 'feed', icon: '📋', label: 'Events', badge: unreadNotifCount },
-    { key: 'journey', icon: '📜', label: 'Journey' }
+    { key: 'journey', icon: '📜', label: 'Journey' },
+    { key: 'achievements', icon: '🏆', label: 'Awards' }
   ];
 
   if (isMobile) {
@@ -223,6 +225,7 @@ export default function GameScreen() {
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
           {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><JourneyTimeline /></div>}
+          {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementGallery /></div>}
           {activeTab === 'map' && (
             <div style={{
               position: 'absolute', bottom: '0', left: '0', right: '0',
@@ -489,6 +492,7 @@ export default function GameScreen() {
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'journey' && <JourneyTimeline />}
+            {activeTab === 'achievements' && <AchievementGallery />}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
                 <LocationDetail />

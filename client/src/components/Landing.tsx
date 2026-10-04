@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
 
+const FLOATING_ICONS = ['🏙️', '🚕', '🍛', '⚖️', '🤝', '🎭', '🌧️', '💰', '🏥', '📚'];
+
 export default function Landing() {
   const { connected, createRoom, joinRoom } = useGameStore();
   const [mode, setMode] = useState<'menu' | 'create' | 'join'>('menu');
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [duration, setDuration] = useState(600);
+  const [showHowTo, setShowHowTo] = useState(false);
 
   const handleCreate = () => {
     if (!name.trim()) return;
@@ -26,32 +29,59 @@ export default function Landing() {
       background: 'linear-gradient(135deg, #0d0f14 0%, #13161e 50%, #0d0f14 100%)',
       position: 'relative', overflow: 'hidden'
     }}>
-      {/* Background decoration */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: `radial-gradient(circle at 20% 80%, rgba(245, 200, 66, 0.04) 0%, transparent 50%),
-          radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%)`,
-        pointerEvents: 'none'
-      }} />
+      {/* Animated background */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: `radial-gradient(circle at 20% 80%, rgba(245, 200, 66, 0.04) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(59, 130, 246, 0.04) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.02) 0%, transparent 40%)`
+        }} />
+        {FLOATING_ICONS.map((icon, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${(i * 11 + 5) % 90}%`,
+            top: `${(i * 13 + 8) % 85}%`,
+            fontSize: '20px', opacity: 0.06,
+            animation: `floatIcon ${8 + (i % 4) * 2}s ease-in-out infinite`,
+            animationDelay: `${i * 0.7}s`
+          }}>
+            {icon}
+          </div>
+        ))}
+        <style>{`
+          @keyframes floatIcon {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(10deg); }
+          }
+        `}</style>
+      </div>
 
       <div style={{
         display: 'flex', flexDirection: 'column',
-        alignItems: 'center', gap: '32px',
-        maxWidth: '480px', width: '90%',
-        zIndex: 1
+        alignItems: 'center', gap: '28px',
+        maxWidth: '520px', width: '90%',
+        zIndex: 1, overflowY: 'auto', maxHeight: '100%',
+        padding: '20px 0'
       }}>
         {/* Title */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '36px', marginBottom: '8px' }}>🏙️</div>
+          <div style={{ fontSize: '42px', marginBottom: '8px' }}>🏙️</div>
           <h1 style={{
-            fontSize: '32px', fontWeight: 700,
-            background: 'linear-gradient(135deg, #f5c842, #f97316)',
+            fontSize: '34px', fontWeight: 800,
+            background: 'linear-gradient(135deg, #f5c842, #f97316, #ef4444)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             marginBottom: '8px', letterSpacing: '-0.5px'
           }}>
-            Kolkata City Survival
+            In Their Shoes
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '15px', maxWidth: '360px', textAlign: 'center' }}>
+          <div style={{
+            fontSize: '14px', fontWeight: 600, color: 'var(--accent-yellow)',
+            letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '8px'
+          }}>
+            Kolkata City Survival
+          </div>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '14px', maxWidth: '380px', textAlign: 'center', lineHeight: 1.6 }}>
             Navigate the city through someone else's eyes. Every character experiences the same world differently.
           </p>
         </div>
@@ -78,7 +108,8 @@ export default function Landing() {
                 padding: '14px 24px', borderRadius: '10px',
                 background: 'linear-gradient(135deg, #f5c842, #f97316)',
                 color: '#000', fontWeight: 700, fontSize: '15px',
-                opacity: connected ? 1 : 0.5
+                opacity: connected ? 1 : 0.5,
+                boxShadow: connected ? '0 4px 20px rgba(245,200,66,0.2)' : 'none'
               }}
             >
               Create New Room
@@ -96,6 +127,8 @@ export default function Landing() {
             >
               Join Existing Room
             </button>
+
+            {/* Feature cards */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px',
               width: '100%'
@@ -117,6 +150,56 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+
+            {/* How to play */}
+            <button
+              onClick={() => setShowHowTo(!showHowTo)}
+              style={{
+                padding: '10px', borderRadius: '8px',
+                background: 'transparent', border: '1px solid var(--border)',
+                color: 'var(--accent-blue)', fontSize: '13px', fontWeight: 600,
+                cursor: 'pointer', width: '100%'
+              }}
+            >
+              {showHowTo ? 'Hide Guide' : 'How to Play'}
+            </button>
+
+            {showHowTo && (
+              <div style={{
+                padding: '16px', borderRadius: '10px',
+                background: 'var(--bg-card)', border: '1px solid var(--border)',
+                animation: 'fadeIn 0.3s ease'
+              }}>
+                <div style={{ fontSize: '14px', fontWeight: 700, marginBottom: '12px', color: 'var(--accent-yellow)' }}>
+                  How to Play
+                </div>
+                {[
+                  { step: '1', title: 'Create or join a room', desc: 'One player creates; others join with the room code.' },
+                  { step: '2', title: 'Receive your persona', desc: 'You get a random character with unique traits, strengths, and vulnerabilities.' },
+                  { step: '3', title: 'Complete your mission', desc: 'Each persona gets a personal mission with required and optional objectives.' },
+                  { step: '4', title: 'Manage survival stats', desc: 'Balance health, hunger, energy, and money by eating, resting, and working.' },
+                  { step: '5', title: 'Face moral dilemmas', desc: 'Random social dilemmas test your values. Choices affect trust and community standing.' },
+                  { step: '6', title: 'Cooperate with others', desc: 'Help, trade, and chat with other players. Cooperation builds trust and unlocks bonuses.' },
+                ].map(s => (
+                  <div key={s.step} style={{
+                    display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'flex-start'
+                  }}>
+                    <div style={{
+                      width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
+                      background: 'rgba(245,200,66,0.15)', color: 'var(--accent-yellow)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '11px', fontWeight: 700
+                    }}>
+                      {s.step}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '2px' }}>{s.title}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>{s.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

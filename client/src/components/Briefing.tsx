@@ -238,7 +238,7 @@ export default function Briefing() {
             Quick Tips
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-            <div>Press <b>1-7</b> to switch tabs</div>
+            <div>Press <b>1-8</b> to switch tabs</div>
             <div>Keep hunger and hydration low</div>
             <div>Click map locations to travel</div>
             <div>Help others to build trust</div>
