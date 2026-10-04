@@ -8,6 +8,11 @@ const EVENT_CONFIG: Record<string, { icon: string; color: string; label: string 
   emergency: { icon: '🚨', color: '#ef4444', label: 'Emergency' },
   opportunity: { icon: '💡', color: '#a78bfa', label: 'Opportunity' },
   festival: { icon: '🎉', color: '#f5c842', label: 'Festival' },
+  transport_disruption: { icon: '🚌', color: '#f97316', label: 'Transport' },
+  resource_shortage: { icon: '💧', color: '#60a5fa', label: 'Shortage' },
+  npc_request: { icon: '🙋', color: '#22c55e', label: 'Request' },
+  cultural: { icon: '🎭', color: '#c084fc', label: 'Cultural' },
+  market: { icon: '🏪', color: '#34d399', label: 'Market' },
 };
 
 export default function WeatherWidget() {

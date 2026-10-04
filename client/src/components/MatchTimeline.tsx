@@ -101,9 +101,11 @@ export default function MatchTimeline() {
             width: `${Math.max(0.5, em.endPct - em.pct)}%`,
             background: em.type === 'weather'
               ? 'rgba(59,130,246,0.2)'
-              : em.type === 'heat'
+              : em.type === 'heat' || em.type === 'emergency'
                 ? 'rgba(239,68,68,0.2)'
-                : 'rgba(245,200,66,0.15)',
+                : em.type === 'crowd'
+                  ? 'rgba(251,191,36,0.15)'
+                  : 'rgba(168,85,247,0.15)',
             borderLeft: '1px solid rgba(255,255,255,0.1)'
           }} title={em.title} />
         ))}

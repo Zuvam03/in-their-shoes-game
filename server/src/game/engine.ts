@@ -950,6 +950,134 @@ const CITY_EVENT_TEMPLATES: Array<Omit<CityEvent, 'id' | 'startTick'>> = [
       { target: 'all', stat: 'energy', change: -5 }
     ],
     requiresChoice: false
+  },
+  {
+    type: 'opportunity',
+    title: 'Lost Tourist',
+    description: 'A confused tourist is asking for help finding their hotel. They look wealthy.',
+    affectedLocations: ['park_street', 'esplanade', 'victoria_memorial'],
+    duration: 120,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'guide_tourist',
+        text: 'Walk them there personally',
+        effects: [{ target: 'self', stat: 'energy', change: -12 }, { target: 'self', stat: 'cash', change: 50 }, { target: 'self', stat: 'mood', change: 10 }],
+        karmaEffect: 6, socialTrustEffect: 5, communityImpactEffect: 3
+      },
+      {
+        id: 'give_directions',
+        text: 'Give clear directions',
+        effects: [{ target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 3, socialTrustEffect: 2, communityImpactEffect: 1
+      },
+      {
+        id: 'ignore_tourist',
+        text: 'Walk past',
+        effects: [],
+        karmaEffect: -2, socialTrustEffect: 0, communityImpactEffect: -1
+      }
+    ]
+  },
+  {
+    type: 'npc_request',
+    title: 'Street Child Begging',
+    description: 'A young child tugs at your sleeve, asking for money to buy food.',
+    affectedLocations: ['new_market', 'howrah_station', 'sealdah_station', 'esplanade'],
+    duration: 90,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'buy_food',
+        text: 'Buy them a meal instead of giving money (₹25)',
+        effects: [{ target: 'self', stat: 'cash', change: -25 }, { target: 'self', stat: 'mood', change: 15 }],
+        karmaEffect: 10, socialTrustEffect: 5, communityImpactEffect: 7
+      },
+      {
+        id: 'give_money',
+        text: 'Give ₹10',
+        effects: [{ target: 'self', stat: 'cash', change: -10 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 3, socialTrustEffect: 2, communityImpactEffect: 2
+      },
+      {
+        id: 'apologize',
+        text: 'Apologize and move on',
+        effects: [{ target: 'self', stat: 'mood', change: -5 }],
+        karmaEffect: -1, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'cultural',
+    title: 'Tea Stall Gathering',
+    description: 'A lively debate is happening at a street tea stall. People are discussing local politics.',
+    affectedLocations: ['college_street', 'shyambazar', 'gariahat'],
+    duration: 120,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'join_debate',
+        text: 'Join the conversation over a cup of chai (₹5)',
+        effects: [{ target: 'self', stat: 'cash', change: -5 }, { target: 'self', stat: 'stress', change: -12 }, { target: 'self', stat: 'mood', change: 8 }],
+        karmaEffect: 2, socialTrustEffect: 3, communityImpactEffect: 2
+      },
+      {
+        id: 'listen',
+        text: 'Listen quietly from the side',
+        effects: [{ target: 'self', stat: 'stress', change: -5 }, { target: 'self', stat: 'mood', change: 3 }],
+        karmaEffect: 0, socialTrustEffect: 1, communityImpactEffect: 0
+      },
+      {
+        id: 'walk_on',
+        text: 'Keep walking — no time for this',
+        effects: [],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'emergency',
+    title: 'Power Outage',
+    description: 'A transformer has blown. Several blocks are without electricity.',
+    affectedLocations: ['salt_lake', 'new_market', 'college_street'],
+    duration: 200,
+    effects: [
+      { target: 'all', stat: 'stress', change: 8 },
+      { target: 'all', stat: 'mood', change: -5 }
+    ],
+    requiresChoice: false
+  },
+  {
+    type: 'market',
+    title: 'Medicine Discount',
+    description: 'A pharmacy is offering a health camp with free basic medicines and checkups.',
+    affectedLocations: ['medical_college', 'gariahat'],
+    duration: 180,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'get_checkup',
+        text: 'Get a free health checkup',
+        effects: [{ target: 'self', stat: 'health', change: 15 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      },
+      {
+        id: 'volunteer',
+        text: 'Help organize the queue',
+        effects: [{ target: 'self', stat: 'energy', change: -10 }, { target: 'self', stat: 'health', change: 8 }, { target: 'self', stat: 'mood', change: 12 }],
+        karmaEffect: 7, socialTrustEffect: 5, communityImpactEffect: 6
+      },
+      {
+        id: 'skip_camp',
+        text: 'Pass — you are doing fine',
+        effects: [],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
   }
 ];
 
