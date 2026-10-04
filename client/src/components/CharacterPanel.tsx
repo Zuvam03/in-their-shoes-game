@@ -21,6 +21,8 @@ import EndgamePreview from './EndgamePreview';
 import DayRecap from './DayRecap';
 import PerspectiveShift from './PerspectiveShift';
 import PrivilegeMeter from './PrivilegeMeter';
+import ChoiceConsequences from './ChoiceConsequences';
+import ResilienceTracker from './ResilienceTracker';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -291,6 +293,12 @@ export default function CharacterPanel() {
 
       {/* Moral Compass */}
       <MoralCompass />
+
+      {/* Choice Consequences */}
+      <ChoiceConsequences />
+
+      {/* Resilience */}
+      <ResilienceTracker />
 
       {/* Decision History */}
       <DecisionHistory />
