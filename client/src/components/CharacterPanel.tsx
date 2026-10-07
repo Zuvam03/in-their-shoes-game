@@ -29,6 +29,9 @@ import ImpactRipple from './ImpactRipple';
 import EmpathyMap from './EmpathyMap';
 import GratitudeLog from './GratitudeLog';
 import PlayerArchetype from './PlayerArchetype';
+import SkillTree from './SkillTree';
+import SocialReputation from './SocialReputation';
+import CityWeather from './CityWeather';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -276,6 +279,15 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Social Reputation */}
+      <SocialReputation />
+
+      {/* Skill Tree */}
+      <SkillTree />
+
+      {/* City Weather */}
+      <CityWeather />
+
       {/* Wellbeing Radar */}
       <WellbeingRadar />
 
