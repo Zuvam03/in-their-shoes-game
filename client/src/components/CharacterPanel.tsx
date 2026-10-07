@@ -35,6 +35,9 @@ import CityWeather from './CityWeather';
 import SurvivalChecklist from './SurvivalChecklist';
 import DistrictMap from './DistrictMap';
 import CommunityLeaderboard from './CommunityLeaderboard';
+import EmergencyAlert from './EmergencyAlert';
+import PersonaQuote from './PersonaQuote';
+import ResourceMap from './ResourceMap';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -109,8 +112,14 @@ export default function CharacterPanel() {
         )}
       </div>
 
+      {/* Emergency Alerts */}
+      <EmergencyAlert />
+
       {/* Player Archetype */}
       <PlayerArchetype />
+
+      {/* Inner Voice */}
+      <PersonaQuote />
 
       {/* Mood Ring */}
       <MoodRing />
@@ -305,6 +314,9 @@ export default function CharacterPanel() {
 
       {/* Resource Forecast */}
       <ResourceForecast />
+
+      {/* Resource Map */}
+      <ResourceMap />
 
       {/* Survival Tips */}
       <SurvivalTips />
