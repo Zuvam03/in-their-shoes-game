@@ -38,6 +38,9 @@ import CommunityLeaderboard from './CommunityLeaderboard';
 import EmergencyAlert from './EmergencyAlert';
 import PersonaQuote from './PersonaQuote';
 import ResourceMap from './ResourceMap';
+import TimeAwareness from './TimeAwareness';
+import PopulationDensity from './PopulationDensity';
+import UrbanLegends from './UrbanLegends';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -297,6 +300,9 @@ export default function CharacterPanel() {
       {/* Skill Tree */}
       <SkillTree />
 
+      {/* Time Awareness */}
+      <TimeAwareness />
+
       {/* City Weather */}
       <CityWeather />
 
@@ -386,6 +392,12 @@ export default function CharacterPanel() {
 
       {/* Gratitude */}
       <GratitudeLog />
+
+      {/* Population Density */}
+      <PopulationDensity />
+
+      {/* Urban Legends */}
+      <UrbanLegends />
 
       {/* Endgame Preview */}
       <EndgamePreview />
