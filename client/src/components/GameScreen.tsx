@@ -77,6 +77,9 @@ import PlayerArchetype from './PlayerArchetype';
 import PlayerProximity from './PlayerProximity';
 import CityEvents from './CityEvents';
 import AchievementProgress from './AchievementProgress';
+import LifeLessons from './LifeLessons';
+import NeighborhoodWatch from './NeighborhoodWatch';
+import FinalReflection from './FinalReflection';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -270,7 +273,7 @@ export default function GameScreen() {
           {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayerProximity /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
-          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><CollectiveMemory /><SystemicInsights /><NarrativeJournal /></div>}
+          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></div>}
           {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementProgress /><AchievementGallery /></div>}
           {activeTab === 'map' && (
             <div style={{
@@ -543,7 +546,7 @@ export default function GameScreen() {
             {activeTab === 'players' && <><PlayerProximity /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
-            {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><CollectiveMemory /><SystemicInsights /><NarrativeJournal /></>}
+            {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></>}
             {activeTab === 'achievements' && <><AchievementProgress /><AchievementGallery /></>}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
@@ -555,6 +558,7 @@ export default function GameScreen() {
                 <QuickEmoteBar />
                 <ActionPanel />
                 <RiskAssessment />
+                <NeighborhoodWatch />
                 <CulturalContext />
                 <TradePanel />
                 <StreetWisdom />
