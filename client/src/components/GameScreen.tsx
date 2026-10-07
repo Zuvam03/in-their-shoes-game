@@ -74,6 +74,9 @@ import CollectiveMemory from './CollectiveMemory';
 import CityNewsTicker from './CityNewsTicker';
 import OpportunityScanner from './OpportunityScanner';
 import PlayerArchetype from './PlayerArchetype';
+import PlayerProximity from './PlayerProximity';
+import CityEvents from './CityEvents';
+import AchievementProgress from './AchievementProgress';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -264,11 +267,11 @@ export default function GameScreen() {
           )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
-          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayerProximity /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
           {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><CollectiveMemory /><SystemicInsights /><NarrativeJournal /></div>}
-          {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementGallery /></div>}
+          {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementProgress /><AchievementGallery /></div>}
           {activeTab === 'map' && (
             <div style={{
               position: 'absolute', bottom: '0', left: '0', right: '0',
@@ -537,11 +540,11 @@ export default function GameScreen() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><SocialNetwork /><PlayersPanel /></>}
+            {activeTab === 'players' && <><PlayerProximity /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><CollectiveMemory /><SystemicInsights /><NarrativeJournal /></>}
-            {activeTab === 'achievements' && <AchievementGallery />}
+            {activeTab === 'achievements' && <><AchievementProgress /><AchievementGallery /></>}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
                 <QuickStats />
