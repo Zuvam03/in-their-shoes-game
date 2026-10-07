@@ -71,6 +71,9 @@ import EmpathyMap from './EmpathyMap';
 import CulturalContext from './CulturalContext';
 import GratitudeLog from './GratitudeLog';
 import CollectiveMemory from './CollectiveMemory';
+import CityNewsTicker from './CityNewsTicker';
+import OpportunityScanner from './OpportunityScanner';
+import PlayerArchetype from './PlayerArchetype';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -242,6 +245,7 @@ export default function GameScreen() {
 
         {/* Match timeline */}
         <MatchTimeline />
+        <CityNewsTicker />
 
         {/* Status effects */}
         <div style={{ padding: '0 8px' }}>
@@ -271,6 +275,7 @@ export default function GameScreen() {
               background: 'linear-gradient(transparent, var(--bg-secondary))',
               padding: '8px', maxHeight: '45%', overflowY: 'auto'
             }}>
+              <OpportunityScanner />
               <QuickEmoteBar />
               <ActionPanel />
             </div>
@@ -464,6 +469,7 @@ export default function GameScreen() {
 
       {/* Match timeline */}
       <MatchTimeline />
+      <CityNewsTicker />
 
       {/* Main content */}
       <div style={{
@@ -539,6 +545,7 @@ export default function GameScreen() {
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
                 <QuickStats />
+                <OpportunityScanner />
                 <EventCountdown />
                 <LocationDetail />
                 <ActionCooldowns />

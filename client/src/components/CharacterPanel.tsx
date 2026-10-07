@@ -28,6 +28,7 @@ import LifeBalance from './LifeBalance';
 import ImpactRipple from './ImpactRipple';
 import EmpathyMap from './EmpathyMap';
 import GratitudeLog from './GratitudeLog';
+import PlayerArchetype from './PlayerArchetype';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -101,6 +102,9 @@ export default function CharacterPanel() {
           </div>
         )}
       </div>
+
+      {/* Player Archetype */}
+      <PlayerArchetype />
 
       {/* Mood Ring */}
       <MoodRing />
