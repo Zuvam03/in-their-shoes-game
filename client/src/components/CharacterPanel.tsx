@@ -32,6 +32,9 @@ import PlayerArchetype from './PlayerArchetype';
 import SkillTree from './SkillTree';
 import SocialReputation from './SocialReputation';
 import CityWeather from './CityWeather';
+import SurvivalChecklist from './SurvivalChecklist';
+import DistrictMap from './DistrictMap';
+import CommunityLeaderboard from './CommunityLeaderboard';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -290,6 +293,15 @@ export default function CharacterPanel() {
 
       {/* Wellbeing Radar */}
       <WellbeingRadar />
+
+      {/* Survival Checklist */}
+      <SurvivalChecklist />
+
+      {/* District Map */}
+      <DistrictMap />
+
+      {/* Community Leaderboard */}
+      <CommunityLeaderboard />
 
       {/* Resource Forecast */}
       <ResourceForecast />
