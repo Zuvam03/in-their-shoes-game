@@ -41,6 +41,8 @@ import ResourceMap from './ResourceMap';
 import TimeAwareness from './TimeAwareness';
 import PopulationDensity from './PopulationDensity';
 import UrbanLegends from './UrbanLegends';
+import SoundscapeIndicator from './SoundscapeIndicator';
+import WealthDistribution from './WealthDistribution';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -395,6 +397,12 @@ export default function CharacterPanel() {
 
       {/* Population Density */}
       <PopulationDensity />
+
+      {/* Soundscape */}
+      <SoundscapeIndicator />
+
+      {/* Wealth Distribution */}
+      <WealthDistribution />
 
       {/* Urban Legends */}
       <UrbanLegends />

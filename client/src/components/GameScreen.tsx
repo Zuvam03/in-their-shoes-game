@@ -80,6 +80,7 @@ import AchievementProgress from './AchievementProgress';
 import LifeLessons from './LifeLessons';
 import NeighborhoodWatch from './NeighborhoodWatch';
 import FinalReflection from './FinalReflection';
+import CommunityHealth from './CommunityHealth';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -270,7 +271,7 @@ export default function GameScreen() {
           )}
           {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
-          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayerProximity /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayerProximity /><CommunityHealth /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></div>}
           {activeTab === 'chat' && <ChatPanel />}
           {activeTab === 'feed' && <EventFeed />}
           {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></div>}
@@ -543,7 +544,7 @@ export default function GameScreen() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <><PlayerProximity /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></>}
+            {activeTab === 'players' && <><PlayerProximity /><CommunityHealth /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></>}
             {activeTab === 'chat' && <ChatPanel />}
             {activeTab === 'feed' && <EventFeed />}
             {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></>}
