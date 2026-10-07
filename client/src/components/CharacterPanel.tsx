@@ -43,6 +43,9 @@ import PopulationDensity from './PopulationDensity';
 import UrbanLegends from './UrbanLegends';
 import SoundscapeIndicator from './SoundscapeIndicator';
 import WealthDistribution from './WealthDistribution';
+import ActionHistory from './ActionHistory';
+import NeedsPriority from './NeedsPriority';
+import CityFacts from './CityFacts';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -311,6 +314,9 @@ export default function CharacterPanel() {
       {/* Wellbeing Radar */}
       <WellbeingRadar />
 
+      {/* Needs Priority */}
+      <NeedsPriority />
+
       {/* Survival Checklist */}
       <SurvivalChecklist />
 
@@ -409,6 +415,12 @@ export default function CharacterPanel() {
 
       {/* Endgame Preview */}
       <EndgamePreview />
+
+      {/* Action History */}
+      <ActionHistory />
+
+      {/* City Facts */}
+      <CityFacts />
 
       {/* Game Stats */}
       <GameStats />
