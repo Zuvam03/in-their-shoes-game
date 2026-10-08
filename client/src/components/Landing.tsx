@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import GameHistory from './GameHistory';
 
 const FLOATING_ICONS = ['🏙️', '🚕', '🍛', '⚖️', '🤝', '🎭', '🌧️', '💰', '🏥', '📚'];
 
@@ -150,6 +151,9 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+
+            {/* Game history */}
+            <GameHistory />
 
             {/* How to play */}
             <button

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import CityMap from './CityMap';
 import CharacterPanel from './CharacterPanel';
@@ -8,7 +8,6 @@ import PlayersPanel from './PlayersPanel';
 import ChatPanel from './ChatPanel';
 import EventFeed from './EventFeed';
 import DilemmaModal from './DilemmaModal';
-import SettingsPanel from './SettingsPanel';
 import AchievementToast from './AchievementToast';
 import TutorialOverlay from './TutorialOverlay';
 import InteractionModal from './InteractionModal';
@@ -27,6 +26,8 @@ import WeatherWidget from './WeatherWidget';
 import QuickActions from './QuickActions';
 import KeyboardShortcuts from './KeyboardShortcuts';
 import ConnectionStatus from './ConnectionStatus';
+import ConnectionQuality from './ConnectionQuality';
+import PauseMenu from './PauseMenu';
 import AmbientOverlay from './AmbientOverlay';
 import DayNightCycle from './DayNightCycle';
 import PersonaInsights from './PersonaInsights';
@@ -81,7 +82,8 @@ import LifeLessons from './LifeLessons';
 import NeighborhoodWatch from './NeighborhoodWatch';
 import FinalReflection from './FinalReflection';
 import CommunityHealth from './CommunityHealth';
-import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd } from '../game/sounds';
+import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd, playAmbient, stopAmbient, playMove, playHelp, playNotification, playAchievement } from '../game/sounds';
+import { getLocationById } from '../game/mapData';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
 
@@ -159,6 +161,18 @@ export default function GameScreen() {
   useEffect(() => {
     if (soundEnabled && pendingDilemma) playDilemma();
   }, [pendingDilemma]);
+
+  const prevLocationRef = useRef(myPlayer?.state.location);
+  useEffect(() => {
+    if (!soundEnabled || !myPlayer) return;
+    const loc = getLocationById(myPlayer.state.location);
+    if (loc) playAmbient(loc.type);
+    if (prevLocationRef.current && prevLocationRef.current !== myPlayer.state.location) {
+      playMove();
+    }
+    prevLocationRef.current = myPlayer.state.location;
+    return () => stopAmbient();
+  }, [myPlayer?.state.location, soundEnabled]);
 
   if (!myPlayer || !room) return null;
 
@@ -241,6 +255,8 @@ export default function GameScreen() {
           }}>
             {liveScore}pts
           </div>
+
+          <ConnectionQuality />
 
           <button onClick={() => setShowSettings(true)} style={{
             background: 'none', border: 'none', fontSize: '14px',
@@ -338,7 +354,7 @@ export default function GameScreen() {
         <ReflectionPrompt />
         <NotificationCenter />
         <ConnectionStatus />
-        {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+        {showSettings && <PauseMenu onClose={() => setShowSettings(false)} />}
       </div>
     );
   }
@@ -464,6 +480,8 @@ export default function GameScreen() {
         }}>
           {soundEnabled ? '🔊' : '🔇'}
         </button>
+
+        <ConnectionQuality />
 
         <button onClick={() => setShowSettings(true)} style={{
           background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -606,7 +624,7 @@ export default function GameScreen() {
       <NotificationCenter />
       <KeyboardShortcuts />
       <ConnectionStatus />
-      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
+      {showSettings && <PauseMenu onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

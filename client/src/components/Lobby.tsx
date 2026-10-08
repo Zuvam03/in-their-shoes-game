@@ -1,4 +1,6 @@
 import { useGameStore } from '../store/gameStore';
+import GameHistory from './GameHistory';
+import LobbyTips from './LobbyTips';
 
 const SPEED_OPTIONS = [
   { value: 0.5, label: '0.5x', desc: 'Relaxed' },
@@ -207,37 +209,8 @@ export default function Lobby() {
           )}
         </div>
 
-        {/* What to Expect */}
-        <div style={{
-          borderRadius: '10px',
-          background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.15)',
-          padding: '14px 16px'
-        }}>
-          <div style={{ fontWeight: 600, color: 'var(--accent-blue)', fontSize: '12px', marginBottom: '10px' }}>
-            What to Expect
-          </div>
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px',
-            fontSize: '11px', color: 'var(--text-secondary)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>🎭</span>
-              <span>Random persona assigned</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>🎯</span>
-              <span>Unique mission to complete</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>⚖️</span>
-              <span>Moral dilemmas to face</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>🌧️</span>
-              <span>Dynamic city events</span>
-            </div>
-          </div>
-        </div>
+        {/* Tips */}
+        <LobbyTips />
 
         <button
           onClick={playAgain}

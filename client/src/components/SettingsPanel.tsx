@@ -122,7 +122,7 @@ export default function SettingsPanel({ onClose }: { onClose: () => void }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginTop: '8px' }}>
                 <InfoItem label="Persona" value={myPlayer.persona.title} />
                 <InfoItem label="Cash" value={`₹${myPlayer.state.cash}`} color="var(--accent-green)" />
-                <InfoItem label="Actions" value={`${myPlayer.actionLog.length}`} />
+                <InfoItem label="Mission" value={myPlayer.mission.status} />
                 <InfoItem label="Helped" value={`${myPlayer.state.helpedOthersCount}`} color="var(--accent-green)" />
                 <InfoItem label="Trust" value={`${myPlayer.socialTrust}`} />
                 <InfoItem label="Impact" value={`${myPlayer.communityImpact >= 0 ? '+' : ''}${myPlayer.communityImpact}`} />

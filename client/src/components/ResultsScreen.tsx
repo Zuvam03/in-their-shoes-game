@@ -3,13 +3,37 @@ import { useGameStore } from '../store/gameStore';
 import type { PerformanceInsight, Player } from '../store/gameStore';
 import { playGameEnd } from '../game/sounds';
 import { ACHIEVEMENTS } from '../game/achievements';
+import ResultsShareCard from './ResultsShareCard';
+import { saveGameRecord } from './GameHistory';
 
 export default function ResultsScreen() {
   const { matchResult, mySocketId, myPlayer, room, playAgain, soundEnabled } = useGameStore();
 
+  const savedRef = useRef(false);
+
   useEffect(() => {
     if (soundEnabled) playGameEnd();
   }, []);
+
+  useEffect(() => {
+    if (savedRef.current || !matchResult) return;
+    savedRef.current = true;
+    const my = matchResult.playerResults.find(r => r.playerId === mySocketId);
+    if (my) {
+      saveGameRecord({
+        date: new Date().toISOString(),
+        personaName: my.personaName,
+        missionTitle: my.missionTitle,
+        missionStatus: my.missionStatus,
+        score: my.score,
+        rank: my.rank,
+        totalPlayers: matchResult.playerResults.length,
+        dilemmaCount: my.dilemmasResolved.length,
+        helpedCount: my.cooperationCount,
+        duration: matchResult.matchDurationActual,
+      });
+    }
+  }, [matchResult, mySocketId]);
 
   if (!matchResult) return null;
 
@@ -492,6 +516,9 @@ export default function ResultsScreen() {
             ))}
           </div>
         )}
+
+        {/* Share Card */}
+        <ResultsShareCard />
 
         {/* Action buttons */}
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
