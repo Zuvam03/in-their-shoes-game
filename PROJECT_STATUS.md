@@ -2,7 +2,7 @@
 
 > Last updated: 2026-10-09
 > Branch: `claude/sweet-faraday-p2djac`
-> Build: 206 modules | 653 KB / 169 KB gzipped | 132 components | 22 server tests passing
+> Build: 206 modules | 679 KB / 175 KB gzipped | 132 components | 22 server tests passing
 
 ---
 
@@ -34,7 +34,7 @@
 | Screen | Status | File | What to test |
 |--------|--------|------|-------------|
 | Landing page (cinematic) | Done | `Landing.tsx` | Animated title reveal, SVG skyline parallax, floating city particles, atmospheric gradients, feature cards |
-| Lobby | Done | `Lobby.tsx` | Player list, speed selector, ready button, start match, tips |
+| Lobby (atmospheric) | Done | `Lobby.tsx` | Atmospheric dark design, floating particles, persona gallery with radar charts, animated player cards |
 | Briefing (dossier reveal) | Done | `Briefing.tsx` | 6-phase staged reveal, typewriter name, animated trait bars, strengths/vulnerabilities, mission card with objectives |
 | Tutorial overlay | Done | `TutorialOverlay.tsx` | Step-by-step walkthrough, skip button |
 | Game screen (mobile + desktop) | Done | `GameScreen.tsx` | 8-tab interface, header stats, responsive layout |
@@ -121,6 +121,10 @@
 | Animated score counters | Done | `ResultsScreen` | Numbers count up from 0 with cubic easing |
 | Confetti particle system | Done | `ResultsScreen` | Canvas-based 120-particle burst on victory |
 | Score bar animations | Done | `ResultsScreen` | Each category bar fills with staggered timing |
+| Persona gallery + radar charts | Done | `Lobby` | Browse all 12 personas with SVG radar charts, trait bars, strengths/weaknesses |
+| Animated title reveal | Done | `Landing` | Letter-by-letter title animation with staggered timing |
+| SVG city skyline | Done | `Landing` | Dual-layer parallax skyline silhouette |
+| Personnel dossier reveal | Done | `Briefing` | 6-phase staged reveal with typewriter, animated trait bars, mission card |
 
 ## BUILT — Audio System
 
@@ -178,7 +182,7 @@
 
 | Issue | Severity | Notes |
 |-------|----------|-------|
-| `PersonaGallery.tsx` is unused | Low | Built but never integrated into any view |
+| Old `PersonaGallery.tsx` removed | Resolved | Replaced by integrated Persona Gallery in Lobby |
 | Bundle is 644KB (over 500KB Vite warning) | Low | Works fine, but code splitting would help load time |
 | Server sends full Player data including `hidden` field | Low | TypeScript strips it in PublicPlayer type but wire still carries it |
 | 9 components use `myPlayer.actionLog` (Player-only) | Info | Works because server sends full Player object; would break if stripped |
