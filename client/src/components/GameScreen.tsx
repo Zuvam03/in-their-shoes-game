@@ -83,6 +83,7 @@ import NeighborhoodWatch from './NeighborhoodWatch';
 import FinalReflection from './FinalReflection';
 import CommunityHealth from './CommunityHealth';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd, playAmbient, stopAmbient, playMove, playHelp, playNotification, playAchievement } from '../game/sounds';
+import CityEventCinematic from './CityEventCinematic';
 import { getLocationById } from '../game/mapData';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -347,6 +348,7 @@ export default function GameScreen() {
         <AmbientOverlay />
         <PersonaInsights />
         <DaySummary />
+        <CityEventCinematic />
         <DilemmaModal />
         <InteractionModal />
         <AchievementToast />
@@ -616,6 +618,7 @@ export default function GameScreen() {
       <AmbientOverlay />
       <PersonaInsights />
       <DaySummary />
+      <CityEventCinematic />
       <DilemmaModal />
       <InteractionModal />
       <AchievementToast />

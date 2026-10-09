@@ -149,6 +149,7 @@ export default function CityMap() {
   }, {});
 
   const hasWeatherEvent = activeCityEvents.some(e => e.type === 'weather');
+  const hasHeatEvent = activeCityEvents.some(e => e.type === 'heat');
   const hasCrowdEvent = activeCityEvents.some(e => e.type === 'crowd');
   const tick = room?.tick || 0;
   const isNightTime = tick > 0 && ((tick % 600) > 400);
@@ -179,33 +180,66 @@ export default function CityMap() {
     }}
       onClick={() => { if (radialTarget) setRadialTarget(null); }}
     >
-      {/* Weather overlay */}
+      {/* Weather overlay — rain with lightning flashes */}
       {hasWeatherEvent && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
-          background: 'linear-gradient(180deg, rgba(30,60,100,0.15) 0%, rgba(20,40,70,0.08) 100%)',
+          background: 'linear-gradient(180deg, rgba(30,60,100,0.18) 0%, rgba(20,40,70,0.06) 100%)',
           animation: 'fadeIn 1s ease'
         }}>
-          {Array.from({ length: 30 }).map((_, i) => (
+          {Array.from({ length: 50 }).map((_, i) => (
             <div key={i} style={{
               position: 'absolute',
-              left: `${(i * 37 + 13) % 100}%`,
-              top: `-${(i * 7) % 20}px`,
-              width: '1px', height: `${12 + (i % 8)}px`,
-              background: 'rgba(100,150,220,0.3)',
-              animation: `rainDrop ${0.4 + (i % 5) * 0.1}s linear infinite`,
-              animationDelay: `${(i * 0.07)}s`
+              left: `${(i * 23 + 7) % 100}%`,
+              top: `-${(i * 5) % 20}px`,
+              width: i % 3 === 0 ? '1.5px' : '1px',
+              height: `${14 + (i % 10)}px`,
+              background: `rgba(140,180,240,${0.15 + (i % 4) * 0.08})`,
+              animation: `rainDrop ${0.35 + (i % 6) * 0.08}s linear infinite`,
+              animationDelay: `${(i * 0.05)}s`,
+              transform: 'rotate(4deg)',
             }} />
           ))}
+          {/* Lightning flash — subtle ambient flicker */}
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'rgba(200,220,255,0.03)',
+            animation: 'lightningFlash 8s ease-in-out infinite',
+          }} />
         </div>
       )}
 
-      {/* Night overlay */}
+      {/* Heat haze overlay */}
+      {hasHeatEvent && !hasWeatherEvent && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+          background: 'linear-gradient(180deg, rgba(245,158,11,0.06) 0%, rgba(239,68,68,0.04) 50%, transparent 100%)',
+          animation: 'heatShimmer 3s ease-in-out infinite',
+        }} />
+      )}
+
+      {/* Night overlay with stars */}
       {isNightTime && (
         <div style={{
           position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
-          background: 'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,10,0.3) 100%)'
-        }} />
+          background: 'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,10,0.35) 100%)'
+        }}>
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div key={i} style={{
+              position: 'absolute',
+              left: `${(i * 47 + 11) % 95 + 2}%`,
+              top: `${(i * 31 + 7) % 40 + 2}%`,
+              width: '2px', height: '2px',
+              borderRadius: '50%',
+              background: i % 3 === 0 ? 'rgba(245,200,66,0.5)' : 'rgba(200,220,255,0.4)',
+              boxShadow: i % 3 === 0
+                ? '0 0 4px rgba(245,200,66,0.3)'
+                : '0 0 3px rgba(200,220,255,0.2)',
+              animation: `starTwinkle ${2 + (i % 4)}s ease-in-out infinite`,
+              animationDelay: `${i * 0.3}s`,
+            }} />
+          ))}
+        </div>
       )}
 
       {/* Map controls */}
@@ -407,6 +441,38 @@ export default function CityMap() {
           <text x="200" y="380" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">Central</text>
           <text x="200" y="520" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">South Kolkata</text>
           <text x="420" y="250" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">East Kolkata</text>
+
+          {/* SVG rain particles inside the map */}
+          {hasWeatherEvent && Array.from({ length: 12 }).map((_, i) => (
+            <line key={`svgrain${i}`}
+              x1={120 + (i * 43) % 400} y1={100}
+              x2={118 + (i * 43) % 400} y2={112}
+              stroke="rgba(120,170,230,0.2)"
+              strokeWidth="1"
+              opacity="0.3"
+            >
+              <animateTransform attributeName="transform" type="translate"
+                values={`0,0;-4,${360 + (i % 3) * 60}`}
+                dur={`${1.2 + (i % 4) * 0.3}s`} repeatCount="indefinite"
+              />
+              <animate attributeName="opacity" values="0.3;0.15;0" dur={`${1.2 + (i % 4) * 0.3}s`} repeatCount="indefinite" />
+            </line>
+          ))}
+
+          {/* Fireflies at night */}
+          {isNightTime && Array.from({ length: 8 }).map((_, i) => (
+            <circle key={`firefly${i}`}
+              cx={150 + (i * 57) % 340} cy={150 + (i * 43) % 300}
+              r="1.5"
+              fill={i % 2 === 0 ? 'rgba(245,200,66,0.6)' : 'rgba(129,230,217,0.5)'}
+            >
+              <animate attributeName="opacity" values="0;0.7;0" dur={`${3 + i % 3}s`} repeatCount="indefinite" begin={`${i * 0.7}s`} />
+              <animateTransform attributeName="transform" type="translate"
+                values={`0,0;${6 - (i % 3) * 4},${-8 + (i % 5) * 3};0,0`}
+                dur={`${5 + i % 3}s`} repeatCount="indefinite" begin={`${i * 0.5}s`}
+              />
+            </circle>
+          ))}
 
           {/* Arrow marker */}
           <defs>
