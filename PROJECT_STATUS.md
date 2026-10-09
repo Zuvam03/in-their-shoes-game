@@ -2,7 +2,7 @@
 
 > Last updated: 2026-10-09
 > Branch: `claude/sweet-faraday-p2djac`
-> Build: 204 modules | 619 KB / 159 KB gzipped | 130 components | 22 server tests passing
+> Build: 206 modules | 644 KB / 166 KB gzipped | 132 components | 22 server tests passing
 
 ---
 
@@ -44,7 +44,7 @@
 
 | Tab | Key | Status | Components | What to test |
 |-----|-----|--------|------------|-------------|
-| Map | 1 | Done | `CityMap`, `LocationDetail`, `Minimap` | Click locations, see actions, travel |
+| Map | 1 | Done | `CityMap`, `LocationDetail`, `RadialActionMenu`, `Minimap` | Click locations, radial action wheel, animated travel, fog-of-war |
 | Character | 2 | Done | `CharacterPanel`, `ActionPanel` | Stats bars, persona info, execute actions |
 | Mission | 3 | Done | `MissionPanel`, `MissionHUD` | Objectives checklist, progress, deadline |
 | Players | 4 | Done | `PlayersPanel`, `PlayerComparison` | Other players' public stats, comparison |
@@ -63,7 +63,8 @@
 | Floating numbers | Done | `FloatingNumbers` | +/- animations on stat changes |
 | Action result toast | Done | `ActionResultToast` | Success/fail feedback popup |
 | Achievement toast | Done | `AchievementToast` | Unlock notification with confetti |
-| Dilemma modal | Done | `DilemmaModal` | Moral choice popup with consequences |
+| Cinematic dilemma modal | Done | `DilemmaModal` | Full-screen letterboxed moral choice with typewriter text, heartbeat, consequence ripples |
+| City event cinematic | Done | `CityEventCinematic` | Dramatic slide-in banner when city events start, auto-dismiss |
 | Interaction modal | Done | `InteractionModal` | Player-to-player interaction UI |
 | City news ticker | Done | `CityNewsTicker` | Scrolling event headlines |
 | Ambient overlay | Done | `AmbientOverlay` | Time-of-day color/mood overlay |
@@ -102,6 +103,21 @@
 | Endgame preview | Done | `EndgamePreview` | Projected final outcome |
 | Perspective shift | Done | `PerspectiveShift` | See situation from other personas |
 
+## BUILT — Immersive "City Comes Alive" Systems
+
+| Feature | Status | Component | What to test |
+|---------|--------|-----------|-------------|
+| Animated travel | Done | `CityMap` + `gameStore` | Player token slides along routes with cubic ease-out, trail particles |
+| Radial action menu | Done | `RadialActionMenu` | Click current location → SVG pie menu with available actions |
+| Fog-of-war | Done | `CityMap` + `gameStore` | Unvisited locations show "???" and dimmed nodes, discovered on arrival |
+| Location vignettes | Done | `LocationDetail` | Gradient scene headers, floating emoji particles per location type |
+| Night sky & fireflies | Done | `CityMap` | Stars twinkle overhead, SVG firefly animations during night cycle |
+| Rain particles (SVG + CSS) | Done | `CityMap` + `index.css` | 50 streaks at varied angles, lightning flash, SVG rain inside map |
+| Heat shimmer overlay | Done | `CityMap` | Wavering haze during heat events |
+| Cinematic dilemma engine | Done | `DilemmaModal` | Letterbox bars, typewriter narrative, phased reveal, heartbeat on low time |
+| Cinematic event banner | Done | `CityEventCinematic` | Dramatic slide-in when city events start, auto-dismiss timer |
+| Exploration progress | Done | `LocationDetail` | Progress bar showing visited/total nearby locations |
+
 ## BUILT — Audio System
 
 | Feature | Status | Notes |
@@ -131,7 +147,7 @@
 | Lobby tips | Done | Rotating gameplay tips |
 | Error boundary | Done | Graceful crash recovery |
 | TypeScript strict mode | Done | Zero type errors (client + server) |
-| Vite production build | Done | 619 KB / 159 KB gzipped |
+| Vite production build | Done | 644 KB / 166 KB gzipped |
 | Server test suite | Done | 22/22 passing |
 
 ---
@@ -140,7 +156,6 @@
 
 | Feature | Priority | Complexity | Description |
 |---------|----------|-----------|-------------|
-| Animated map movement | High | Medium | Smooth player token transitions between locations instead of instant teleport |
 | Action cooldown timers | High | Low | Visual countdown showing when actions become available again |
 | Multi-room server persistence | Medium | Medium | Rooms survive server restart (currently in-memory only) |
 | Spectator mode | Medium | Medium | Watch ongoing matches without being a player |
@@ -160,7 +175,7 @@
 | Issue | Severity | Notes |
 |-------|----------|-------|
 | `PersonaGallery.tsx` is unused | Low | Built but never integrated into any view |
-| Bundle is 619KB (over 500KB Vite warning) | Low | Works fine, but code splitting would help load time |
+| Bundle is 644KB (over 500KB Vite warning) | Low | Works fine, but code splitting would help load time |
 | Server sends full Player data including `hidden` field | Low | TypeScript strips it in PublicPlayer type but wire still carries it |
 | 9 components use `myPlayer.actionLog` (Player-only) | Info | Works because server sends full Player object; would break if stripped |
 | 6 components use `mission.definition` (Player-only) | Info | Same as above — safe today, coupling risk |
@@ -205,11 +220,20 @@ Use this when reviewing locally:
 - [ ] No console errors during gameplay
 
 ### Game — Map Tab
-- [ ] City map renders with location markers
-- [ ] Click location shows detail panel
-- [ ] Move action travels to location
-- [ ] Location-appropriate actions appear
+- [ ] City map renders with 20 location markers
+- [ ] Fog-of-war: unvisited locations show "???" labels and dimmed nodes
+- [ ] Click current location opens radial action menu (pie menu)
+- [ ] Click another location shows travel panel with transport modes
+- [ ] Travel animates player token along route (smooth slide, not teleport)
+- [ ] Trail particles visible during travel animation
+- [ ] Location Detail panel shows gradient header with floating particles
+- [ ] Exploration progress bar shows visited/total nearby
+- [ ] Night: stars twinkle overhead, fireflies animate in SVG
+- [ ] Rain event: visible rain streaks + subtle lightning flash
+- [ ] City Directory button opens location list
 - [ ] Minimap visible in corner
+- [ ] Zoom in/out controls work
+- [ ] Pinch-to-zoom works on mobile
 
 ### Game — Actions
 - [ ] Eat/drink/rest actions work and update stats
@@ -225,10 +249,18 @@ Use this when reviewing locally:
 - [ ] Other players visible on map
 - [ ] Player interaction modal works when clicking players
 
-### Game — Events
+### Game — Events & Dilemmas
 - [ ] City events appear in feed
-- [ ] Event choices can be made
-- [ ] Dilemma modal appears for moral choices
+- [ ] Cinematic event banner slides in when new city event starts
+- [ ] Banner auto-dismisses after 4 seconds
+- [ ] Event choices can be made via choice modal
+- [ ] Dilemma modal: full-screen letterbox presentation
+- [ ] Dilemma: typewriter text reveals the narrative
+- [ ] Dilemma: choices slide in with staggered animation
+- [ ] Dilemma: hovering a choice shows consequence preview
+- [ ] Dilemma: "feels right" / "against instinct" resonance indicators
+- [ ] Dilemma: selecting a choice shows ripple + consequence reveal
+- [ ] Dilemma: heartbeat effect when timer is low
 - [ ] News ticker scrolls events
 
 ### Results
