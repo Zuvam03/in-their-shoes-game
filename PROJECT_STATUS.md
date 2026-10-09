@@ -2,7 +2,7 @@
 
 > Last updated: 2026-10-09
 > Branch: `claude/sweet-faraday-p2djac`
-> Build: 206 modules | 644 KB / 166 KB gzipped | 132 components | 22 server tests passing
+> Build: 206 modules | 653 KB / 169 KB gzipped | 132 components | 22 server tests passing
 
 ---
 
@@ -38,7 +38,7 @@
 | Briefing | Done | `Briefing.tsx` | Persona reveal, mission objectives, "Enter the City" button |
 | Tutorial overlay | Done | `TutorialOverlay.tsx` | Step-by-step walkthrough, skip button |
 | Game screen (mobile + desktop) | Done | `GameScreen.tsx` | 8-tab interface, header stats, responsive layout |
-| Results screen | Done | `ResultsScreen.tsx` | Scores, ranks, mission outcome, share card, history save |
+| Results screen (cinematic) | Done | `ResultsScreen.tsx` | 7-phase staged reveal, animated counters, confetti, typewriter narrative |
 
 ## BUILT — 8 Game Tabs
 
@@ -117,6 +117,10 @@
 | Cinematic dilemma engine | Done | `DilemmaModal` | Letterbox bars, typewriter narrative, phased reveal, heartbeat on low time |
 | Cinematic event banner | Done | `CityEventCinematic` | Dramatic slide-in when city events start, auto-dismiss timer |
 | Exploration progress | Done | `LocationDetail` | Progress bar showing visited/total nearby locations |
+| Cinematic results reveal | Done | `ResultsScreen` | 7-phase staged reveal: blackout → winner → rank/score counter → typewriter narrative → animated bars → insights → full scroll |
+| Animated score counters | Done | `ResultsScreen` | Numbers count up from 0 with cubic easing |
+| Confetti particle system | Done | `ResultsScreen` | Canvas-based 120-particle burst on victory |
+| Score bar animations | Done | `ResultsScreen` | Each category bar fills with staggered timing |
 
 ## BUILT — Audio System
 
