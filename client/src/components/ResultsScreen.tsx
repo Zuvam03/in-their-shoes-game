@@ -5,6 +5,7 @@ import { playGameEnd } from '../game/sounds';
 import { ACHIEVEMENTS } from '../game/achievements';
 import ResultsShareCard from './ResultsShareCard';
 import { saveGameRecord } from './GameHistory';
+import KolkataChronicle from './KolkataChronicle';
 
 // Animated counter hook — counts from 0 to target with easing
 function useCounter(target: number, duration: number, startDelay: number, active: boolean) {
@@ -115,6 +116,7 @@ export default function ResultsScreen() {
   const [phase, setPhase] = useState<RevealPhase>(0);
   const [showConfetti, setShowConfetti] = useState(false);
   const [narrativeText, setNarrativeText] = useState('');
+  const [showChronicle, setShowChronicle] = useState(false);
   const savedRef = useRef(false);
 
   // Save game record
@@ -797,6 +799,29 @@ export default function ResultsScreen() {
           </div>
         )}
 
+        {/* Kolkata Chronicle */}
+        <div style={{ ...sectionStyle(6, 900) }}>
+          <button onClick={() => setShowChronicle(true)} style={{
+            width: '100%', padding: '16px 20px', borderRadius: '12px',
+            background: 'linear-gradient(135deg, #faf5e8 0%, #f0e6cc 100%)',
+            border: '2px solid #c4b78c',
+            color: '#2a2217', fontFamily: '"Georgia", "Times New Roman", serif',
+            cursor: 'pointer', textAlign: 'center',
+            boxShadow: '0 4px 20px rgba(139,119,73,0.15)',
+            transition: 'transform 0.2s, box-shadow 0.2s',
+          }}>
+            <div style={{ fontSize: '8px', letterSpacing: '2px', textTransform: 'uppercase', color: '#8b7749', marginBottom: '4px' }}>
+              Special Edition
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '2px', marginBottom: '2px' }}>
+              THE KOLKATA CHRONICLE
+            </div>
+            <div style={{ fontSize: '11px', color: '#5a4d3a', fontStyle: 'italic' }}>
+              Read the newspaper account of your match
+            </div>
+          </button>
+        </div>
+
         {/* Share Card */}
         <div style={{ ...sectionStyle(6, 1000) }}>
           <ResultsShareCard />
@@ -850,6 +875,8 @@ export default function ResultsScreen() {
           </button>
         </div>
       </div>
+
+      {showChronicle && <KolkataChronicle onClose={() => setShowChronicle(false)} />}
 
       <style>{`
         @keyframes rankPulse {

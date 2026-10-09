@@ -2,7 +2,7 @@
 
 > Last updated: 2026-10-09
 > Branch: `claude/sweet-faraday-p2djac`
-> Build: 206 modules | 679 KB / 175 KB gzipped | 132 components | 22 server tests passing
+> Build: 207 modules | 691 KB / 179 KB gzipped | 133 components | 22 server tests passing
 
 ---
 
@@ -125,6 +125,7 @@
 | Animated title reveal | Done | `Landing` | Letter-by-letter title animation with staggered timing |
 | SVG city skyline | Done | `Landing` | Dual-layer parallax skyline silhouette |
 | Personnel dossier reveal | Done | `Briefing` | 6-phase staged reveal with typewriter, animated trait bars, mission card |
+| The Kolkata Chronicle | Done | `KolkataChronicle` | Procedurally generated sepia newspaper from match data — lead article, sidebar, dilemma column, rankings |
 
 ## BUILT — Audio System
 
