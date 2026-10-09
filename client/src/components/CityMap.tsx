@@ -1,21 +1,24 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import {
   LOCATIONS, ROUTES, LOCATION_COLORS, LOCATION_ICONS,
   getConnectedLocations, getRoutesBetween, LocationInfo
 } from '../game/mapData';
+import RadialActionMenu from './RadialActionMenu';
 
 export default function CityMap() {
-  const { myPlayer, room, submitAction, playerEmotes } = useGameStore();
+  const { myPlayer, room, submitAction, playerEmotes, travelAnimation, visitedLocations } = useGameStore();
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
   const [hoveredLocation, setHoveredLocation] = useState<string | null>(null);
   const [transportMode, setTransportMode] = useState<string>('walk');
   const [showDirectory, setShowDirectory] = useState(false);
+  const [radialTarget, setRadialTarget] = useState<string | null>(null);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
+  const [animProgress, setAnimProgress] = useState(0);
 
   const currentLocation = myPlayer?.state.location;
   const otherPlayers = room
@@ -32,11 +35,17 @@ export default function CityMap() {
   const isConnectedToSelected = (id: string) => connected.includes(id);
 
   const handleLocationClick = (loc: LocationInfo) => {
+    if (radialTarget) {
+      setRadialTarget(null);
+      return;
+    }
     if (loc.id === currentLocation) {
+      setRadialTarget(loc.id);
       setSelectedLocation(null);
       return;
     }
     setSelectedLocation(loc.id);
+    setRadialTarget(null);
   };
 
   const handleMove = () => {
@@ -45,6 +54,7 @@ export default function CityMap() {
     const mode = route?.modes.includes(transportMode) ? transportMode : route?.modes[0] || 'walk';
     submitAction('move', { destination: selectedLocation, mode });
     setSelectedLocation(null);
+    setRadialTarget(null);
   };
 
   const routeBetweenSelected = selectedLocation
@@ -57,6 +67,21 @@ export default function CityMap() {
   const TRAVEL_COSTS: Record<string, number> = {
     walk: 0, bus: 8, metro: 15, tram: 6, taxi: 80
   };
+
+  // Travel animation frame loop
+  useEffect(() => {
+    if (!travelAnimation) { setAnimProgress(0); return; }
+    let raf: number;
+    const animate = () => {
+      const elapsed = Date.now() - travelAnimation.startTime;
+      const p = Math.min(1, elapsed / travelAnimation.duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setAnimProgress(eased);
+      if (p < 1) raf = requestAnimationFrame(animate);
+    };
+    raf = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(raf);
+  }, [travelAnimation]);
 
   const pinchDist = useRef(0);
 
@@ -128,12 +153,32 @@ export default function CityMap() {
   const tick = room?.tick || 0;
   const isNightTime = tick > 0 && ((tick % 600) > 400);
 
+  // Compute animated player position
+  let playerX = 0, playerY = 0;
+  const currentLocData = LOCATIONS.find(l => l.id === currentLocation);
+  if (travelAnimation && animProgress < 1) {
+    const fromLoc = LOCATIONS.find(l => l.id === travelAnimation.from);
+    const toLoc = LOCATIONS.find(l => l.id === travelAnimation.to);
+    if (fromLoc && toLoc) {
+      playerX = fromLoc.x + (toLoc.x - fromLoc.x) * animProgress;
+      playerY = fromLoc.y + (toLoc.y - fromLoc.y) * animProgress;
+    } else if (currentLocData) {
+      playerX = currentLocData.x;
+      playerY = currentLocData.y;
+    }
+  } else if (currentLocData) {
+    playerX = currentLocData.x;
+    playerY = currentLocData.y;
+  }
+
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
       background: isNightTime ? '#060810' : '#0a0d14',
       transition: 'background 2s ease'
-    }}>
+    }}
+      onClick={() => { if (radialTarget) setRadialTarget(null); }}
+    >
       {/* Weather overlay */}
       {hasWeatherEvent && (
         <div style={{
@@ -211,6 +256,7 @@ export default function CityMap() {
               </div>
               {locs.map(loc => {
                 const isCurrent = loc.id === currentLocation;
+                const isVisited = visitedLocations.has(loc.id);
                 return (
                   <div
                     key={loc.id}
@@ -220,16 +266,17 @@ export default function CityMap() {
                       marginBottom: '4px',
                       background: isCurrent ? 'rgba(245,200,66,0.1)' : selectedLocation === loc.id ? 'rgba(59,130,246,0.1)' : 'transparent',
                       border: isCurrent ? '1px solid rgba(245,200,66,0.2)' : '1px solid transparent',
-                      transition: 'background 0.15s'
+                      transition: 'background 0.15s',
+                      opacity: isVisited || isCurrent ? 1 : 0.5
                     }}
                     onMouseEnter={e => { if (!isCurrent) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
                     onMouseLeave={e => { if (!isCurrent && selectedLocation !== loc.id) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <div style={{ fontSize: '12px', fontWeight: 600, marginBottom: '2px', color: isCurrent ? 'var(--accent-yellow)' : 'var(--text-primary)' }}>
-                      {loc.name} {isCurrent && '(you)'}
+                      {loc.name} {isCurrent && '(you)'} {!isVisited && !isCurrent && '🔒'}
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {loc.tagline}
+                      {isVisited || isCurrent ? loc.tagline : 'Not yet explored'}
                     </div>
                   </div>
                 );
@@ -324,6 +371,15 @@ export default function CityMap() {
               <stop offset="0%" stopColor="#1a3a5c" stopOpacity="0.8" />
               <stop offset="100%" stopColor="#1e4a7c" stopOpacity="0.6" />
             </linearGradient>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <radialGradient id="fogGrad">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="60%" stopColor="transparent" />
+              <stop offset="100%" stopColor="rgba(6,8,16,0.7)" />
+            </radialGradient>
           </defs>
 
           {/* Hooghly River */}
@@ -352,7 +408,7 @@ export default function CityMap() {
           <text x="200" y="520" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">South Kolkata</text>
           <text x="420" y="250" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">East Kolkata</text>
 
-          {/* Animated travel path definition */}
+          {/* Arrow marker */}
           <defs>
             <marker id="arrowMarker" markerWidth="6" markerHeight="4" refX="5" refY="2" orient="auto">
               <path d="M0,0 L6,2 L0,4" fill="var(--accent-blue)" />
@@ -380,23 +436,33 @@ export default function CityMap() {
               ((route.from === currentLocation && route.to === hoveredLocation) ||
                (route.to === currentLocation && route.from === hoveredLocation));
 
+            const isTravelRoute = travelAnimation &&
+              ((route.from === travelAnimation.from && route.to === travelAnimation.to) ||
+               (route.to === travelAnimation.from && route.from === travelAnimation.to));
+
+            const bothVisited = visitedLocations.has(route.from) && visitedLocations.has(route.to);
+
             return (
               <g key={`${route.from}-${route.to}`}>
                 <line
                   x1={from.x} y1={from.y}
                   x2={to.x} y2={to.y}
-                  stroke={isCurrentRoute
-                    ? 'var(--accent-blue)'
-                    : isHighlighted
-                      ? 'rgba(59,130,246,0.5)'
-                      : isHoveredRoute
-                        ? 'rgba(245,200,66,0.3)'
-                        : 'rgba(255,255,255,0.12)'}
-                  strokeWidth={isCurrentRoute ? 2.5 : isHighlighted || isHoveredRoute ? 2 : 1}
+                  stroke={isTravelRoute
+                    ? 'var(--accent-yellow)'
+                    : isCurrentRoute
+                      ? 'var(--accent-blue)'
+                      : isHighlighted
+                        ? 'rgba(59,130,246,0.5)'
+                        : isHoveredRoute
+                          ? 'rgba(245,200,66,0.3)'
+                          : bothVisited
+                            ? 'rgba(255,255,255,0.12)'
+                            : 'rgba(255,255,255,0.05)'}
+                  strokeWidth={isTravelRoute ? 3 : isCurrentRoute ? 2.5 : isHighlighted || isHoveredRoute ? 2 : 1}
                   strokeDasharray={route.modes.includes('walk') ? undefined : '5,5'}
                 />
                 {/* Animated travel arrow on selected route */}
-                {isCurrentRoute && (
+                {isCurrentRoute && !isTravelRoute && (
                   <line
                     x1={route.from === currentLocation ? from.x : to.x}
                     y1={route.from === currentLocation ? from.y : to.y}
@@ -407,6 +473,14 @@ export default function CityMap() {
                   >
                     <animate attributeName="stroke-dashoffset" from="28" to="0" dur="1s" repeatCount="indefinite" />
                   </line>
+                )}
+                {/* Travel trail glow */}
+                {isTravelRoute && (
+                  <line
+                    x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                    stroke="var(--accent-yellow)" strokeWidth="6" opacity="0.2"
+                    filter="url(#glow)"
+                  />
                 )}
               </g>
             );
@@ -421,6 +495,8 @@ export default function CityMap() {
             const otherPlayersHere = otherPlayers.filter(p => p.state.location === loc.id);
             const color = LOCATION_COLORS[loc.type];
             const affected = isLocationAffected(loc.id);
+            const isVisited = visitedLocations.has(loc.id);
+            const fogOpacity = isVisited || isCurrent ? 0 : 0.6;
 
             const labelOffset = getLabelOffset(loc);
 
@@ -429,27 +505,40 @@ export default function CityMap() {
                 key={loc.id}
                 className="location-node"
                 transform={`translate(${loc.x},${loc.y})`}
-                onClick={() => handleLocationClick(loc)}
+                onClick={(e) => { e.stopPropagation(); handleLocationClick(loc); }}
                 onMouseEnter={() => setHoveredLocation(loc.id)}
                 onMouseLeave={() => setHoveredLocation(null)}
                 style={{ cursor: 'pointer' }}
               >
-                {/* City event warning ring */}
-                {affected && !isCurrent && (
-                  <circle r="18" fill="none" stroke="#ef4444" strokeWidth="1.5" opacity="0.5"
-                    strokeDasharray="4,3">
-                    <animate attributeName="opacity" values="0.5;0.2;0.5" dur="2s" repeatCount="indefinite" />
+                {/* Fog of war for unvisited */}
+                {fogOpacity > 0 && (
+                  <circle r="20" fill={`rgba(6,8,16,${fogOpacity})`} />
+                )}
+
+                {/* Event pulse ring */}
+                {affected && (
+                  <circle r="20" fill="none" stroke="#ef4444" strokeWidth="1.5" opacity="0.6">
+                    <animate attributeName="r" values="16;24;16" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0.6;0.15;0.6" dur="2s" repeatCount="indefinite" />
                   </circle>
                 )}
 
                 {/* Glow ring for current location */}
                 {isCurrent && (
-                  <circle r="20" fill="none" stroke={color} strokeWidth="1.5" opacity="0.3" />
+                  <>
+                    <circle r="22" fill="none" stroke="var(--accent-yellow)" strokeWidth="1" opacity="0.3">
+                      <animate attributeName="r" values="20;26;20" dur="3s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.3;0.1;0.3" dur="3s" repeatCount="indefinite" />
+                    </circle>
+                    <circle r="20" fill="none" stroke={color} strokeWidth="1.5" opacity="0.3" />
+                  </>
                 )}
 
                 {/* Selection ring */}
                 {isSelected && (
-                  <circle r="16" fill="none" stroke="var(--accent-blue)" strokeWidth="2" />
+                  <circle r="16" fill="none" stroke="var(--accent-blue)" strokeWidth="2">
+                    <animate attributeName="strokeDasharray" values="0,100;50,50;100,0" dur="0.4s" fill="freeze" />
+                  </circle>
                 )}
 
                 {/* Reachable indicator */}
@@ -461,15 +550,16 @@ export default function CityMap() {
                 {/* Main node */}
                 <circle
                   r={isCurrent ? 12 : isHovered ? 11 : 9}
-                  fill={isCurrent ? color : isHovered ? `${color}cc` : 'var(--bg-card)'}
-                  stroke={color}
+                  fill={isCurrent ? color : isHovered ? `${color}cc` : isVisited ? 'var(--bg-card)' : 'rgba(20,22,30,0.9)'}
+                  stroke={isVisited || isCurrent ? color : `${color}44`}
                   strokeWidth={isCurrent ? 3 : isHovered ? 2 : 1.5}
-                  opacity={isConnected || isCurrent || !selectedLocation ? 1 : 0.4}
+                  opacity={isConnected || isCurrent || !selectedLocation ? 1 : isVisited ? 0.7 : 0.3}
                 />
 
                 {/* Icon */}
                 <text textAnchor="middle" dominantBaseline="central"
                   fontSize={isCurrent ? "11" : "9"} y="0.5"
+                  opacity={isVisited || isCurrent ? 1 : 0.3}
                   style={{ pointerEvents: 'none', userSelect: 'none' }}>
                   {LOCATION_ICONS[loc.type]}
                 </text>
@@ -484,19 +574,6 @@ export default function CityMap() {
                       {otherPlayersHere.length}
                     </text>
                   </g>
-                )}
-
-                {/* Danger zone pulse for affected locations */}
-                {affected && isCurrent && (
-                  <circle r="22" fill="none" stroke="#ef4444" strokeWidth="1" opacity="0.4">
-                    <animate attributeName="r" values="18;26;18" dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="opacity" values="0.4;0.1;0.4" dur="2s" repeatCount="indefinite" />
-                  </circle>
-                )}
-
-                {/* My player dot */}
-                {isCurrent && (
-                  <circle cx="9" cy="-9" r="5" fill="var(--accent-yellow)" stroke="var(--bg-primary)" strokeWidth="1.5" />
                 )}
 
                 {/* Other players */}
@@ -521,32 +598,83 @@ export default function CityMap() {
                   </g>
                 ))}
 
-                {/* Always-visible label with name and tagline */}
+                {/* Label */}
                 <g transform={`translate(${labelOffset.x}, ${labelOffset.y})`}>
                   <text
                     textAnchor={labelOffset.anchor}
                     fontSize="8"
                     fill={isCurrent ? 'var(--accent-yellow)' : isSelected ? 'var(--accent-blue)' : 'var(--text-primary)'}
                     fontWeight={isCurrent || isSelected ? 700 : 500}
-                    opacity={isConnected || isCurrent || !selectedLocation ? 1 : 0.4}
+                    opacity={isVisited || isCurrent ? (isConnected || isCurrent || !selectedLocation ? 1 : 0.4) : 0.25}
                     style={{ pointerEvents: 'none', userSelect: 'none' }}
                   >
-                    {loc.name}
+                    {isVisited || isCurrent ? loc.name : '???'}
                   </text>
-                  <text
-                    textAnchor={labelOffset.anchor}
-                    y="10"
-                    fontSize="6.5"
-                    fill={color}
-                    opacity={isConnected || isCurrent || !selectedLocation ? 0.8 : 0.3}
-                    style={{ pointerEvents: 'none', userSelect: 'none' }}
-                  >
-                    {loc.tagline}
-                  </text>
+                  {(isVisited || isCurrent) && (
+                    <text
+                      textAnchor={labelOffset.anchor}
+                      y="10"
+                      fontSize="6.5"
+                      fill={color}
+                      opacity={isConnected || isCurrent || !selectedLocation ? 0.8 : 0.3}
+                      style={{ pointerEvents: 'none', userSelect: 'none' }}
+                    >
+                      {loc.tagline}
+                    </text>
+                  )}
                 </g>
               </g>
             );
           })}
+
+          {/* Animated player token (smooth travel between locations) */}
+          {currentLocation && (
+            <g style={{ transition: travelAnimation ? 'none' : 'transform 0.3s ease' }}>
+              {/* Trail particles during travel */}
+              {travelAnimation && animProgress < 1 && (
+                <>
+                  {[0.2, 0.4, 0.6].map((offset, i) => {
+                    const trailP = Math.max(0, animProgress - offset * 0.3);
+                    const fromLoc = LOCATIONS.find(l => l.id === travelAnimation.from);
+                    const toLoc = LOCATIONS.find(l => l.id === travelAnimation.to);
+                    if (!fromLoc || !toLoc) return null;
+                    const tx = fromLoc.x + (toLoc.x - fromLoc.x) * trailP;
+                    const ty = fromLoc.y + (toLoc.y - fromLoc.y) * trailP;
+                    return (
+                      <circle key={i} cx={tx} cy={ty} r={2 - i * 0.5}
+                        fill="var(--accent-yellow)" opacity={0.4 - i * 0.12} />
+                    );
+                  })}
+                </>
+              )}
+
+              {/* Main player token */}
+              <circle cx={playerX} cy={playerY} r="7"
+                fill="var(--accent-yellow)" stroke="#000" strokeWidth="2"
+                filter={travelAnimation ? 'url(#glow)' : undefined}
+              />
+              <text x={playerX} y={playerY + 0.5} textAnchor="middle" dominantBaseline="central"
+                fontSize="7" fontWeight="700" fill="#000"
+                style={{ pointerEvents: 'none', userSelect: 'none' }}>
+                {myPlayer?.name?.[0]?.toUpperCase() || '?'}
+              </text>
+            </g>
+          )}
+
+          {/* Radial action menu */}
+          {radialTarget && currentLocation === radialTarget && (() => {
+            const loc = LOCATIONS.find(l => l.id === radialTarget);
+            if (!loc) return null;
+            return (
+              <RadialActionMenu
+                locationId={radialTarget}
+                x={loc.x}
+                y={loc.y}
+                scale={scale}
+                onClose={() => setRadialTarget(null)}
+              />
+            );
+          })()}
         </g>
       </svg>
 
@@ -573,7 +701,7 @@ export default function CityMap() {
       )}
 
       {/* Hover detail tooltip */}
-      {hoveredLocation && (
+      {hoveredLocation && !radialTarget && (
         <div style={{
           position: 'absolute', top: '60px', right: '16px',
           background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -585,11 +713,12 @@ export default function CityMap() {
             if (!loc) return null;
             const hoveredRoute = currentLocation ? getRoutesBetween(currentLocation, loc.id) : null;
             const isCurrent = loc.id === currentLocation;
+            const isVisited = visitedLocations.has(loc.id);
             const ambientNote = getAmbientNote(loc, hasWeatherEvent, hasCrowdEvent, isNightTime);
             return (
               <>
                 <div style={{ fontWeight: 700, marginBottom: '4px', fontSize: '13px' }}>
-                  {LOCATION_ICONS[loc.type]} {loc.name}
+                  {LOCATION_ICONS[loc.type]} {isVisited || isCurrent ? loc.name : '??? Unknown'}
                   {isCurrent && <span style={{ color: 'var(--accent-yellow)', fontSize: '10px', marginLeft: '6px' }}>(here)</span>}
                 </div>
                 <div style={{
@@ -607,10 +736,9 @@ export default function CityMap() {
                   </div>
                 )}
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '8px' }}>
-                  {loc.description}
+                  {isVisited || isCurrent ? loc.description : 'You haven\'t been here yet. Travel to discover this location.'}
                 </div>
 
-                {/* Travel cost preview */}
                 {hoveredRoute && !isCurrent && (
                   <div style={{
                     padding: '6px 8px', borderRadius: '6px',
@@ -642,18 +770,31 @@ export default function CityMap() {
                   </div>
                 )}
 
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '6px' }}>
-                  {loc.availableActions.slice(0, 3).map((a, i) => (
-                    <div key={i} style={{ marginBottom: '2px' }}>
-                      {a.icon} {a.label}
-                    </div>
-                  ))}
-                  {loc.availableActions.length > 3 && (
-                    <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      +{loc.availableActions.length - 3} more...
-                    </div>
-                  )}
-                </div>
+                {(isVisited || isCurrent) && (
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', borderTop: '1px solid var(--border)', paddingTop: '6px' }}>
+                    {loc.availableActions.slice(0, 3).map((a, i) => (
+                      <div key={i} style={{ marginBottom: '2px' }}>
+                        {a.icon} {a.label}
+                      </div>
+                    ))}
+                    {loc.availableActions.length > 3 && (
+                      <div style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        +{loc.availableActions.length - 3} more...
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isCurrent && (
+                  <div style={{
+                    marginTop: '8px', padding: '6px 8px', borderRadius: '6px',
+                    background: 'rgba(245,200,66,0.08)',
+                    border: '1px solid rgba(245,200,66,0.15)',
+                    fontSize: '10px', color: 'var(--accent-yellow)', fontWeight: 600, textAlign: 'center'
+                  }}>
+                    Click to open action wheel
+                  </div>
+                )}
               </>
             );
           })()}
@@ -676,6 +817,7 @@ export default function CityMap() {
             </span>
           ))}
           <span style={{ color: 'var(--accent-yellow)' }}>&#x25CF; You</span>
+          <span style={{ color: 'rgba(255,255,255,0.3)' }}>&#x25CF; Unexplored</span>
         </div>
       )}
     </div>

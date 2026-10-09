@@ -359,6 +359,10 @@ interface GameState {
   // Quick emotes
   playerEmotes: Record<string, { emoji: string; tick: number }>;
 
+  // Travel animation
+  travelAnimation: { from: string; to: string; startTime: number; duration: number } | null;
+  visitedLocations: Set<string>;
+
   // Actions
   connect: () => void;
   createRoom: (name: string, duration: number, gameSpeed?: number) => void;
@@ -408,6 +412,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastActionTick: 0,
   prevStats: null,
   playerEmotes: {},
+  travelAnimation: null,
+  visitedLocations: new Set<string>(),
   notifications: [],
   unreadNotifCount: 0,
   soundEnabled: true,
@@ -475,6 +481,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     socket.on('playerUpdate', (player: Player) => {
       const prev = get().myPlayer;
       if (prev) {
+        const locationChanged = prev.state.location !== player.state.location;
+        const visited = get().visitedLocations;
+        if (locationChanged) {
+          visited.add(player.state.location);
+        }
         set({
           myPlayer: player,
           prevStats: {
@@ -485,10 +496,24 @@ export const useGameStore = create<GameState>((set, get) => ({
             mood: prev.state.mood,
             stress: prev.state.stress,
             cash: prev.state.cash
-          }
+          },
+          ...(locationChanged ? {
+            travelAnimation: {
+              from: prev.state.location,
+              to: player.state.location,
+              startTime: Date.now(),
+              duration: 800
+            },
+            visitedLocations: new Set(visited)
+          } : {})
         });
+        if (locationChanged) {
+          setTimeout(() => set({ travelAnimation: null }), 850);
+        }
       } else {
-        set({ myPlayer: player });
+        const visited = get().visitedLocations;
+        visited.add(player.state.location);
+        set({ myPlayer: player, visitedLocations: new Set(visited) });
       }
     });
 
