@@ -33,9 +33,9 @@
 
 | Screen | Status | File | What to test |
 |--------|--------|------|-------------|
-| Landing page | Done | `Landing.tsx` | Create room, join room, game history panel |
+| Landing page (cinematic) | Done | `Landing.tsx` | Animated title reveal, SVG skyline parallax, floating city particles, atmospheric gradients, feature cards |
 | Lobby | Done | `Lobby.tsx` | Player list, speed selector, ready button, start match, tips |
-| Briefing | Done | `Briefing.tsx` | Persona reveal, mission objectives, "Enter the City" button |
+| Briefing (dossier reveal) | Done | `Briefing.tsx` | 6-phase staged reveal, typewriter name, animated trait bars, strengths/vulnerabilities, mission card with objectives |
 | Tutorial overlay | Done | `TutorialOverlay.tsx` | Step-by-step walkthrough, skip button |
 | Game screen (mobile + desktop) | Done | `GameScreen.tsx` | 8-tab interface, header stats, responsive layout |
 | Results screen (cinematic) | Done | `ResultsScreen.tsx` | 7-phase staged reveal, animated counters, confetti, typewriter narrative |
