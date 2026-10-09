@@ -1,0 +1,90 @@
+{
+  "id": "the_insider_knowledge",
+  "title": "The Insider Knowledge",
+  "setup": "A contact whispers to you at a tea stall: a large company is buying up land in Tangra. Small families there don't know yet. If you buy a stake in the area now, you'll triple your money within a year. Your contact got this from someone inside the deal. It's not public. It's not legal to act on. It would genuinely change your financial situation.",
+  "dilemmaType": "ethics_vs_survival",
+  "triggerLocation": "park_street",
+  "minTick": 120,
+  "probabilityPerTick": 0.002,
+  "personaContext": {
+    "arjun_das": "This is the kind of break people with connections get every day. He doesn't have connections. He has this. And the families in Tangra will lose their land regardless of what he does.",
+    "priya_mondal": "She knows those Tangra families. Some of them. If the deal goes through, she'll be the one managing their displacement anger.",
+    "ramesh_paswan": "He has a construction contact in that area. He could position something. But informal workers have no standing if it goes wrong.",
+    "siddharth_roy": "This is exactly the type of information his startup used to operate on. He's missed two of these. He's already running numbers in his head.",
+    "nasreen_begum": "She immediately thinks: who else knows, and how does she get this information to the families in Tangra before the deal closes?"
+  },
+  "choices": [
+    {
+      "id": "act_on_it",
+      "text": "Move quietly. Buy in. Tell no one. The families were going to lose regardless.",
+      "shortLabel": "Act on it",
+      "statChanges": { "cash": 350 },
+      "karmaChange": -15,
+      "trustChange": -8,
+      "communityChange": -10,
+      "conscienceEffect": -18,
+      "narrativeOutcome": "The deal closes in four months. You've made money. The Tangra families find out six weeks before the eviction notice. You knew seven months earlier.",
+      "personaResonance": {
+        "siddharth_roy": "natural",
+        "arjun_das": "neutral",
+        "ramesh_paswan": "neutral",
+        "priya_mondal": "against",
+        "nasreen_begum": "against"
+      }
+    },
+    {
+      "id": "dont_act",
+      "text": "Leave it. You don't know how to play this game and you don't want to start.",
+      "shortLabel": "Walk away",
+      "statChanges": { "mood": 60, "stress": 30 },
+      "karmaChange": 5,
+      "trustChange": 2,
+      "communityChange": 2,
+      "conscienceEffect": 8,
+      "narrativeOutcome": "You sit on the information. The deal happens. You watch the news six months later. You don't know if you made the right choice or the cowardly one.",
+      "personaResonance": {
+        "arjun_das": "natural",
+        "ramesh_paswan": "natural",
+        "priya_mondal": "neutral",
+        "siddharth_roy": "against",
+        "nasreen_begum": "neutral"
+      }
+    },
+    {
+      "id": "warn_the_families",
+      "text": "Find a way to tip off community organisers in Tangra. Give them time to organise.",
+      "shortLabel": "Warn the community",
+      "statChanges": { "mood": 75, "energy": 45 },
+      "karmaChange": 18,
+      "trustChange": 15,
+      "communityChange": 15,
+      "conscienceEffect": 25,
+      "narrativeOutcome": "Three families manage to get legal consultation before the notice arrives. They can't stop the deal but they negotiate better terms. The organiser who passed the information asks how you knew. You don't say.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "priya_mondal": "natural",
+        "arjun_das": "neutral",
+        "ramesh_paswan": "neutral",
+        "siddharth_roy": "against"
+      }
+    },
+    {
+      "id": "report_to_authorities",
+      "text": "Report the insider information leak to a journalist you trust. Make it public.",
+      "shortLabel": "Go to press",
+      "statChanges": { "mood": 65, "stress": 65 },
+      "karmaChange": 12,
+      "trustChange": 10,
+      "communityChange": 12,
+      "conscienceEffect": 18,
+      "narrativeOutcome": "A small outlet runs the story. The deal gets delayed by six months. Your contact stops speaking to you. You've created a public record. Whether it matters is still being decided.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "arjun_das": "neutral",
+        "siddharth_roy": "against",
+        "priya_mondal": "neutral",
+        "ramesh_paswan": "against"
+      }
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+{
+  "id": "siddharth_roy",
+  "name": "Siddharth Roy",
+  "title": "Failing Startup Founder",
+  "description": "Two years ago he was a success story. Now he's living inside a fiction.",
+  "backstory": "Siddharth's fintech startup got angel funding, press coverage in YourStory, and a 12-person team at its peak. Eight months ago, the funding dried up and the team left quietly. He still has the office key, still posts on LinkedIn, still tells his parents he's 'growing'. His burn rate has consumed his savings. The Gariahat flat his family owns is the only thing keeping him from complete collapse — and he's been lying to them too.",
+  "traits": {
+    "analyticalThinking": 8,
+    "emotionalSensitivity": 5,
+    "appetite": 4,
+    "workOrientation": 8,
+    "spendingStyle": 7,
+    "socialOrientation": 7,
+    "riskTolerance": 9,
+    "resilience": 5,
+    "adaptability": 6,
+    "cooperation": 5
+  },
+  "motivations": {
+    "careerAdvancement": 9,
+    "financialSecurity": 7,
+    "socialAcceptance": 9,
+    "personalIndependence": 8,
+    "familyResponsibility": 5,
+    "fairness": 5,
+    "helpingOthers": 4,
+    "achievement": 10,
+    "comfort": 7
+  },
+  "foodPreferences": ["restaurant", "any"],
+  "startingCash": 890,
+  "startingEnergy": 60,
+  "traitInteractions": [
+    "High risk tolerance built on former success; now miscalibrated to a dangerous level",
+    "Status anxiety means he maintains expensive habits he can no longer afford",
+    "Low resilience despite outer confidence — shame spiral hits hard when alone"
+  ],
+  "strengths": ["Persuasive and articulate in social situations", "Analytical enough to see solutions others miss", "Risk-taking has upside when his read is correct"],
+  "vulnerabilities": ["Shame prevents him from accessing help he genuinely needs", "Spending style doesn't match reality", "Decisions distorted by need to maintain image"],
+  "modifiers": {
+    "hungerRate": 0.8,
+    "energyRecovery": 0.8,
+    "moodFromFood": 0.9,
+    "stressFromWork": 0.9,
+    "moodFromSocial": 1.3,
+    "analyticsBonus": 1.3,
+    "spendingResistance": 0.6,
+    "socialRecovery": 1.2,
+    "riskRewardBonus": 1.5,
+    "cooperationBonus": 0.8,
+    "stressThreshold": 45,
+    "independencePenalty": 0.2
+  },
+  "socialContext": {
+    "class": "upper-middle",
+    "communityIdentity": "Bengali bhadralok, startup ecosystem, South Kolkata",
+    "politicalPressures": [
+      "Bhadralok expectation: failure is a family disgrace, not a learning experience",
+      "Startup ecosystem's 'fail fast' culture clashes with Bengali cultural shame around failure",
+      "Parents invested their savings; admitting failure means confronting that betrayal"
+    ],
+    "hiddenObligations": [
+      "Still employs one part-time developer and hasn't told him the company is effectively dead",
+      "Owes angel investor ₹80,000 in unpaid expenses — avoids their calls",
+      "Has not filed GST returns for 14 months"
+    ],
+    "decisionWeights": {
+      "groupLoyalty": 3,
+      "selfPreservation": 8,
+      "principledAction": 4,
+      "statusAnxiety": 10,
+      "communityDuty": 2
+    },
+    "insightLines": [
+      "Siddharth's dishonesty isn't sociopathy — it's the logical endpoint of a culture that makes failure unspeakable.",
+      "His status anxiety is bhadralok social conditioning at full volume: respectability matters more than truth.",
+      "When he chose image over integrity, he was delaying a reckoning the city was always going to force."
+    ],
+    "dilemmaProfile": "Status-preservation overrides ethics; rationalisations are sophisticated and convincing"
+  }
+}

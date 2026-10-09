@@ -1,17 +1,179 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore } from '../store/gameStore';
 import CityMap from './CityMap';
 import CharacterPanel from './CharacterPanel';
 import ActionPanel from './ActionPanel';
 import MissionPanel from './MissionPanel';
 import PlayersPanel from './PlayersPanel';
+import ChatPanel from './ChatPanel';
+import EventFeed from './EventFeed';
+import DilemmaModal from './DilemmaModal';
+import AchievementToast from './AchievementToast';
+import TutorialOverlay from './TutorialOverlay';
+import InteractionModal from './InteractionModal';
+import Minimap from './Minimap';
+import LocationDetail from './LocationDetail';
+import JourneyTimeline from './JourneyTimeline';
+import QuickEmoteBar from './QuickEmoteBar';
+import StatusEffectsBar from './StatusEffectsBar';
+import FloatingNumbers from './FloatingNumbers';
+import ActionResultToast from './ActionResultToast';
+import MissionHUD from './MissionHUD';
+import MatchTimeline from './MatchTimeline';
+import LiveLeaderboard from './LiveLeaderboard';
+import ContextualHints from './ContextualHints';
+import WeatherWidget from './WeatherWidget';
+import QuickActions from './QuickActions';
+import KeyboardShortcuts from './KeyboardShortcuts';
+import ConnectionStatus from './ConnectionStatus';
+import ConnectionQuality from './ConnectionQuality';
+import PauseMenu from './PauseMenu';
+import AmbientOverlay from './AmbientOverlay';
+import DayNightCycle from './DayNightCycle';
+import PersonaInsights from './PersonaInsights';
+import ProgressSummary from './ProgressSummary';
+import AchievementGallery from './AchievementGallery';
+import DaySummary from './DaySummary';
+import NarrativeJournal from './NarrativeJournal';
+import TradePanel from './TradePanel';
+import MoodRing from './MoodRing';
+import CommunityBoard from './CommunityBoard';
+import StreetWisdom from './StreetWisdom';
+import DangerZones from './DangerZones';
+import NotificationCenter from './NotificationCenter';
+import ActionCooldowns from './ActionCooldowns';
+import EventCountdown from './EventCountdown';
+import ReflectionPrompt from './ReflectionPrompt';
+import CityEconomy from './CityEconomy';
+import CollaborativeGoals from './CollaborativeGoals';
+import SocialNetwork from './SocialNetwork';
+import DailyChallenge from './DailyChallenge';
+import InequalityIndex from './InequalityIndex';
+import CityPulse from './CityPulse';
+import QuickStats from './QuickStats';
+import MoralCompass from './MoralCompass';
+import SurvivalJournal from './SurvivalJournal';
+import TrustMap from './TrustMap';
+import RiskAssessment from './RiskAssessment';
+import EndgamePreview from './EndgamePreview';
+import PersonaCompatibility from './PersonaCompatibility';
+import DayRecap from './DayRecap';
+import PerspectiveShift from './PerspectiveShift';
+import CommunityVoice from './CommunityVoice';
+import PrivilegeMeter from './PrivilegeMeter';
+import ChoiceConsequences from './ChoiceConsequences';
+import SystemicInsights from './SystemicInsights';
+import ResilienceTracker from './ResilienceTracker';
+import SafetyNet from './SafetyNet';
+import LifeBalance from './LifeBalance';
+import ImpactRipple from './ImpactRipple';
+import StoryArc from './StoryArc';
+import EmpathyMap from './EmpathyMap';
+import CulturalContext from './CulturalContext';
+import GratitudeLog from './GratitudeLog';
+import CollectiveMemory from './CollectiveMemory';
+import CityNewsTicker from './CityNewsTicker';
+import OpportunityScanner from './OpportunityScanner';
+import PlayerArchetype from './PlayerArchetype';
+import PlayerProximity from './PlayerProximity';
+import CityEvents from './CityEvents';
+import AchievementProgress from './AchievementProgress';
+import LifeLessons from './LifeLessons';
+import NeighborhoodWatch from './NeighborhoodWatch';
+import FinalReflection from './FinalReflection';
+import CommunityHealth from './CommunityHealth';
+import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd, playAmbient, stopAmbient, playMove, playHelp, playNotification, playAchievement } from '../game/sounds';
+import CityEventCinematic from './CityEventCinematic';
+import { getLocationById } from '../game/mapData';
 
-type Tab = 'map' | 'character' | 'mission' | 'players';
+type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
 
 export default function GameScreen() {
-  const { room, myPlayer } = useGameStore();
+  const { room, myPlayer, unreadChatCount, unreadNotifCount, soundEnabled, toggleSound, notifications, chatMessages, lastActionResult, pendingDilemma } = useGameStore();
   const [activeTab, setActiveTab] = useState<Tab>('map');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showSettings, setShowSettings] = useState(false);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Warn before closing during active game
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, []);
+
+  // Keyboard shortcuts for tab switching
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'SELECT') return;
+      const tabKeys: Record<string, Tab> = { '1': 'map', '2': 'character', '3': 'mission', '4': 'players', '5': 'chat', '6': 'feed', '7': 'journey', '8': 'achievements' };
+      if (tabKeys[e.key]) {
+        e.preventDefault();
+        setActiveTab(tabKeys[e.key]);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Play game start sound on mount
+  useEffect(() => {
+    if (soundEnabled) playGameStart();
+  }, []);
+
+  // Sound effects
+  useEffect(() => {
+    if (!soundEnabled || !lastActionResult) return;
+    if (lastActionResult.success) {
+      if (lastActionResult.changes.cash !== undefined && lastActionResult.changes.cash > (myPlayer?.state.cash || 0)) {
+        playCoinEarn();
+      } else if (lastActionResult.changes.cash !== undefined && lastActionResult.changes.cash < (myPlayer?.state.cash || 0)) {
+        playCoinSpend();
+      } else {
+        playActionSuccess();
+      }
+    } else {
+      playActionFail();
+    }
+  }, [lastActionResult]);
+
+  useEffect(() => {
+    if (!soundEnabled) return;
+    const last = notifications[notifications.length - 1];
+    if (!last) return;
+    if (last.type === 'warning') playWarning();
+    else if (last.type === 'fortune') playFortune();
+  }, [notifications.length]);
+
+  useEffect(() => {
+    if (!soundEnabled || chatMessages.length === 0) return;
+    const last = chatMessages[chatMessages.length - 1];
+    if (last && last.senderId !== myPlayer?.id) playChat();
+  }, [chatMessages.length]);
+
+  useEffect(() => {
+    if (soundEnabled && pendingDilemma) playDilemma();
+  }, [pendingDilemma]);
+
+  const prevLocationRef = useRef(myPlayer?.state.location);
+  useEffect(() => {
+    if (!soundEnabled || !myPlayer) return;
+    const loc = getLocationById(myPlayer.state.location);
+    if (loc) playAmbient(loc.type);
+    if (prevLocationRef.current && prevLocationRef.current !== myPlayer.state.location) {
+      playMove();
+    }
+    prevLocationRef.current = myPlayer.state.location;
+    return () => stopAmbient();
+  }, [myPlayer?.state.location, soundEnabled]);
 
   if (!myPlayer || !room) return null;
 
@@ -21,6 +183,185 @@ export default function GameScreen() {
   const timeIsLow = timeLeft < 60;
   const timeIsCritical = timeLeft < 30;
 
+  // Live score estimate
+  const completedRequired = myPlayer.mission.objectives.filter((o: { optional: boolean; completed: boolean }) => !o.optional && o.completed).length;
+  const totalRequired = myPlayer.mission.objectives.filter((o: { optional: boolean }) => !o.optional).length;
+  const completedOptional = myPlayer.mission.objectives.filter((o: { optional: boolean; completed: boolean }) => o.optional && o.completed).length;
+  const liveScore = Math.min(100, Math.max(0,
+    Math.round((completedRequired / Math.max(1, totalRequired)) * 60)
+    + completedOptional * 10
+    + Math.round(myPlayer.state.cash / 10)
+    + Math.round(myPlayer.socialTrust / 2)
+    + Math.round(myPlayer.communityImpact)
+  ));
+
+  const nearbyPlayers = Object.values(room.players)
+    .filter(p => p.id !== myPlayer.id && p.state.location === myPlayer.state.location && p.isConnected);
+
+  const tabs: { key: Tab; icon: string; label: string; badge?: number }[] = [
+    { key: 'map', icon: '🗺️', label: 'Map' },
+    { key: 'character', icon: '👤', label: 'Stats' },
+    { key: 'mission', icon: '🎯', label: 'Mission' },
+    { key: 'players', icon: '👥', label: 'Players' },
+    { key: 'chat', icon: '💬', label: 'Chat', badge: unreadChatCount },
+    { key: 'feed', icon: '📋', label: 'Events', badge: unreadNotifCount },
+    { key: 'journey', icon: '📜', label: 'Journey' },
+    { key: 'achievements', icon: '🏆', label: 'Awards' }
+  ];
+
+  if (isMobile) {
+    return (
+      <div style={{
+        width: '100%', height: '100%',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden'
+      }}>
+        {/* Compact header */}
+        <div style={{
+          height: '40px', minHeight: '40px',
+          background: 'var(--bg-secondary)',
+          borderBottom: '1px solid var(--border)',
+          display: 'flex', alignItems: 'center',
+          padding: '0 8px', gap: '8px'
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 8px', borderRadius: '12px',
+            background: timeIsCritical ? 'rgba(239,68,68,0.2)' : timeIsLow ? 'rgba(245,200,66,0.15)' : 'var(--bg-card)',
+            color: timeIsCritical ? 'var(--accent-red)' : timeIsLow ? 'var(--accent-yellow)' : 'var(--text-primary)',
+            fontWeight: 700, fontSize: '13px'
+          }}>
+            ⏱ {timeMin}:{timeSec.toString().padStart(2, '0')}
+          </div>
+
+          <DayNightCycle />
+
+          <div style={{ flex: 1 }} />
+
+          <MiniStatBar label="HP" value={myPlayer.state.health} color="var(--accent-red)" />
+          <MiniStatBar label="EN" value={myPlayer.state.energy} color="var(--accent-yellow)" />
+
+          <div style={{
+            padding: '4px 8px', borderRadius: '12px',
+            background: 'rgba(34, 197, 94, 0.1)',
+            fontWeight: 700, color: 'var(--accent-green)', fontSize: '12px'
+          }}>
+            ₹{myPlayer.state.cash}
+          </div>
+
+          <div style={{
+            padding: '4px 6px', borderRadius: '12px',
+            background: 'rgba(168, 85, 247, 0.1)',
+            fontWeight: 700, color: 'var(--accent-purple)', fontSize: '11px'
+          }}>
+            {liveScore}pts
+          </div>
+
+          <ConnectionQuality />
+
+          <button onClick={() => setShowSettings(true)} style={{
+            background: 'none', border: 'none', fontSize: '14px',
+            color: 'var(--text-secondary)', padding: '2px'
+          }}>
+            ⚙️
+          </button>
+        </div>
+
+        {/* Match timeline */}
+        <MatchTimeline />
+        <CityNewsTicker />
+
+        {/* Status effects */}
+        <div style={{ padding: '0 8px' }}>
+          <StatusEffectsBar />
+        </div>
+
+        {/* Content area */}
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {activeTab === 'map' && (
+            <>
+              <CityMap />
+              <MissionHUD />
+              <WeatherWidget />
+              <ContextualHints />
+            </>
+          )}
+          {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
+          {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
+          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayerProximity /><CommunityHealth /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></div>}
+          {activeTab === 'chat' && <ChatPanel />}
+          {activeTab === 'feed' && <EventFeed />}
+          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></div>}
+          {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementProgress /><AchievementGallery /></div>}
+          {activeTab === 'map' && (
+            <div style={{
+              position: 'absolute', bottom: '0', left: '0', right: '0',
+              background: 'linear-gradient(transparent, var(--bg-secondary))',
+              padding: '8px', maxHeight: '45%', overflowY: 'auto'
+            }}>
+              <OpportunityScanner />
+              <QuickEmoteBar />
+              <ActionPanel />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom tab bar */}
+        <div style={{
+          height: '52px', minHeight: '52px',
+          background: 'var(--bg-secondary)',
+          borderTop: '1px solid var(--border)',
+          display: 'flex'
+        }}>
+          {tabs.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: '2px',
+                background: activeTab === tab.key ? 'rgba(245,200,66,0.08)' : 'transparent',
+                color: activeTab === tab.key ? 'var(--accent-yellow)' : 'var(--text-muted)',
+                borderTop: activeTab === tab.key ? '2px solid var(--accent-yellow)' : '2px solid transparent',
+                fontSize: '10px', fontWeight: 600, position: 'relative'
+              }}
+            >
+              <span style={{ fontSize: '16px' }}>{tab.icon}</span>
+              <span>{tab.label}</span>
+              {(tab.badge || 0) > 0 && (
+                <span style={{
+                  position: 'absolute', top: '4px', right: '50%', marginRight: '-16px',
+                  background: 'var(--accent-red)', color: '#fff',
+                  fontSize: '9px', fontWeight: 700,
+                  width: '14px', height: '14px', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {tab.badge! > 9 ? '9+' : tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <FloatingNumbers />
+        <ActionResultToast />
+        <AmbientOverlay />
+        <PersonaInsights />
+        <DaySummary />
+        <CityEventCinematic />
+        <DilemmaModal />
+        <InteractionModal />
+        <AchievementToast />
+        <TutorialOverlay />
+        <ReflectionPrompt />
+        <NotificationCenter />
+        <ConnectionStatus />
+        {showSettings && <PauseMenu onClose={() => setShowSettings(false)} />}
+      </div>
+    );
+  }
+
+  // Desktop layout
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -36,13 +377,47 @@ export default function GameScreen() {
         padding: '0 12px', gap: '12px',
         zIndex: 10
       }}>
-        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--accent-yellow)' }}>
+        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--accent-yellow)', display: 'flex', alignItems: 'center', gap: '8px' }}>
           🏙️ Kolkata City Survival
+          {room.gameSpeed !== 1 && (
+            <span style={{
+              fontSize: '10px', fontWeight: 600, padding: '2px 6px',
+              borderRadius: '8px',
+              background: room.gameSpeed > 1 ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+              color: room.gameSpeed > 1 ? 'var(--accent-red)' : 'var(--accent-blue)'
+            }}>
+              {room.gameSpeed}x
+            </span>
+          )}
         </div>
+
+        <DayNightCycle />
+        <MoodRing />
+
+        {room.cityEvents.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 10px', borderRadius: '20px',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+            fontSize: '11px', color: '#f87171', fontWeight: 600
+          }}>
+            ⚠ {room.cityEvents[0].title}
+          </div>
+        )}
+
+        {nearbyPlayers.length > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '4px 10px', borderRadius: '20px',
+            background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)',
+            fontSize: '11px', color: 'var(--accent-green)', fontWeight: 600
+          }}>
+            👥 {nearbyPlayers.map(p => p.name).join(', ')} nearby
+          </div>
+        )}
 
         <div style={{ flex: 1 }} />
 
-        {/* Timer */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: '6px',
           padding: '6px 12px', borderRadius: '20px',
@@ -59,7 +434,6 @@ export default function GameScreen() {
           ⏱ {timeMin}:{timeSec.toString().padStart(2, '0')}
         </div>
 
-        {/* Cash */}
         <div style={{
           padding: '6px 12px', borderRadius: '20px',
           background: 'rgba(34, 197, 94, 0.1)',
@@ -69,7 +443,17 @@ export default function GameScreen() {
           ₹{myPlayer.state.cash}
         </div>
 
-        {/* Mission status */}
+        <div style={{
+          padding: '5px 10px', borderRadius: '20px',
+          background: 'rgba(168, 85, 247, 0.1)',
+          border: '1px solid rgba(168, 85, 247, 0.2)',
+          fontWeight: 700, color: 'var(--accent-purple)', fontSize: '12px'
+        }}
+          title="Estimated score based on current progress"
+        >
+          Score: {liveScore}
+        </div>
+
         <div style={{
           padding: '5px 10px', borderRadius: '20px', fontSize: '12px',
           background: myPlayer.mission.status === 'completed'
@@ -90,7 +474,29 @@ export default function GameScreen() {
         }}>
           {myPlayer.mission.title || myPlayer.mission.definition.title}
         </div>
+
+        <button onClick={toggleSound} style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: '6px', padding: '5px 8px', fontSize: '14px',
+          color: soundEnabled ? 'var(--text-primary)' : 'var(--text-muted)'
+        }}>
+          {soundEnabled ? '🔊' : '🔇'}
+        </button>
+
+        <ConnectionQuality />
+
+        <button onClick={() => setShowSettings(true)} style={{
+          background: 'var(--bg-card)', border: '1px solid var(--border)',
+          borderRadius: '6px', padding: '5px 8px', fontSize: '14px',
+          color: 'var(--text-secondary)'
+        }}>
+          ⚙️
+        </button>
       </div>
+
+      {/* Match timeline */}
+      <MatchTimeline />
+      <CityNewsTicker />
 
       {/* Main content */}
       <div style={{
@@ -106,7 +512,10 @@ export default function GameScreen() {
           overflow: 'hidden',
           transition: 'width 0.2s ease, min-width 0.2s ease'
         }}>
-          {/* Stat bars */}
+          {/* Minimap + Stat bars */}
+          <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
+            <Minimap />
+          </div>
           <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
             <StatBar label="Health" value={myPlayer.state.health} color="var(--accent-red)" icon="❤️" />
             <StatBar label="Energy" value={myPlayer.state.energy} color="var(--accent-yellow)" icon="⚡" />
@@ -114,26 +523,39 @@ export default function GameScreen() {
             <StatBar label="Hydration" value={myPlayer.state.hydration} color="var(--accent-blue)" icon="💧" inverted />
             <StatBar label="Mood" value={myPlayer.state.mood} color="var(--accent-purple)" icon="😊" />
             <StatBar label="Stress" value={myPlayer.state.stress} color="#ef4444" icon="😰" inverted />
+            <StatusEffectsBar />
           </div>
 
           {/* Tab navigation */}
           <div style={{
-            display: 'flex', borderBottom: '1px solid var(--border)'
+            display: 'flex', borderBottom: '1px solid var(--border)', flexWrap: 'wrap'
           }}>
-            {(['map', 'character', 'mission', 'players'] as Tab[]).map(tab => (
+            {tabs.map(tab => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
                 style={{
-                  flex: 1, padding: '8px 4px',
-                  background: activeTab === tab ? 'rgba(245,200,66,0.1)' : 'transparent',
-                  color: activeTab === tab ? 'var(--accent-yellow)' : 'var(--text-muted)',
-                  borderBottom: activeTab === tab ? '2px solid var(--accent-yellow)' : '2px solid transparent',
-                  fontSize: '11px', fontWeight: 600, textTransform: 'capitalize'
+                  flex: 1, padding: '6px 2px', minWidth: '40px',
+                  background: activeTab === tab.key ? 'rgba(245,200,66,0.1)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--accent-yellow)' : 'var(--text-muted)',
+                  borderBottom: activeTab === tab.key ? '2px solid var(--accent-yellow)' : '2px solid transparent',
+                  fontSize: '10px', fontWeight: 600, textTransform: 'capitalize',
+                  position: 'relative'
                 }}
               >
-                {tab === 'map' ? '🗺️' : tab === 'character' ? '👤' : tab === 'mission' ? '🎯' : '👥'}
-                <div>{tab}</div>
+                <span>{tab.icon}</span>
+                <div>{tab.label}</div>
+                {(tab.badge || 0) > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '2px', right: '4px',
+                    background: 'var(--accent-red)', color: '#fff',
+                    fontSize: '8px', fontWeight: 700,
+                    width: '12px', height: '12px', borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                  }}>
+                    {tab.badge! > 9 ? '9+' : tab.badge}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -142,10 +564,25 @@ export default function GameScreen() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <PlayersPanel />}
+            {activeTab === 'players' && <><PlayerProximity /><CommunityHealth /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></>}
+            {activeTab === 'chat' && <ChatPanel />}
+            {activeTab === 'feed' && <EventFeed />}
+            {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></>}
+            {activeTab === 'achievements' && <><AchievementProgress /><AchievementGallery /></>}
             {activeTab === 'map' && (
               <div style={{ padding: '12px' }}>
+                <QuickStats />
+                <OpportunityScanner />
+                <EventCountdown />
+                <LocationDetail />
+                <ActionCooldowns />
+                <QuickEmoteBar />
                 <ActionPanel />
+                <RiskAssessment />
+                <NeighborhoodWatch />
+                <CulturalContext />
+                <TradePanel />
+                <StreetWisdom />
               </div>
             )}
           </div>
@@ -165,8 +602,32 @@ export default function GameScreen() {
             {showSidebar ? '◀ Hide' : '▶ Show'} Panel
           </button>
           <CityMap />
+          <MissionHUD />
+          <LiveLeaderboard />
+          <WeatherWidget />
+          <CityPulse />
+          <DangerZones />
+          <QuickActions />
+          <ContextualHints />
+          <ProgressSummary />
         </div>
       </div>
+
+      <FloatingNumbers />
+      <ActionResultToast />
+      <AmbientOverlay />
+      <PersonaInsights />
+      <DaySummary />
+      <CityEventCinematic />
+      <DilemmaModal />
+      <InteractionModal />
+      <AchievementToast />
+      <TutorialOverlay />
+      <ReflectionPrompt />
+      <NotificationCenter />
+      <KeyboardShortcuts />
+      <ConnectionStatus />
+      {showSettings && <PauseMenu onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
@@ -205,6 +666,24 @@ function StatBar({ label, value, color, icon, inverted = false }: {
             : isWarning
               ? 'var(--accent-yellow)'
               : color,
+          transition: 'width 0.5s ease'
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function MiniStatBar({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+      <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>{label}</span>
+      <div style={{
+        width: '32px', height: '4px', background: 'var(--border)',
+        borderRadius: '2px', overflow: 'hidden'
+      }}>
+        <div style={{
+          height: '100%', borderRadius: '2px',
+          width: `${Math.round(value)}%`, background: color,
           transition: 'width 0.5s ease'
         }} />
       </div>

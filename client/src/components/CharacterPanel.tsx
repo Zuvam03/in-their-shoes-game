@@ -1,4 +1,51 @@
+import { useState } from 'react';
 import { useGameStore } from '../store/gameStore';
+import GameStats from './GameStats';
+import ConscienceMeter from './ConscienceMeter';
+import ExplorationTracker from './ExplorationTracker';
+import RelationshipTracker from './RelationshipTracker';
+import SocialDynamics from './SocialDynamics';
+import SurvivalTips from './SurvivalTips';
+import LocationMemory from './LocationMemory';
+import MoodRing from './MoodRing';
+import ResourceForecast from './ResourceForecast';
+import StrategyAdvisor from './StrategyAdvisor';
+import EmpathyScore from './EmpathyScore';
+import HelpBeacon from './HelpBeacon';
+import KarmaWheel from './KarmaWheel';
+import DecisionHistory from './DecisionHistory';
+import WellbeingRadar from './WellbeingRadar';
+import TimelineMilestones from './TimelineMilestones';
+import MoralCompass from './MoralCompass';
+import EndgamePreview from './EndgamePreview';
+import DayRecap from './DayRecap';
+import PerspectiveShift from './PerspectiveShift';
+import PrivilegeMeter from './PrivilegeMeter';
+import ChoiceConsequences from './ChoiceConsequences';
+import ResilienceTracker from './ResilienceTracker';
+import SafetyNet from './SafetyNet';
+import LifeBalance from './LifeBalance';
+import ImpactRipple from './ImpactRipple';
+import EmpathyMap from './EmpathyMap';
+import GratitudeLog from './GratitudeLog';
+import PlayerArchetype from './PlayerArchetype';
+import SkillTree from './SkillTree';
+import SocialReputation from './SocialReputation';
+import CityWeather from './CityWeather';
+import SurvivalChecklist from './SurvivalChecklist';
+import DistrictMap from './DistrictMap';
+import CommunityLeaderboard from './CommunityLeaderboard';
+import EmergencyAlert from './EmergencyAlert';
+import PersonaQuote from './PersonaQuote';
+import ResourceMap from './ResourceMap';
+import TimeAwareness from './TimeAwareness';
+import PopulationDensity from './PopulationDensity';
+import UrbanLegends from './UrbanLegends';
+import SoundscapeIndicator from './SoundscapeIndicator';
+import WealthDistribution from './WealthDistribution';
+import ActionHistory from './ActionHistory';
+import NeedsPriority from './NeedsPriority';
+import CityFacts from './CityFacts';
 
 const TRAIT_LABELS: Record<string, string> = {
   analyticalThinking: 'Analytical', emotionalSensitivity: 'Empathy',
@@ -15,8 +62,24 @@ const MOTIVATION_LABELS: Record<string, string> = {
   helpingOthers: 'Helping Others', achievement: 'Achievement', comfort: 'Comfort'
 };
 
+function TrendArrow({ current, previous }: { current: number; previous: number | undefined }) {
+  if (previous === undefined) return null;
+  const diff = current - previous;
+  if (Math.abs(diff) < 1) return null;
+  const up = diff > 0;
+  return (
+    <span style={{
+      fontSize: '9px', fontWeight: 700, marginLeft: '3px',
+      color: up ? 'var(--accent-green)' : 'var(--accent-red)'
+    }}>
+      {up ? '▲' : '▼'}
+    </span>
+  );
+}
+
 export default function CharacterPanel() {
-  const { myPlayer } = useGameStore();
+  const { myPlayer, prevStats } = useGameStore();
+  const [showBackstory, setShowBackstory] = useState(false);
   if (!myPlayer) return null;
 
   const persona = myPlayer.persona;
@@ -38,6 +101,104 @@ export default function CharacterPanel() {
         </div>
         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', lineHeight: 1.5 }}>
           {persona.description}
+        </div>
+        <button onClick={() => setShowBackstory(!showBackstory)} style={{
+          marginTop: '6px', background: 'none', border: 'none',
+          color: 'var(--accent-blue)', fontSize: '11px', padding: 0,
+          cursor: 'pointer', textDecoration: 'underline'
+        }}>
+          {showBackstory ? 'Hide backstory' : 'Read full backstory'}
+        </button>
+        {showBackstory && (
+          <div style={{
+            marginTop: '8px', fontSize: '11px', color: 'var(--text-secondary)',
+            lineHeight: 1.6, padding: '8px', borderRadius: '6px',
+            background: 'rgba(0,0,0,0.2)', fontStyle: 'italic'
+          }}>
+            {persona.backstory}
+          </div>
+        )}
+      </div>
+
+      {/* Emergency Alerts */}
+      <EmergencyAlert />
+
+      {/* Player Archetype */}
+      <PlayerArchetype />
+
+      {/* Inner Voice */}
+      <PersonaQuote />
+
+      {/* Mood Ring */}
+      <MoodRing />
+
+      {/* Vital Stats with Trends */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px'
+      }}>
+        {([
+          { key: 'health' as const, label: 'Health', icon: '❤️', color: 'var(--accent-red)', inv: false },
+          { key: 'energy' as const, label: 'Energy', icon: '⚡', color: 'var(--accent-yellow)', inv: false },
+          { key: 'mood' as const, label: 'Mood', icon: '😊', color: 'var(--accent-purple)', inv: false },
+          { key: 'hunger' as const, label: 'Hunger', icon: '🍛', color: 'var(--accent-orange)', inv: true },
+          { key: 'hydration' as const, label: 'Thirst', icon: '💧', color: 'var(--accent-blue)', inv: true },
+          { key: 'stress' as const, label: 'Stress', icon: '😰', color: 'var(--accent-red)', inv: true },
+        ]).map(({ key, label, icon, color, inv }) => {
+          const val = state[key] as number;
+          const prev = prevStats?.[key] as number | undefined;
+          const isWarning = inv ? val > 65 : val < 30;
+          return (
+            <div key={key} style={{
+              padding: '6px 8px', borderRadius: '8px',
+              background: isWarning ? 'rgba(239,68,68,0.08)' : 'var(--bg-secondary)',
+              border: `1px solid ${isWarning ? 'rgba(239,68,68,0.2)' : 'var(--border)'}`,
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '13px' }}>{icon}</div>
+              <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px' }}>{label}</div>
+              <div style={{ fontWeight: 700, fontSize: '13px', color }}>
+                {Math.round(val)}
+                <TrendArrow current={val} previous={prev} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Cash */}
+      <div style={{
+        padding: '8px 12px', borderRadius: '8px',
+        background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+      }}>
+        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>💰 Cash</span>
+        <span style={{ fontWeight: 700, fontSize: '15px', color: 'var(--accent-green)' }}>
+          ₹{state.cash}
+          <TrendArrow current={state.cash} previous={prevStats?.cash} />
+        </span>
+      </div>
+
+      {/* Strengths & Vulnerabilities */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent-green)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Strengths
+          </div>
+          {persona.strengths?.map((s, i) => (
+            <div key={i} style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px', paddingLeft: '6px', borderLeft: '2px solid rgba(34,197,94,0.3)' }}>
+              {s}
+            </div>
+          ))}
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--accent-red)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+            Vulnerabilities
+          </div>
+          {persona.vulnerabilities?.map((v, i) => (
+            <div key={i} style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '3px', paddingLeft: '6px', borderLeft: '2px solid rgba(239,68,68,0.3)' }}>
+              {v}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -138,6 +299,131 @@ export default function CharacterPanel() {
           </div>
         </div>
       </div>
+      {/* Social Reputation */}
+      <SocialReputation />
+
+      {/* Skill Tree */}
+      <SkillTree />
+
+      {/* Time Awareness */}
+      <TimeAwareness />
+
+      {/* City Weather */}
+      <CityWeather />
+
+      {/* Wellbeing Radar */}
+      <WellbeingRadar />
+
+      {/* Needs Priority */}
+      <NeedsPriority />
+
+      {/* Survival Checklist */}
+      <SurvivalChecklist />
+
+      {/* District Map */}
+      <DistrictMap />
+
+      {/* Community Leaderboard */}
+      <CommunityLeaderboard />
+
+      {/* Resource Forecast */}
+      <ResourceForecast />
+
+      {/* Resource Map */}
+      <ResourceMap />
+
+      {/* Survival Tips */}
+      <SurvivalTips />
+
+      {/* Trait Effects */}
+      <SocialDynamics />
+
+      {/* Persona Strategy */}
+      <StrategyAdvisor />
+
+      {/* Help Beacon */}
+      <HelpBeacon />
+
+      {/* Empathy Score */}
+      <EmpathyScore />
+
+      {/* Karma */}
+      <KarmaWheel />
+
+      {/* Moral Compass */}
+      <MoralCompass />
+
+      {/* Choice Consequences */}
+      <ChoiceConsequences />
+
+      {/* Resilience */}
+      <ResilienceTracker />
+
+      {/* Safety Net */}
+      <SafetyNet />
+
+      {/* Life Balance */}
+      <LifeBalance />
+
+      {/* Impact Ripple */}
+      <ImpactRipple />
+
+      {/* Decision History */}
+      <DecisionHistory />
+
+      {/* Milestones */}
+      <TimelineMilestones />
+
+      {/* Conscience Meter */}
+      <ConscienceMeter />
+
+      {/* Exploration */}
+      <ExplorationTracker />
+
+      {/* Location Memory */}
+      <LocationMemory />
+
+      {/* Relationships */}
+      <RelationshipTracker />
+
+      {/* Day Recap */}
+      <DayRecap />
+
+      {/* Empathy Map */}
+      <EmpathyMap />
+
+      {/* Perspective Shift */}
+      <PerspectiveShift />
+
+      {/* Privilege Meter */}
+      <PrivilegeMeter />
+
+      {/* Gratitude */}
+      <GratitudeLog />
+
+      {/* Population Density */}
+      <PopulationDensity />
+
+      {/* Soundscape */}
+      <SoundscapeIndicator />
+
+      {/* Wealth Distribution */}
+      <WealthDistribution />
+
+      {/* Urban Legends */}
+      <UrbanLegends />
+
+      {/* Endgame Preview */}
+      <EndgamePreview />
+
+      {/* Action History */}
+      <ActionHistory />
+
+      {/* City Facts */}
+      <CityFacts />
+
+      {/* Game Stats */}
+      <GameStats />
     </div>
   );
 }

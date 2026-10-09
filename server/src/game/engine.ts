@@ -1,9 +1,10 @@
 import type {
   Player, CharacterState, Room, GameAction, ActionResult,
   PersonaDefinition, MissionDefinition, PlayerMission, GameEvent,
-  CityEvent, EventChoice, MissionObjective, InteractionRequest
+  CityEvent, EventChoice, MissionObjective, InteractionRequest,
+  SocialDilemma, DilemmaEvent, DilemmaRecord
 } from './types';
-import { getRoute, getLocation, findShortestPath } from './map';
+import { getRoute, getLocation } from './map';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Seeded RNG ---
@@ -12,7 +13,7 @@ export class SeededRng {
   constructor(seed: number) { this.state = seed >>> 0; }
   next(): number {
     this.state = (this.state * 1664525 + 1013904223) & 0xffffffff;
-    return (this.state >>> 0) / 0xffffffff;
+    return (this.state >>> 0) / 0x100000000;
   }
   chance(probability: number): boolean { return this.next() < probability; }
   between(min: number, max: number): number { return min + Math.floor(this.next() * (max - min + 1)); }
@@ -45,12 +46,15 @@ export function tickCharacterState(state: CharacterState, persona: PersonaDefini
   const s = { ...state };
   const m = persona.modifiers;
 
+  // Progressive difficulty: needs escalate in the final third of the match
+  const urgencyMultiplier = tick > 400 ? 1.3 : tick > 300 ? 1.15 : 1.0;
+
   // Hunger increases over time
-  const hungerIncrease = 0.5 * m.hungerRate;
+  const hungerIncrease = 0.5 * m.hungerRate * urgencyMultiplier;
   s.hunger = Math.min(100, s.hunger + hungerIncrease);
 
   // Hydration increases over time
-  s.hydration = Math.min(100, s.hydration + 0.4);
+  s.hydration = Math.min(100, s.hydration + 0.4 * urgencyMultiplier);
 
   // Overeating penalty decays
   if (s.overeatingPenalty > 0) {
@@ -112,10 +116,6 @@ export function resolveAction(
   room: Room,
   rng: SeededRng
 ): ActionResult {
-  const s = { ...player.state };
-  const persona = player.persona;
-  const m = persona.modifiers;
-
   switch (action.type) {
     case 'move': return resolveMove(action, player, room, rng);
     case 'eat': return resolveEat(action, player, rng);
@@ -129,6 +129,7 @@ export function resolveAction(
     case 'transfer_money': return resolveTransferMoney(action, player, room);
     case 'complete_objective': return resolveCompleteObjective(action, player, room, rng);
     case 'event_choice': return resolveEventChoice(action, player, room, rng);
+    case 'dilemma_choice': return resolveDilemmaChoice(action, player, room, rng);
     default:
       return { success: false, message: 'Unknown action type.', changes: {} };
   }
@@ -480,7 +481,7 @@ function resolveCompleteObjective(action: GameAction, player: Player, room: Room
   const mission = player.mission.definition;
   if (mission.requiredLocations && mission.requiredLocations.length > 0) {
     const isAtRequired = mission.requiredLocations.includes(player.state.location);
-    if (!isAtRequired && !objective.optional) {
+    if (!isAtRequired) {
       return {
         success: false,
         message: `You need to be at a specific location to complete this. Try reaching: ${mission.requiredLocations.join(', ')}`,
@@ -518,7 +519,7 @@ function resolveEventChoice(action: GameAction, player: Player, room: Room, rng:
 
   const changes: Partial<CharacterState> = {};
   for (const effect of choice.effects) {
-    if (effect.target === 'all' || effect.target === player.id) {
+    if (effect.target === 'all' || effect.target === 'self' || effect.target === player.id) {
       (changes as unknown as Record<string, number>)[effect.stat] = (player.state as unknown as Record<string, number>)[effect.stat] + effect.change;
     }
   }
@@ -531,6 +532,77 @@ function resolveEventChoice(action: GameAction, player: Player, room: Room, rng:
     karmaChange: choice.karmaEffect,
     trustChange: choice.socialTrustEffect,
     communityChange: choice.communityImpactEffect
+  };
+}
+
+function resolveDilemmaChoice(action: GameAction, player: Player, _room: Room, _rng: SeededRng): ActionResult {
+  const { dilemmaId, choiceId } = action.payload as { dilemmaId: string; choiceId: string };
+
+  const activeDilemma = (player as Player & { _pendingDilemma?: SocialDilemma }).
+    _pendingDilemma;
+  if (!activeDilemma || activeDilemma.id !== dilemmaId) {
+    return { success: false, message: 'No matching dilemma found.', changes: {} };
+  }
+
+  const choice = activeDilemma.choices.find(c => c.id === choiceId);
+  if (!choice) {
+    return { success: false, message: 'Invalid choice.', changes: {} };
+  }
+
+  const changes: Partial<CharacterState> = {};
+  for (const [stat, delta] of Object.entries(choice.statChanges)) {
+    const current = (player.state as unknown as Record<string, number>)[stat] ?? 0;
+    (changes as unknown as Record<string, number>)[stat] = current + (delta as number);
+  }
+
+  if (choice.conscienceEffect !== 0) {
+    const cur = changes.mood ?? player.state.mood;
+    changes.mood = Math.max(0, Math.min(100, cur + choice.conscienceEffect));
+  }
+
+  return {
+    success: true,
+    message: choice.narrativeOutcome,
+    narrative: choice.narrativeOutcome,
+    changes,
+    karmaChange: choice.karmaChange,
+    trustChange: choice.trustChange,
+    communityChange: choice.communityChange
+  };
+}
+
+export function pickDilemmaForTick(
+  dilemmas: SocialDilemma[],
+  player: Player,
+  tick: number,
+  rng: SeededRng
+): SocialDilemma | null {
+  if (player.activeDilemmaId) return null; // already has one pending
+
+  const resolved = new Set(player.dilemmasResolved.map(d => d.dilemmaId));
+  const eligible = dilemmas.filter(d => {
+    if (resolved.has(d.id)) return false;
+    if (d.triggerLocation && d.triggerLocation !== player.state.location) return false;
+    if (d.minTick !== undefined && tick < d.minTick) return false;
+    if (d.maxTick !== undefined && tick > d.maxTick) return false;
+    return rng.chance(d.probabilityPerTick);
+  });
+
+  if (eligible.length === 0) return null;
+  return eligible[rng.between(0, eligible.length - 1)];
+}
+
+export function buildDilemmaEvent(dilemma: SocialDilemma, tick: number): DilemmaEvent {
+  return {
+    id: uuidv4(),
+    dilemmaId: dilemma.id,
+    title: dilemma.title,
+    setup: dilemma.setup,
+    dilemmaType: dilemma.dilemmaType,
+    choices: dilemma.choices,
+    tick,
+    expiresAtTick: tick + 120, // 2 minute window to respond
+    personaContext: dilemma.personaContext
   };
 }
 
@@ -580,16 +652,51 @@ export function checkForUnexpectedFortune(
 
   if (!rng.chance(probability)) return null;
 
-  // Even low-karma players can have fortune (just less likely)
+  const isNight = tick > 0 && ((tick % 600) > 400);
+
   const fortunes = [
     { desc: 'A stranger offers you directions that save precious time.', stat: 'mood', change: 5 },
     { desc: 'You find a few rupees on the ground. Small luck.', stat: 'cash', change: 20 },
     { desc: 'A kind vendor gives you a free glass of water.', stat: 'hydration', change: -25 },
     { desc: 'The bus arrives just as you reach the stop. Lucky timing.', stat: 'energy', change: 5 },
-    { desc: 'A brief rest spot opens up just when you need it.', stat: 'stress', change: -8 }
+    { desc: 'A brief rest spot opens up just when you need it.', stat: 'stress', change: -8 },
+    { desc: 'Someone shares their lunch with you. A kind gesture.', stat: 'hunger', change: -20 },
+    { desc: 'A passerby drops a hundred-rupee note. Your lucky day!', stat: 'cash', change: 100 },
+    { desc: 'A cool breeze lifts your spirits unexpectedly.', stat: 'mood', change: 10 },
+    { desc: 'You find a shaded spot to catch your breath.', stat: 'energy', change: 8 },
+    { desc: 'A street musician plays a melody that lifts your mood.', stat: 'mood', change: 7 },
   ];
 
-  const fortune = fortunes[rng.between(0, fortunes.length - 1)];
+  const misfortunes = [
+    { desc: 'You step in a puddle and twist your ankle slightly.', stat: 'health', change: -5 },
+    { desc: 'A pickpocket bumps into you — check your pockets!', stat: 'cash', change: -15 },
+    { desc: 'The heat makes you feel dizzy for a moment.', stat: 'energy', change: -8 },
+    { desc: 'You witness an argument that raises your stress.', stat: 'stress', change: 10 },
+    { desc: 'A stray dog chases you down the street.', stat: 'energy', change: -6 },
+    { desc: 'You realize you dropped some money earlier.', stat: 'cash', change: -25 },
+    { desc: 'The crowd jostles you hard. You feel a bruise forming.', stat: 'health', change: -4 },
+    { desc: 'A sudden noise startles you badly.', stat: 'stress', change: 8 },
+  ];
+
+  if (isNight) {
+    misfortunes.push(
+      { desc: 'A shadow moves in the alley. Your heart races.', stat: 'stress', change: 12 },
+      { desc: 'You stumble on an uneven road in the dark.', stat: 'health', change: -6 }
+    );
+  }
+
+  const isGoodFortune = karma > 0
+    ? rng.chance(0.6 + karma / 200)
+    : rng.chance(0.4 + karma / 200);
+
+  const pool = isGoodFortune ? fortunes : misfortunes;
+
+  const fortune = pool[rng.between(0, pool.length - 1)];
+  const currentVal = (player.state as unknown as Record<string, number>)[fortune.stat] ?? 0;
+  const isCash = fortune.stat === 'cash';
+  const newVal = isCash
+    ? Math.max(0, currentVal + fortune.change)
+    : Math.max(0, Math.min(100, currentVal + fortune.change));
 
   return {
     id: uuidv4(),
@@ -597,7 +704,7 @@ export function checkForUnexpectedFortune(
     type: 'city_event',
     playerId: player.id,
     description: fortune.desc,
-    statChanges: { [fortune.stat]: fortune.change } as Partial<CharacterState>,
+    statChanges: { [fortune.stat]: newVal } as Partial<CharacterState>,
     isPublic: false
   };
 }
@@ -710,11 +817,289 @@ const CITY_EVENT_TEMPLATES: Array<Omit<CityEvent, 'id' | 'startTick'>> = [
       { target: 'all', stat: 'mood', change: 3 }
     ],
     requiresChoice: false
+  },
+  {
+    type: 'resource_shortage',
+    title: 'Water Supply Disruption',
+    description: 'A burst pipe has cut water supply to several areas. Bottled water prices have surged.',
+    affectedLocations: ['new_market', 'park_street', 'college_street'],
+    duration: 240,
+    effects: [
+      { target: 'all', stat: 'hydration', change: 15 },
+      { target: 'all', stat: 'stress', change: 5 }
+    ],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'buy_water',
+        text: 'Buy expensive bottled water (₹30)',
+        effects: [{ target: 'self', stat: 'cash', change: -30 }, { target: 'self', stat: 'hydration', change: -20 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      },
+      {
+        id: 'share_supply',
+        text: 'Share your water with others nearby',
+        effects: [{ target: 'self', stat: 'hydration', change: 10 }, { target: 'self', stat: 'mood', change: 10 }],
+        karmaEffect: 7, socialTrustEffect: 5, communityImpactEffect: 6
+      },
+      {
+        id: 'endure',
+        text: 'Tough it out and keep moving',
+        effects: [{ target: 'self', stat: 'hydration', change: 12 }, { target: 'self', stat: 'energy', change: -8 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'emergency',
+    title: 'Traffic Accident Ahead',
+    description: 'A serious accident has blocked a major intersection. Emergency services are on scene.',
+    affectedLocations: ['esplanade', 'dalhousie_sq', 'howrah_station'],
+    duration: 180,
+    effects: [
+      { target: 'all', stat: 'stress', change: 10 }
+    ],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'help_injured',
+        text: 'Stop and help the injured until medics arrive',
+        effects: [{ target: 'self', stat: 'energy', change: -20 }, { target: 'self', stat: 'mood', change: 15 }],
+        karmaEffect: 10, socialTrustEffect: 8, communityImpactEffect: 8
+      },
+      {
+        id: 'call_help',
+        text: 'Call emergency services and direct traffic',
+        effects: [{ target: 'self', stat: 'energy', change: -5 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 5, socialTrustEffect: 3, communityImpactEffect: 4
+      },
+      {
+        id: 'detour',
+        text: 'Find an alternate route and move on',
+        effects: [{ target: 'self', stat: 'energy', change: -8 }],
+        karmaEffect: -1, socialTrustEffect: 0, communityImpactEffect: -1
+      }
+    ]
+  },
+  {
+    type: 'cultural',
+    title: 'Street Performance',
+    description: 'A group of Baul folk singers is performing at the roadside, drawing a small crowd.',
+    affectedLocations: ['park_street', 'maidan', 'college_street'],
+    duration: 150,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'watch',
+        text: 'Stop and enjoy the music',
+        effects: [{ target: 'self', stat: 'mood', change: 15 }, { target: 'self', stat: 'stress', change: -10 }],
+        karmaEffect: 1, socialTrustEffect: 1, communityImpactEffect: 2
+      },
+      {
+        id: 'tip',
+        text: 'Leave a tip (₹20)',
+        effects: [{ target: 'self', stat: 'cash', change: -20 }, { target: 'self', stat: 'mood', change: 20 }],
+        karmaEffect: 4, socialTrustEffect: 3, communityImpactEffect: 5
+      },
+      {
+        id: 'pass',
+        text: 'Appreciate from afar and keep walking',
+        effects: [{ target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'market',
+    title: 'Street Vendor Deal',
+    description: 'A vendor is selling fresh seasonal fruit at a deep discount — but only for the next few minutes.',
+    affectedLocations: ['new_market', 'gariahat', 'college_street'],
+    duration: 120,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'buy_fruit',
+        text: 'Buy fruit for yourself (₹15)',
+        effects: [{ target: 'self', stat: 'cash', change: -15 }, { target: 'self', stat: 'hunger', change: -20 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      },
+      {
+        id: 'buy_extra',
+        text: 'Buy extra to share with someone nearby (₹30)',
+        effects: [{ target: 'self', stat: 'cash', change: -30 }, { target: 'self', stat: 'hunger', change: -20 }, { target: 'self', stat: 'mood', change: 12 }],
+        karmaEffect: 6, socialTrustEffect: 4, communityImpactEffect: 4
+      },
+      {
+        id: 'skip',
+        text: 'Not hungry right now',
+        effects: [],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'heat',
+    title: 'Heatwave Warning',
+    description: 'Temperatures have soared above 40°C. Stay hydrated and avoid prolonged walking.',
+    affectedLocations: ['all'],
+    duration: 300,
+    effects: [
+      { target: 'all', stat: 'hydration', change: 10 },
+      { target: 'all', stat: 'energy', change: -5 }
+    ],
+    requiresChoice: false
+  },
+  {
+    type: 'opportunity',
+    title: 'Lost Tourist',
+    description: 'A confused tourist is asking for help finding their hotel. They look wealthy.',
+    affectedLocations: ['park_street', 'esplanade', 'victoria_memorial'],
+    duration: 120,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'guide_tourist',
+        text: 'Walk them there personally',
+        effects: [{ target: 'self', stat: 'energy', change: -12 }, { target: 'self', stat: 'cash', change: 50 }, { target: 'self', stat: 'mood', change: 10 }],
+        karmaEffect: 6, socialTrustEffect: 5, communityImpactEffect: 3
+      },
+      {
+        id: 'give_directions',
+        text: 'Give clear directions',
+        effects: [{ target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 3, socialTrustEffect: 2, communityImpactEffect: 1
+      },
+      {
+        id: 'ignore_tourist',
+        text: 'Walk past',
+        effects: [],
+        karmaEffect: -2, socialTrustEffect: 0, communityImpactEffect: -1
+      }
+    ]
+  },
+  {
+    type: 'npc_request',
+    title: 'Street Child Begging',
+    description: 'A young child tugs at your sleeve, asking for money to buy food.',
+    affectedLocations: ['new_market', 'howrah_station', 'sealdah_station', 'esplanade'],
+    duration: 90,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'buy_food',
+        text: 'Buy them a meal instead of giving money (₹25)',
+        effects: [{ target: 'self', stat: 'cash', change: -25 }, { target: 'self', stat: 'mood', change: 15 }],
+        karmaEffect: 10, socialTrustEffect: 5, communityImpactEffect: 7
+      },
+      {
+        id: 'give_money',
+        text: 'Give ₹10',
+        effects: [{ target: 'self', stat: 'cash', change: -10 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 3, socialTrustEffect: 2, communityImpactEffect: 2
+      },
+      {
+        id: 'apologize',
+        text: 'Apologize and move on',
+        effects: [{ target: 'self', stat: 'mood', change: -5 }],
+        karmaEffect: -1, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'cultural',
+    title: 'Tea Stall Gathering',
+    description: 'A lively debate is happening at a street tea stall. People are discussing local politics.',
+    affectedLocations: ['college_street', 'shyambazar', 'gariahat'],
+    duration: 120,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'join_debate',
+        text: 'Join the conversation over a cup of chai (₹5)',
+        effects: [{ target: 'self', stat: 'cash', change: -5 }, { target: 'self', stat: 'stress', change: -12 }, { target: 'self', stat: 'mood', change: 8 }],
+        karmaEffect: 2, socialTrustEffect: 3, communityImpactEffect: 2
+      },
+      {
+        id: 'listen',
+        text: 'Listen quietly from the side',
+        effects: [{ target: 'self', stat: 'stress', change: -5 }, { target: 'self', stat: 'mood', change: 3 }],
+        karmaEffect: 0, socialTrustEffect: 1, communityImpactEffect: 0
+      },
+      {
+        id: 'walk_on',
+        text: 'Keep walking — no time for this',
+        effects: [],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
+  },
+  {
+    type: 'emergency',
+    title: 'Power Outage',
+    description: 'A transformer has blown. Several blocks are without electricity.',
+    affectedLocations: ['salt_lake', 'new_market', 'college_street'],
+    duration: 200,
+    effects: [
+      { target: 'all', stat: 'stress', change: 8 },
+      { target: 'all', stat: 'mood', change: -5 }
+    ],
+    requiresChoice: false
+  },
+  {
+    type: 'market',
+    title: 'Medicine Discount',
+    description: 'A pharmacy is offering a health camp with free basic medicines and checkups.',
+    affectedLocations: ['medical_college', 'gariahat'],
+    duration: 180,
+    effects: [],
+    requiresChoice: true,
+    choices: [
+      {
+        id: 'get_checkup',
+        text: 'Get a free health checkup',
+        effects: [{ target: 'self', stat: 'health', change: 15 }, { target: 'self', stat: 'mood', change: 5 }],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      },
+      {
+        id: 'volunteer',
+        text: 'Help organize the queue',
+        effects: [{ target: 'self', stat: 'energy', change: -10 }, { target: 'self', stat: 'health', change: 8 }, { target: 'self', stat: 'mood', change: 12 }],
+        karmaEffect: 7, socialTrustEffect: 5, communityImpactEffect: 6
+      },
+      {
+        id: 'skip_camp',
+        text: 'Pass — you are doing fine',
+        effects: [],
+        karmaEffect: 0, socialTrustEffect: 0, communityImpactEffect: 0
+      }
+    ]
   }
 ];
 
-export function generateCityEvent(tick: number, rng: SeededRng): CityEvent {
-  const template = CITY_EVENT_TEMPLATES[rng.between(0, CITY_EVENT_TEMPLATES.length - 1)];
+export function generateCityEvent(tick: number, rng: SeededRng, players?: Player[]): CityEvent {
+  let pool = [...CITY_EVENT_TEMPLATES];
+
+  // Contextual weighting: prefer relevant events based on player states
+  if (players && players.length > 0) {
+    const avgHunger = players.reduce((s, p) => s + p.state.hunger, 0) / players.length;
+    const avgHydration = players.reduce((s, p) => s + p.state.hydration, 0) / players.length;
+
+    if (avgHunger > 60) {
+      const foodEvents = pool.filter(e => e.type === 'market' || e.type === 'opportunity');
+      pool = [...pool, ...foodEvents];
+    }
+    if (avgHydration > 60) {
+      const waterEvents = pool.filter(e => e.type === 'resource_shortage' || e.type === 'heat');
+      pool = [...pool, ...waterEvents];
+    }
+  }
+
+  const template = pool[rng.between(0, pool.length - 1)];
   return {
     ...template,
     id: uuidv4(),
@@ -733,17 +1118,21 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
     const totalRequired = objectives.filter(o => !o.optional).length;
     const completedOptional = objectives.filter(o => o.optional && o.completed).length;
 
-    // Score calculation
-    let score = 0;
-    score += (completedRequired / Math.max(1, totalRequired)) * 60; // 60 points for required
-    score += completedOptional * 10; // 10 points per optional
-    score += Math.round(player.state.cash / 10); // Cash bonus (capped contribution)
-    score += Math.round(player.socialTrust / 2); // Trust bonus
-    score += Math.round(player.communityImpact); // Community impact
-    score = Math.min(100, Math.round(score));
+    // Score calculation with breakdown
+    const missionPoints = Math.round((completedRequired / Math.max(1, totalRequired)) * 60);
+    const optionalBonus = completedOptional * 10;
+    const cashBonus = Math.round(player.state.cash / 10);
+    const trustBonus = Math.round(player.socialTrust / 2);
+    const communityBonus = Math.round(player.communityImpact);
+
+    const scoreBreakdown = { missionPoints, optionalBonus, cashBonus, trustBonus, communityBonus, total: 0 };
+    const rawTotal = missionPoints + optionalBonus + cashBonus + trustBonus + communityBonus;
+    const score = Math.min(100, Math.max(0, rawTotal));
+    scoreBreakdown.total = score;
 
     // Generate journey narrative
     const narrative = generatePlayerNarrative(player, mission);
+    const performanceInsights = generatePerformanceInsights(player, mission, scoreBreakdown);
 
     playerResults.push({
       playerId: player.id,
@@ -755,14 +1144,18 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
       socialTrust: player.socialTrust,
       communityImpact: player.communityImpact,
       score,
-      rank: 0, // filled in after sorting
-      journey: player.actionLog.slice(-20), // last 20 events
+      rank: 0,
+      journey: player.actionLog.slice(-20),
       majorDecisions: player.actionLog
         .filter(e => ['help_player', 'transfer_money', 'event_choice'].includes(e.type))
         .map(e => e.description),
       cooperationCount: player.state.helpedOthersCount,
       helpedCount: player.state.receivedHelpCount,
-      narrative
+      narrative,
+      dilemmasResolved: player.dilemmasResolved || [],
+      personaLens: player.persona.socialContext?.insightLines,
+      scoreBreakdown,
+      performanceInsights
     });
   }
 
@@ -818,4 +1211,81 @@ function generatePlayerNarrative(player: Player, mission: PlayerMission): string
   }
 
   return parts.join(' ');
+}
+
+function generatePerformanceInsights(
+  player: Player,
+  mission: PlayerMission,
+  breakdown: { missionPoints: number; trustBonus: number; cashBonus: number }
+): import('./types').PerformanceInsight[] {
+  const insights: import('./types').PerformanceInsight[] = [];
+
+  if (mission.status === 'completed') {
+    insights.push({ category: 'strength', text: 'Completed all mission objectives — excellent focus and planning.' });
+  } else if (mission.status === 'partial') {
+    const pct = mission.partialProgress;
+    insights.push({ category: 'weakness', text: `Mission only ${pct}% complete. Prioritize required objectives and plan your route to mission locations early.` });
+  } else {
+    insights.push({ category: 'weakness', text: 'Mission was not completed. Plan your route to hit mission-critical locations before time runs out.' });
+  }
+
+  if (player.state.health > 70) {
+    insights.push({ category: 'strength', text: 'Maintained good health throughout — smart self-care choices.' });
+  } else if (player.state.health < 30) {
+    insights.push({ category: 'weakness', text: `Health dropped to ${Math.round(player.state.health)}%. Visit medical locations or rest areas when health dips below 50.` });
+  }
+
+  if (player.state.energy < 20) {
+    insights.push({ category: 'weakness', text: `Energy critically low (${Math.round(player.state.energy)}%). Rest at parks, gardens, or residential areas to recover.` });
+  } else if (player.state.energy > 60) {
+    insights.push({ category: 'strength', text: 'Good energy management — balanced activity with rest.' });
+  }
+
+  if (player.state.hunger > 70) {
+    insights.push({ category: 'weakness', text: 'Went too long without eating. Eat before hunger passes 60 to avoid health penalties.' });
+  }
+  if (player.state.hydration > 70) {
+    insights.push({ category: 'weakness', text: 'Severe dehydration. Free water is available at stations, hospitals, and temples.' });
+  }
+
+  if (player.socialTrust > 70) {
+    insights.push({ category: 'strength', text: `Social trust of ${Math.round(player.socialTrust)} — community-minded choices paid off in your score.` });
+  } else if (player.socialTrust < 30) {
+    insights.push({ category: 'weakness', text: 'Low social trust. Helping others and making ethical dilemma choices builds trust and boosts your score.' });
+  }
+
+  const cashChange = player.state.cash - player.persona.startingCash;
+  if (cashChange > 100) {
+    insights.push({ category: 'strength', text: `Earned ₹${cashChange} net — strong financial management.` });
+  } else if (player.state.cash < 20) {
+    insights.push({ category: 'weakness', text: 'Nearly ran out of money. Balance spending on food with work opportunities at offices.' });
+  }
+
+  if (player.communityImpact > 10) {
+    insights.push({ category: 'strength', text: `Positive community impact (+${Math.round(player.communityImpact)}). Your choices made a real difference.` });
+  } else if (player.communityImpact < -5) {
+    insights.push({ category: 'weakness', text: 'Negative community impact. Consider helping NPCs and choosing community-friendly options in dilemmas.' });
+  }
+
+  if (player.state.stress > 60) {
+    insights.push({ category: 'tip', text: 'High stress reduces mood and health over time. Visit Maidan, Hooghly Riverbank, or Victoria Memorial to decompress.' });
+  }
+
+  if (breakdown.missionPoints < 30) {
+    insights.push({ category: 'tip', text: 'Mission completion is worth up to 60 points. Plan your route to reach mission locations before tackling side activities.' });
+  }
+  if (breakdown.trustBonus < 15) {
+    insights.push({ category: 'tip', text: 'Social trust contributes to your score. Help other players and engage thoughtfully with social dilemmas.' });
+  }
+  if (breakdown.cashBonus < 5) {
+    insights.push({ category: 'tip', text: 'Work at Dalhousie Square or Salt Lake IT Park to earn cash. Cash remaining at game end adds to your score.' });
+  }
+
+  if ((player.dilemmasResolved || []).length === 0) {
+    insights.push({ category: 'tip', text: 'You did not encounter any social dilemmas. Spend more time at different locations to trigger dilemma events.' });
+  } else if ((player.dilemmasResolved || []).length >= 3) {
+    insights.push({ category: 'strength', text: `Engaged with ${player.dilemmasResolved.length} social dilemmas — each one shapes your persona's story and score.` });
+  }
+
+  return insights;
 }

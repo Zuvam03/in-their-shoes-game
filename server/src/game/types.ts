@@ -73,6 +73,22 @@ export interface PersonaMotivations {
   comfort: number; // 1-10
 }
 
+export interface PersonaSocialContext {
+  class: 'working' | 'lower-middle' | 'middle' | 'upper-middle' | 'privileged';
+  communityIdentity: string;
+  politicalPressures: string[];
+  hiddenObligations: string[];
+  decisionWeights: {
+    groupLoyalty: number;      // 1-10
+    selfPreservation: number;  // 1-10
+    principledAction: number;  // 1-10
+    statusAnxiety: number;     // 1-10
+    communityDuty: number;     // 1-10
+  };
+  insightLines: string[];      // shown post-game in Persona Lens
+  dilemmaProfile: string;      // one-line descriptor
+}
+
 export interface PersonaDefinition {
   id: string;
   name: string;
@@ -89,6 +105,8 @@ export interface PersonaDefinition {
   vulnerabilities: string[];
   // Mechanical modifiers
   modifiers: PersonaModifiers;
+  // Social/political context (optional, enriches dilemma resolution + post-game lens)
+  socialContext?: PersonaSocialContext;
 }
 
 export interface PersonaModifiers {
@@ -179,6 +197,8 @@ export interface Player {
     lastKarmaActionTick: number;
   };
   actionLog: GameEvent[];
+  dilemmasResolved: DilemmaRecord[];
+  activeDilemmaId?: string;  // pending dilemma waiting for player response
   isConnected: boolean;
   isReady: boolean;
 }
@@ -196,8 +216,57 @@ export interface Room {
   tick: number;          // game tick (incremented by server)
   gameSpeed: number;     // ticks per second
   cityEvents: CityEvent[];
+  pendingInteractions: InteractionRequest[];
   matchResult?: MatchResult;
   seed: number;          // for reproducible randomness
+}
+
+// --- Social Dilemmas ---
+
+export type SocialDilemmaType =
+  | 'ethics_vs_survival'
+  | 'loyalty_vs_principle'
+  | 'class_encounter'
+  | 'political_pressure'
+  | 'community_obligation'
+  | 'bystander';
+
+export interface DilemmaChoice {
+  id: string;
+  text: string;
+  shortLabel: string;
+  statChanges: Partial<CharacterState>;
+  karmaChange: number;
+  trustChange: number;
+  communityChange: number;
+  conscienceEffect: number;  // mood change reflecting inner conflict
+  narrativeOutcome: string;
+  personaResonance?: Record<string, 'natural' | 'against' | 'neutral'>;
+}
+
+export interface SocialDilemma {
+  id: string;
+  title: string;
+  setup: string;
+  dilemmaType: SocialDilemmaType;
+  choices: DilemmaChoice[];
+  triggerLocation?: string;
+  minTick?: number;
+  maxTick?: number;
+  probabilityPerTick: number;
+  personaContext: Record<string, string>;  // per-persona explanation of natural lean
+}
+
+export interface DilemmaEvent {
+  id: string;
+  dilemmaId: string;
+  title: string;
+  setup: string;
+  dilemmaType: SocialDilemmaType;
+  choices: DilemmaChoice[];
+  tick: number;
+  expiresAtTick: number;
+  personaContext: Record<string, string>;
 }
 
 // --- City Events ---
@@ -209,7 +278,10 @@ export type CityEventType =
   | 'opportunity'
   | 'npc_request'
   | 'crowd'
-  | 'emergency';
+  | 'emergency'
+  | 'cultural'
+  | 'market'
+  | 'heat';
 
 export interface CityEvent {
   id: string;
@@ -254,7 +326,8 @@ export type ActionType =
   | 'share_info'
   | 'transfer_money'
   | 'complete_objective'
-  | 'event_choice';
+  | 'event_choice'
+  | 'dilemma_choice';
 
 export interface GameAction {
   playerId: string;
@@ -288,6 +361,28 @@ export interface GameEvent {
 
 // --- End of Game ---
 
+export interface DilemmaRecord {
+  dilemmaId: string;
+  dilemmaTitle: string;
+  choiceId: string;
+  choiceLabel: string;
+  tick: number;
+}
+
+export interface ScoreBreakdown {
+  missionPoints: number;
+  optionalBonus: number;
+  cashBonus: number;
+  trustBonus: number;
+  communityBonus: number;
+  total: number;
+}
+
+export interface PerformanceInsight {
+  category: 'strength' | 'weakness' | 'tip';
+  text: string;
+}
+
 export interface PlayerResult {
   playerId: string;
   playerName: string;
@@ -304,6 +399,10 @@ export interface PlayerResult {
   cooperationCount: number;
   helpedCount: number;
   narrative: string;
+  dilemmasResolved: DilemmaRecord[];
+  personaLens?: string[];
+  scoreBreakdown: ScoreBreakdown;
+  performanceInsights: PerformanceInsight[];
 }
 
 export interface MatchResult {
@@ -317,16 +416,43 @@ export interface MatchResult {
 
 // --- Socket Events ---
 
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  tick: number;
+  target: 'all' | string; // 'all' or a specific player id
+  timestamp: number;
+}
+
+export interface GameNotification {
+  id: string;
+  tick: number;
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity';
+  text: string;
+  playerId?: string;
+  playerName?: string;
+  isPrivate: boolean;
+}
+
 export interface ServerToClientEvents {
   roomUpdate: (room: Omit<Room, 'players'> & { players: Record<string, PublicPlayer> }) => void;
   playerUpdate: (player: Player) => void;
   actionResult: (result: ActionResult) => void;
   cityEvent: (event: CityEvent) => void;
+  dilemmaEvent: (event: DilemmaEvent) => void;
   gameStarted: (data: { yourPlayer: Player; room: PublicRoom }) => void;
   gameEnded: (result: MatchResult) => void;
   error: (message: string) => void;
   tick: (tick: number) => void;
   interactionRequest: (request: InteractionRequest) => void;
+  chatMessage: (msg: ChatMessage) => void;
+  chatReaction: (reaction: { messageId: string; emoji: string; fromPlayerId: string; fromPlayerName: string }) => void;
+  playerEmote: (data: { playerId: string; playerName: string; emoji: string }) => void;
+  gameNotification: (notification: GameNotification) => void;
+  briefingComplete: () => void;
+  joinedRoom: (data: { roomId: string }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -335,7 +461,12 @@ export interface ClientToServerEvents {
   startMatch: () => void;
   submitAction: (action: Omit<GameAction, 'tick'>) => void;
   respondToInteraction: (data: { requestId: string; accept: boolean }) => void;
+  setGameSpeed: (data: { speed: number }) => void;
+  chatReaction: (data: { messageId: string; emoji: string }) => void;
+  playerEmote: (data: { emoji: string }) => void;
   ready: () => void;
+  readyToPlay: () => void;
+  sendChat: (data: { text: string; target: 'all' | string }) => void;
 }
 
 export interface InteractionRequest {

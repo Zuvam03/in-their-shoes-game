@@ -353,6 +353,13 @@ export const ROUTES: Route[] = [
     modes: ['walk'],
     travelTime: { walk: 240, bus: 0, metro: 0, tram: 0, taxi: 60 },
     cost: { walk: 0, bus: 0, metro: 0, tram: 0, taxi: 40 }
+  },
+  // Sealdah Station ↔ Dalhousie Sq
+  {
+    from: 'sealdah_station', to: 'dalhousie_sq',
+    modes: ['walk', 'bus'],
+    travelTime: { walk: 540, bus: 240, metro: 0, tram: 0, taxi: 140 },
+    cost: { walk: 0, bus: 8, metro: 0, tram: 0, taxi: 80 }
   }
 ];
 

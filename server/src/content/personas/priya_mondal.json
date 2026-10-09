@@ -1,0 +1,81 @@
+{
+  "id": "priya_mondal",
+  "name": "Priya Mondal",
+  "title": "Ward-Level Party Worker",
+  "description": "The invisible machinery of local politics. Everyone needs her; nobody thanks her.",
+  "backstory": "Priya's been knocking on doors for the TMC since 2011. She arranged flood relief in Ward 82, ensured her block's drainage was fixed before the monsoon, and called in three favours to get a local boy out of a false case. In return, she gets a small party stipend, access to a photocopier, and the constant, exhausting expectation that she will fix everything for everyone. Her husband thinks politics is beneath a woman. Her party boss thinks women belong in canvassing, not candidacy.",
+  "traits": {
+    "analyticalThinking": 6,
+    "emotionalSensitivity": 8,
+    "appetite": 5,
+    "workOrientation": 9,
+    "spendingStyle": 3,
+    "socialOrientation": 10,
+    "riskTolerance": 6,
+    "resilience": 9,
+    "adaptability": 8,
+    "cooperation": 9
+  },
+  "motivations": {
+    "careerAdvancement": 6,
+    "financialSecurity": 7,
+    "socialAcceptance": 8,
+    "personalIndependence": 4,
+    "familyResponsibility": 8,
+    "fairness": 7,
+    "helpingOthers": 9,
+    "achievement": 6,
+    "comfort": 3
+  },
+  "foodPreferences": ["street", "any"],
+  "startingCash": 320,
+  "startingEnergy": 65,
+  "traitInteractions": [
+    "Her extreme social orientation means she reads rooms instantly — knows who resents her, who needs her",
+    "Resilience built from years of low-grade betrayal from the party she serves",
+    "High cooperation but she rarely says no, which invites exploitation"
+  ],
+  "strengths": ["Knows everyone, remembered by everyone", "Can call favours across districts", "Expert at navigating bureaucratic systems"],
+  "vulnerabilities": ["Exhausted by being needed", "Party loyalty is a leash, not a choice", "Invisible labour goes uncompensated financially"],
+  "modifiers": {
+    "hungerRate": 0.9,
+    "energyRecovery": 0.8,
+    "moodFromFood": 1.0,
+    "stressFromWork": 1.2,
+    "moodFromSocial": 1.5,
+    "analyticsBonus": 1.1,
+    "spendingResistance": 1.3,
+    "socialRecovery": 1.4,
+    "riskRewardBonus": 1.0,
+    "cooperationBonus": 1.6,
+    "stressThreshold": 65,
+    "independencePenalty": 0.4
+  },
+  "socialContext": {
+    "class": "lower-middle",
+    "communityIdentity": "Bengali Hindu, TMC cadre, Ward 82 Chetla",
+    "politicalPressures": [
+      "Party boss expects unquestioned loyalty; public dissent ends her access to patronage",
+      "Opposition workers openly threaten her family during election season",
+      "Accused by rivals of being a TMC 'toady' even when doing genuine community work"
+    ],
+    "hiddenObligations": [
+      "Must deliver a certain voter turnout or lose her stipend",
+      "Her son needs a government job recommendation — she's been holding the favour back",
+      "Covering for a party member's corruption because exposing it destroys the whole network she relies on"
+    ],
+    "decisionWeights": {
+      "groupLoyalty": 9,
+      "selfPreservation": 6,
+      "principledAction": 5,
+      "statusAnxiety": 4,
+      "communityDuty": 8
+    },
+    "insightLines": [
+      "Priya's loyalty to the party isn't blind faith — it's the only system that ever gave her power, however constrained.",
+      "She bends rules not out of corruption but because the rules were never written for people like her ward.",
+      "Her exhaustion is the city's hidden cost: she bears the weight of governance others are paid to perform."
+    ],
+    "dilemmaProfile": "Mediates conflict instinctively; loyalty to network competes with personal ethics"
+  }
+}

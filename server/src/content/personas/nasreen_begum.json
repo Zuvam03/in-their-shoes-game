@@ -1,0 +1,81 @@
+{
+  "id": "nasreen_begum",
+  "name": "Nasreen Begum",
+  "title": "Community Rights Organiser",
+  "description": "She knows exactly which forms to file. The system knows exactly how to ignore them.",
+  "backstory": "Nasreen runs a one-woman community helpdesk in Metiabruz, helping families navigate eviction notices, ration card applications, and police complaints. She has no funding, no office, and no formal authority — just an encyclopaedic knowledge of local bureaucracy and a reputation that means people walk three kilometres to find her. She's been labelled a 'troublemaker' by the local ward office and a 'community asset' by an NGO that published her in a report and gave her nothing.",
+  "traits": {
+    "analyticalThinking": 9,
+    "emotionalSensitivity": 9,
+    "appetite": 5,
+    "workOrientation": 8,
+    "spendingStyle": 2,
+    "socialOrientation": 9,
+    "riskTolerance": 7,
+    "resilience": 8,
+    "adaptability": 7,
+    "cooperation": 9
+  },
+  "motivations": {
+    "careerAdvancement": 3,
+    "financialSecurity": 5,
+    "socialAcceptance": 6,
+    "personalIndependence": 8,
+    "familyResponsibility": 7,
+    "fairness": 10,
+    "helpingOthers": 10,
+    "achievement": 6,
+    "comfort": 2
+  },
+  "foodPreferences": ["street", "any"],
+  "startingCash": 140,
+  "startingEnergy": 70,
+  "traitInteractions": [
+    "Combination of high empathy and high analyticity means she diagnoses systemic causes where others see individual failures",
+    "Social orientation drives her — isolation is genuinely harmful to her functioning",
+    "Her principled action scores high but she knows when the battle isn't worth the cost"
+  ],
+  "strengths": ["Deep institutional knowledge of KMC and welfare systems", "Trusted by multiple overlapping communities", "Can mobilise collective action quickly"],
+  "vulnerabilities": ["Constantly under-resourced and overextended", "Marked as a threat by local political machine", "Personal financial situation precarious despite helping others"],
+  "modifiers": {
+    "hungerRate": 0.9,
+    "energyRecovery": 0.9,
+    "moodFromFood": 1.0,
+    "stressFromWork": 1.1,
+    "moodFromSocial": 1.6,
+    "analyticsBonus": 1.5,
+    "spendingResistance": 1.7,
+    "socialRecovery": 1.5,
+    "riskRewardBonus": 1.1,
+    "cooperationBonus": 1.7,
+    "stressThreshold": 60,
+    "independencePenalty": 0.2
+  },
+  "socialContext": {
+    "class": "working",
+    "communityIdentity": "Bengali Muslim minority, Metiabruz, women's rights, community organiser",
+    "politicalPressures": [
+      "Post-CAA environment means minority identity is politicised and surveilled",
+      "Police routinely discourage her from filing complaints on behalf of clients",
+      "Labelled 'politically motivated' by ward office to delegitimise her work"
+    ],
+    "hiddenObligations": [
+      "Supporting her brother's family after he lost his job — not known publicly",
+      "Promised a widow she'd get her son's case reopened; has been unable to",
+      "Afraid that visibility will make her a target; tries to stay under the radar while doing loud work"
+    ],
+    "decisionWeights": {
+      "groupLoyalty": 8,
+      "selfPreservation": 5,
+      "principledAction": 10,
+      "statusAnxiety": 2,
+      "communityDuty": 10
+    },
+    "insightLines": [
+      "Nasreen's willingness to act despite personal cost is not recklessness — it is a calculated bet that the community matters more than her comfort.",
+      "She chose principle over self-preservation because she has seen what happens when no one does.",
+      "Her distrust of institutions isn't cynicism; it is documented, evidence-based, and entirely correct."
+    ],
+    "dilemmaProfile": "Principled action dominant; will sacrifice personal gain for community; rarely self-interested"
+  }
+}

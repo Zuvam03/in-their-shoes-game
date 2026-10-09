@@ -1,0 +1,90 @@
+{
+  "id": "the_queue_cutter",
+  "title": "The Queue Cutter",
+  "setup": "You've been waiting 25 minutes at the ration shop queue. A man in clean kurta and leather chappals cuts in front of you — and three others — with the ease of someone used to being allowed. The queue murmurs but no one speaks up. He turns and catches your eye.",
+  "dilemmaType": "class_encounter",
+  "triggerLocation": "esplanade",
+  "minTick": 30,
+  "probabilityPerTick": 0.004,
+  "personaContext": {
+    "arjun_das": "Arjun sees this constantly. He's been passed over for the same reasons. But calling out this man risks escalation he can't afford right now.",
+    "priya_mondal": "Priya knows exactly who this type is — a minor functionary using social capital. She could defuse this or amplify it depending on what serves the ward.",
+    "ramesh_paswan": "Ramesh won't speak — his Hindi marks him immediately. Any confrontation ends with him being the 'outsider causing trouble'.",
+    "siddharth_roy": "Siddharth winces. He's been this man without thinking about it. Calling it out feels hypocritical.",
+    "nasreen_begum": "Nasreen is already calculating: is this worth the energy, or is there a bigger fight today?"
+  },
+  "choices": [
+    {
+      "id": "confront_publicly",
+      "text": "Speak loudly: 'Dada, queue ache. Apni pichhe asan.' The whole line turns.",
+      "shortLabel": "Call it out",
+      "statChanges": { "stress": 45, "mood": 55 },
+      "karmaChange": 8,
+      "trustChange": 10,
+      "communityChange": 5,
+      "conscienceEffect": 15,
+      "narrativeOutcome": "The man's face reddens. He mumbles something and steps back. Three people in the queue nod at you. One says thank you under their breath. Your hands are shaking slightly.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "arjun_das": "against",
+        "ramesh_paswan": "against",
+        "priya_mondal": "neutral",
+        "siddharth_roy": "against"
+      }
+    },
+    {
+      "id": "tell_quietly",
+      "text": "Lean forward and say quietly: 'Bhai, line ta dhere. Please.' Only he hears.",
+      "shortLabel": "Quiet word",
+      "statChanges": { "stress": 35, "mood": 50 },
+      "karmaChange": 5,
+      "trustChange": 5,
+      "communityChange": 2,
+      "conscienceEffect": 8,
+      "narrativeOutcome": "He looks annoyed but doesn't push back. Moves back two steps — technically still cutting but less blatantly. You've chosen de-escalation over justice.",
+      "personaResonance": {
+        "arjun_das": "natural",
+        "priya_mondal": "natural",
+        "siddharth_roy": "natural",
+        "ramesh_paswan": "neutral",
+        "nasreen_begum": "neutral"
+      }
+    },
+    {
+      "id": "say_nothing",
+      "text": "Look away. This is the city. This is how it works.",
+      "shortLabel": "Look away",
+      "statChanges": { "stress": 30, "mood": 40 },
+      "karmaChange": -3,
+      "trustChange": -2,
+      "communityChange": -2,
+      "conscienceEffect": -12,
+      "narrativeOutcome": "The queue moves on. The man gets served first. You tell yourself it doesn't matter. It does, a little.",
+      "personaResonance": {
+        "ramesh_paswan": "natural",
+        "siddharth_roy": "natural",
+        "arjun_das": "neutral",
+        "priya_mondal": "against",
+        "nasreen_begum": "against"
+      }
+    },
+    {
+      "id": "organise_queue",
+      "text": "Turn to the others: 'We were all here first. Should we say something together?'",
+      "shortLabel": "Organise others",
+      "statChanges": { "stress": 40, "energy": 45, "mood": 65 },
+      "karmaChange": 12,
+      "trustChange": 15,
+      "communityChange": 8,
+      "conscienceEffect": 20,
+      "narrativeOutcome": "Four people look at you. Two nod. The collective energy shifts. The man senses it and returns to the back without anyone speaking directly to him. Something small but real just happened.",
+      "personaResonance": {
+        "nasreen_begum": "natural",
+        "priya_mondal": "natural",
+        "arjun_das": "against",
+        "ramesh_paswan": "against",
+        "siddharth_roy": "neutral"
+      }
+    }
+  ]
+}

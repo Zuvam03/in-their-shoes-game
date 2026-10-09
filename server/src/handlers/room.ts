@@ -1,26 +1,34 @@
 import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type {
-  Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState
+  Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState,
+  SocialDilemma, ChatMessage, GameNotification, InteractionRequest
 } from '../game/types';
 import { PERSONAS, shufflePersonas } from '../game/personas';
 import { MISSIONS, shuffleMissions } from '../game/missions';
 import { LOCATIONS } from '../game/map';
 import {
   createCharacterState, tickCharacterState, resolveAction, evaluateKarma,
-  checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng
+  checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
+  pickDilemmaForTick, buildDilemmaEvent
 } from '../game/engine';
+import { loadContent, getContentDilemmas } from '../content/loader';
+
+loadContent();
 
 const rooms = new Map<string, Room>();
 const playerToRoom = new Map<string, string>(); // socketId -> roomId
 
 const TICK_INTERVAL_MS = 1000;
 const roomIntervals = new Map<string, NodeJS.Timeout>();
+const roomBriefingTimers = new Map<string, NodeJS.Timeout>();
+const roomPrevLocations = new Map<string, Map<string, string>>();
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
-  socket.on('createRoom', ({ playerName, matchDuration = 600 }) => {
+  socket.on('createRoom', ({ playerName, matchDuration = 600, gameSpeed = 1 }) => {
     const roomId = generateRoomCode();
     const seed = Date.now();
+    const validSpeed = [0.5, 1, 1.5, 2].includes(gameSpeed) ? gameSpeed : 1;
     const room: Room = {
       id: roomId,
       hostId: socket.id,
@@ -28,8 +36,9 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
       phase: 'lobby',
       matchDuration,
       tick: 0,
-      gameSpeed: 1,
+      gameSpeed: validSpeed,
       cityEvents: [],
+      pendingInteractions: [],
       seed
     };
     rooms.set(roomId, room);
@@ -45,13 +54,47 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
   });
 
   socket.on('joinRoom', ({ roomId, playerName }) => {
-    const room = rooms.get(roomId.toUpperCase());
+    const normalizedId = roomId.toUpperCase();
+    const room = rooms.get(normalizedId);
     if (!room) {
       socket.emit('error', 'Room not found. Check the code and try again.');
       return;
     }
+
+    // Reconnection: if game is in progress, find disconnected player by name
+    if (room.phase === 'playing' || room.phase === 'briefing') {
+      const disconnected = Object.values(room.players).find(
+        p => p.name === playerName && !p.isConnected
+      );
+      if (disconnected) {
+        const oldId = disconnected.id;
+        // Migrate player to new socket
+        disconnected.id = socket.id;
+        disconnected.socketId = socket.id;
+        disconnected.isConnected = true;
+        room.players[socket.id] = disconnected;
+        delete room.players[oldId];
+
+        playerToRoom.set(socket.id, normalizedId);
+        socket.join(normalizedId);
+
+        socket.emit('joinedRoom', { roomId: normalizedId });
+        if (room.phase === 'playing') {
+          socket.emit('gameStarted', { yourPlayer: disconnected, room: toPublicRoom(room) });
+          socket.emit('briefingComplete');
+        } else {
+          socket.emit('gameStarted', { yourPlayer: disconnected, room: toPublicRoom(room) });
+        }
+        io.to(normalizedId).emit('roomUpdate', toPublicRoom(room));
+        console.log(`${playerName} reconnected to room ${normalizedId}`);
+        return;
+      }
+      socket.emit('error', 'This match has already started. Enter the same name to reconnect.');
+      return;
+    }
+
     if (room.phase !== 'lobby') {
-      socket.emit('error', 'This match has already started.');
+      socket.emit('error', 'This match has already ended.');
       return;
     }
     if (Object.keys(room.players).length >= 6) {
@@ -60,12 +103,12 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     }
 
     addPlayerToRoom(room, socket.id, playerName);
-    playerToRoom.set(socket.id, roomId);
+    playerToRoom.set(socket.id, normalizedId);
 
-    socket.join(roomId);
-    io.to(roomId).emit('roomUpdate', toPublicRoom(room));
-    socket.emit('joinedRoom', { roomId });
-    console.log(`${playerName} joined room ${roomId}`);
+    socket.join(normalizedId);
+    io.to(normalizedId).emit('roomUpdate', toPublicRoom(room));
+    socket.emit('joinedRoom', { roomId: normalizedId });
+    console.log(`${playerName} joined room ${normalizedId}`);
   });
 
   socket.on('ready', () => {
@@ -112,6 +155,25 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     const result = resolveAction(action, player, room, rng);
 
     if (result.success) {
+      // Create interaction request for request_help
+      if (action.type === 'request_help') {
+        const targetId = (action.payload as { targetPlayerId?: string }).targetPlayerId;
+        const target = targetId ? room.players[targetId] : undefined;
+        if (target && targetId) {
+          const request: InteractionRequest = {
+            id: uuidv4(),
+            fromPlayerId: socket.id,
+            fromPlayerName: player.name,
+            type: 'help_request',
+            message: `${player.name} is asking for your help.`,
+            expiresAtTick: room.tick + 120
+          };
+          room.pendingInteractions.push(request);
+          io.to(targetId).emit('interactionRequest', request);
+          emitNotification(io, roomId, targetId, 'action', `${player.name} is asking for your help!`, room.tick, socket.id, player.name);
+        }
+      }
+
       // Apply state changes
       applyStateChanges(player, result.changes);
 
@@ -165,6 +227,17 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
       };
       player.actionLog.push(event);
 
+      // Handle dilemma choice resolution
+      if (action.type === 'dilemma_choice') {
+        const { dilemmaId, choiceId, choiceLabel } = action.payload as {
+          dilemmaId: string; choiceId: string; choiceLabel: string;
+        };
+        const dilemmaTitle = ((player as Player & { _pendingDilemma?: SocialDilemma })._pendingDilemma)?.title || '';
+        player.dilemmasResolved.push({ dilemmaId, dilemmaTitle, choiceId, choiceLabel, tick: room.tick });
+        delete (player as Player & { _pendingDilemma?: SocialDilemma })._pendingDilemma;
+        player.activeDilemmaId = undefined;
+      }
+
       // Handle complete_objective
       if (action.type === 'complete_objective') {
         const objectiveId = (action.payload as { objectiveId?: string }).objectiveId;
@@ -185,10 +258,167 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     socket.emit('actionResult', result);
     socket.emit('playerUpdate', player);
     io.to(roomId).emit('roomUpdate', toPublicRoom(room));
+
+    if (result.success) {
+      emitNotification(io, roomId, socket.id, 'action', result.message, room.tick, socket.id, player.name);
+      if (['help_player', 'transfer_money', 'share_info'].includes(action.type)) {
+        emitNotification(io, roomId, null, 'action', `${player.name}: ${result.message}`, room.tick, socket.id, player.name);
+      }
+    }
   });
 
-  socket.on('respondToInteraction', ({ requestId, accept }) => {
-    // TODO: Handle interaction responses (help requests, trades)
+  socket.on('readyToPlay', () => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'briefing') return;
+
+    const player = room.players[socket.id];
+    if (player) player.isReady = true;
+
+    const allReady = Object.values(room.players).every(p => p.isReady);
+    if (allReady) {
+      const timer = roomBriefingTimers.get(room.id);
+      if (timer) { clearTimeout(timer); roomBriefingTimers.delete(room.id); }
+      room.phase = 'playing';
+      io.to(room.id).emit('briefingComplete');
+      io.to(room.id).emit('roomUpdate', toPublicRoom(room));
+      startGameLoop(io, room);
+    }
+  });
+
+  socket.on('setGameSpeed', ({ speed }: { speed: number }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'lobby') return;
+    if (room.hostId !== socket.id) {
+      socket.emit('error', 'Only the host can change game speed.');
+      return;
+    }
+    if ([0.5, 1, 1.5, 2].includes(speed)) {
+      room.gameSpeed = speed;
+      io.to(roomId).emit('roomUpdate', toPublicRoom(room));
+    }
+  });
+
+  socket.on('chatReaction', ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const allowed = ['👍', '❤️', '😂', '😮', '😢', '🔥'];
+    if (!allowed.includes(emoji)) return;
+
+    io.to(roomId).emit('chatReaction', {
+      messageId,
+      emoji,
+      fromPlayerId: socket.id,
+      fromPlayerName: player.name
+    });
+  });
+
+  socket.on('playerEmote', ({ emoji }: { emoji: string }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const allowed = ['👋', '😊', '😤', '🏃', '💪', '😩', '🙏', '🎉'];
+    if (!allowed.includes(emoji)) return;
+
+    io.to(roomId).emit('playerEmote', {
+      playerId: socket.id,
+      playerName: player.name,
+      emoji
+    });
+  });
+
+  socket.on('sendChat', ({ text, target }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const sanitized = text.trim().slice(0, 200);
+    if (!sanitized) return;
+
+    const msg: ChatMessage = {
+      id: uuidv4(),
+      senderId: socket.id,
+      senderName: player.name,
+      text: sanitized,
+      tick: room.tick,
+      target,
+      timestamp: Date.now()
+    };
+
+    if (target === 'all') {
+      io.to(roomId).emit('chatMessage', msg);
+    } else {
+      socket.emit('chatMessage', msg);
+      if (room.players[target]) {
+        io.to(target).emit('chatMessage', msg);
+      }
+    }
+  });
+
+  socket.on('respondToInteraction', ({ requestId, accept }: { requestId: string; accept: boolean }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const idx = room.pendingInteractions.findIndex(r => r.id === requestId);
+    if (idx === -1) return;
+    const request = room.pendingInteractions[idx];
+
+    // Only the target can respond — the request was emitted to a specific socket,
+    // but we don't store targetSocketId on InteractionRequest so we verify via fromPlayerId
+    if (request.fromPlayerId === socket.id) return; // requester can't respond to own request
+
+    room.pendingInteractions.splice(idx, 1);
+    const requester = room.players[request.fromPlayerId];
+    if (!requester) return;
+
+    if (accept) {
+      const sameLocation = player.state.location === requester.state.location;
+      const proximityBonus = sameLocation ? 1.5 : 1;
+
+      player.state.energy = Math.max(0, player.state.energy - 5);
+      player.socialTrust = Math.min(100, player.socialTrust + Math.round(3 * proximityBonus));
+      player.communityImpact += Math.round(2 * proximityBonus);
+      player.state.helpedOthersCount++;
+      requester.state.mood = Math.min(100, requester.state.mood + Math.round(10 * proximityBonus));
+      requester.state.receivedHelpCount++;
+
+      const bonusText = sameLocation ? ' (proximity bonus!)' : '';
+      io.to(request.fromPlayerId).emit('actionResult', {
+        success: true,
+        message: `${player.name} accepted your help request!${bonusText}`,
+        changes: { mood: requester.state.mood }
+      });
+      io.to(request.fromPlayerId).emit('playerUpdate', requester);
+      io.to(socket.id).emit('playerUpdate', player);
+
+      emitNotification(io, roomId, request.fromPlayerId, 'action', `${player.name} helped you!${bonusText}`, room.tick, socket.id, player.name);
+      emitNotification(io, roomId, socket.id, 'action', `You helped ${requester.name}.${bonusText}`, room.tick, socket.id, player.name);
+    } else {
+      io.to(request.fromPlayerId).emit('actionResult', {
+        success: false,
+        message: `${player.name} couldn't help right now.`,
+        changes: {}
+      });
+    }
   });
 
   socket.on('disconnect', () => {
@@ -258,15 +488,23 @@ function startMatch(io: Server, room: Room): void {
     });
   }
 
-  // After briefing phase, start playing
-  setTimeout(() => {
+  // Reset ready flags so players must explicitly signal readyToPlay
+  for (const p of Object.values(room.players)) p.isReady = false;
+
+  // Fallback: auto-start after 2 minutes if players never signal ready
+  const briefingTimer = setTimeout(() => {
+    roomBriefingTimers.delete(room.id);
+    if (room.phase !== 'briefing') return;
     room.phase = 'playing';
+    io.to(room.id).emit('briefingComplete');
     io.to(room.id).emit('roomUpdate', toPublicRoom(room));
     startGameLoop(io, room);
-  }, 5000); // 5 second briefing window
+  }, 120000);
+  roomBriefingTimers.set(room.id, briefingTimer);
 }
 
 function startGameLoop(io: Server, room: Room): void {
+  const tickMs = Math.round(TICK_INTERVAL_MS / room.gameSpeed);
   const interval = setInterval(() => {
     if (room.phase !== 'playing') {
       clearInterval(interval);
@@ -283,7 +521,39 @@ function startGameLoop(io: Server, room: Room): void {
       const { newState, events } = tickCharacterState(player.state, player.persona, room.tick);
       player.state = newState;
 
-      // Log any state events
+      // Environmental effects — weather and night
+      const isNightTime = room.tick > 0 && ((room.tick % 600) > 400);
+      const activeWeather = room.cityEvents.some(e =>
+        e.type === 'weather' &&
+        e.startTick + e.duration > room.tick &&
+        (e.affectedLocations.includes('all') || e.affectedLocations.includes(player.state.location))
+      );
+      const activeHeat = room.cityEvents.some(e =>
+        e.type === 'heat' &&
+        e.startTick + e.duration > room.tick &&
+        (e.affectedLocations.includes('all') || e.affectedLocations.includes(player.state.location))
+      );
+
+      if (activeWeather) {
+        player.state.hydration = Math.min(100, player.state.hydration + 0.15);
+        player.state.mood = Math.max(0, player.state.mood - 0.08);
+        if (room.tick % 60 === 0 && !events.length) {
+          events.push('The rain makes everything harder.');
+        }
+      }
+      if (activeHeat) {
+        player.state.hydration = Math.min(100, player.state.hydration + 0.25);
+        player.state.energy = Math.max(0, player.state.energy - 0.1);
+        if (room.tick % 60 === 0 && !events.length) {
+          events.push('The heat is draining you.');
+        }
+      }
+      if (isNightTime) {
+        player.state.stress = Math.min(100, player.state.stress + 0.08);
+        player.state.energy = Math.max(0, player.state.energy - 0.05);
+      }
+
+      // Log any state events and notify
       for (const evt of events) {
         player.actionLog.push({
           id: uuidv4(),
@@ -293,6 +563,7 @@ function startGameLoop(io: Server, room: Room): void {
           description: evt,
           isPublic: false
         });
+        emitNotification(io, room.id, socketId, 'warning', evt, room.tick);
       }
 
       // Check for unexpected fortune
@@ -307,21 +578,78 @@ function startGameLoop(io: Server, room: Room): void {
           changes: fortune.statChanges,
           narrative: fortune.description
         });
+        emitNotification(io, room.id, socketId, 'fortune', fortune.description, room.tick, socketId, player.name);
+      }
+
+      // Fire social dilemma if eligible
+      const dilemmas = getContentDilemmas();
+      if (dilemmas.length > 0) {
+        const dilemma = pickDilemmaForTick(dilemmas, player, room.tick, rng);
+        if (dilemma) {
+          (player as Player & { _pendingDilemma?: SocialDilemma })._pendingDilemma = dilemma;
+          player.activeDilemmaId = dilemma.id;
+          const evt = buildDilemmaEvent(dilemma, room.tick);
+          io.to(socketId).emit('dilemmaEvent', evt);
+          emitNotification(io, room.id, socketId, 'dilemma', `Dilemma: ${dilemma.title}`, room.tick);
+        }
       }
 
       // Send private player update
       io.to(socketId).emit('playerUpdate', player);
     }
 
-    // Generate city events occasionally
-    if (rng.chance(0.008) && room.cityEvents.filter(e => e.startTick + e.duration > room.tick).length < 3) {
-      const event = generateCityEvent(room.tick, rng);
+    // Proximity notifications — detect arrivals and departures
+    let prevLocs = roomPrevLocations.get(room.id);
+    if (!prevLocs) {
+      prevLocs = new Map();
+      roomPrevLocations.set(room.id, prevLocs);
+    }
+    for (const [socketId, player] of Object.entries(room.players)) {
+      if (!player.isConnected) continue;
+      const prevLoc = prevLocs.get(socketId);
+      const curLoc = player.state.location;
+      if (prevLoc && prevLoc !== curLoc) {
+        const locName = LOCATIONS.find(l => l.id === curLoc)?.name || curLoc;
+        for (const [otherId, other] of Object.entries(room.players)) {
+          if (otherId === socketId || !other.isConnected) continue;
+          if (other.state.location === curLoc) {
+            emitNotification(io, room.id, otherId, 'proximity',
+              `${player.name} arrived at ${locName}`, room.tick, socketId, player.name);
+          }
+          if (other.state.location === prevLoc) {
+            emitNotification(io, room.id, otherId, 'proximity',
+              `${player.name} left your area`, room.tick, socketId, player.name);
+          }
+        }
+      }
+      prevLocs.set(socketId, curLoc);
+    }
+
+    // Clean up expired interaction requests
+    room.pendingInteractions = room.pendingInteractions.filter(r => r.expiresAtTick > room.tick);
+
+    // Generate city events (more frequent as time runs out)
+    const timeProgress = room.tick / room.matchDuration;
+    const eventChance = timeProgress > 0.75 ? 0.015 : timeProgress > 0.5 ? 0.012 : 0.008;
+    const maxActive = timeProgress > 0.75 ? 4 : 3;
+    if (rng.chance(eventChance) && room.cityEvents.filter(e => e.startTick + e.duration > room.tick).length < maxActive) {
+      const activePlayers = Object.values(room.players).filter(p => p.isConnected);
+      const event = generateCityEvent(room.tick, rng, activePlayers);
       room.cityEvents.push(event);
       io.to(room.id).emit('cityEvent', event);
+      emitNotification(io, room.id, null, 'event', `${event.title}: ${event.description}`, room.tick);
+    }
+
+    // Time warnings
+    const remaining = room.matchDuration - room.tick;
+    if (remaining === 60) {
+      emitNotification(io, room.id, null, 'warning', '1 minute remaining! Complete your objectives!', room.tick);
+    } else if (remaining === 30) {
+      emitNotification(io, room.id, null, 'warning', '30 seconds left! Final push!', room.tick);
     }
 
     // Check match time limit
-    const elapsed = room.tick; // 1 tick = 1 second
+    const elapsed = room.tick;
     if (elapsed >= room.matchDuration) {
       endMatch(io, room);
       clearInterval(interval);
@@ -332,23 +660,37 @@ function startGameLoop(io: Server, room: Room): void {
     io.to(room.id).emit('tick', room.tick);
     io.to(room.id).emit('roomUpdate', toPublicRoom(room));
 
-  }, TICK_INTERVAL_MS);
+  }, tickMs);
 
   roomIntervals.set(room.id, interval);
 }
 
 function endMatch(io: Server, room: Room): void {
   room.phase = 'ended';
+  const briefingTimer = roomBriefingTimers.get(room.id);
+  if (briefingTimer) {
+    clearTimeout(briefingTimer);
+    roomBriefingTimers.delete(room.id);
+  }
   const interval = roomIntervals.get(room.id);
   if (interval) {
     clearInterval(interval);
     roomIntervals.delete(room.id);
   }
+  roomPrevLocations.delete(room.id);
 
   const result = calculateMatchResult(room);
   room.matchResult = result;
   io.to(room.id).emit('gameEnded', result);
   console.log(`Match ended in room ${room.id}`);
+
+  setTimeout(() => {
+    rooms.delete(room.id);
+    for (const [socketId, rId] of playerToRoom) {
+      if (rId === room.id) playerToRoom.delete(socketId);
+    }
+    console.log(`Room ${room.id} cleaned up`);
+  }, 5 * 60 * 1000);
 }
 
 function addPlayerToRoom(room: Room, socketId: string, name: string): void {
@@ -373,9 +715,27 @@ function addPlayerToRoom(room: Room, socketId: string, name: string): void {
     communityImpact: 0,
     hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
     actionLog: [],
+    dilemmasResolved: [],
     isConnected: true,
     isReady: false
   };
+}
+
+function emitNotification(
+  io: Server, roomId: string, targetSocket: string | null,
+  type: GameNotification['type'], text: string, tick: number,
+  playerId?: string, playerName?: string
+): void {
+  const notif: GameNotification = {
+    id: uuidv4(), tick, type, text,
+    playerId, playerName,
+    isPrivate: targetSocket !== null
+  };
+  if (targetSocket) {
+    io.to(targetSocket).emit('gameNotification', notif);
+  } else {
+    io.to(roomId).emit('gameNotification', notif);
+  }
 }
 
 function applyStateChanges(player: Player, changes: Partial<CharacterState>): void {
