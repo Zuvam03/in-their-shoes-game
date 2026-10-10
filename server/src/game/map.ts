@@ -7,7 +7,7 @@ export const LOCATIONS: Location[] = [
     name: 'Howrah Station',
     district: 'Howrah',
     type: 'transport',
-    x: 120, y: 310,
+    x: 90, y: 340,
     resources: { water: 1 },
     description: 'The grand old station of Kolkata, always teeming with people. Starting point for many journeys.'
   },
@@ -16,7 +16,7 @@ export const LOCATIONS: Location[] = [
     name: 'Esplanade',
     district: 'Central Kolkata',
     type: 'transport',
-    x: 280, y: 290,
+    x: 340, y: 340,
     resources: { food: 1, water: 1 },
     description: 'The crossroads of the city. Every bus, tram, and metro passes through here.'
   },
@@ -25,7 +25,7 @@ export const LOCATIONS: Location[] = [
     name: 'Sealdah Station',
     district: 'North Kolkata',
     type: 'transport',
-    x: 370, y: 220,
+    x: 500, y: 155,
     resources: { food: 1 },
     description: 'Eastern gateway for suburban trains. Busy and always in motion.'
   },
@@ -35,7 +35,7 @@ export const LOCATIONS: Location[] = [
     name: 'College Street',
     district: 'North Kolkata',
     type: 'education',
-    x: 310, y: 200,
+    x: 380, y: 175,
     resources: { knowledge: 1 },
     description: 'The city\'s intellectual heart. Books, students, and the smell of old paper. Study materials available.'
   },
@@ -44,7 +44,7 @@ export const LOCATIONS: Location[] = [
     name: 'Park Street',
     district: 'South Central',
     type: 'food',
-    x: 270, y: 360,
+    x: 370, y: 430,
     resources: { food: 2, water: 1 },
     description: 'The restaurant mile of Kolkata. Every cuisine, every price point. Food restores more here.'
   },
@@ -53,7 +53,7 @@ export const LOCATIONS: Location[] = [
     name: 'Maidan',
     district: 'Central',
     type: 'public',
-    x: 230, y: 340,
+    x: 250, y: 400,
     resources: { energy: 1, water: 1 },
     description: 'The vast open green heart of the city. A rare place to breathe and recover energy.'
   },
@@ -62,7 +62,7 @@ export const LOCATIONS: Location[] = [
     name: 'Victoria Memorial Area',
     district: 'Central',
     type: 'public',
-    x: 240, y: 400,
+    x: 260, y: 490,
     resources: { mood: 1 },
     description: 'Historical monument and gardens. Visiting restores mood and offers a brief calm.'
   },
@@ -72,7 +72,7 @@ export const LOCATIONS: Location[] = [
     name: 'New Market',
     district: 'Central',
     type: 'shop',
-    x: 260, y: 260,
+    x: 320, y: 265,
     resources: { food: 2, goods: 2, water: 1 },
     description: 'Legendary market with everything from food to clothes. Best prices in the city.'
   },
@@ -81,7 +81,7 @@ export const LOCATIONS: Location[] = [
     name: 'Gariahat Market',
     district: 'South Kolkata',
     type: 'shop',
-    x: 280, y: 480,
+    x: 420, y: 610,
     resources: { goods: 2, food: 1 },
     description: 'South Kolkata\'s biggest market. Sarees, handicrafts, street food.'
   },
@@ -91,7 +91,7 @@ export const LOCATIONS: Location[] = [
     name: 'Shyambazar',
     district: 'North Kolkata',
     type: 'residential',
-    x: 290, y: 160,
+    x: 360, y: 105,
     resources: { food: 1 },
     description: 'A classic north Kolkata neighbourhood. Famous for its puchkas and political posters.'
   },
@@ -100,7 +100,7 @@ export const LOCATIONS: Location[] = [
     name: 'Lake Gardens',
     district: 'South Kolkata',
     type: 'residential',
-    x: 310, y: 520,
+    x: 490, y: 660,
     resources: { energy: 1 },
     description: 'A quiet residential area around the lakes. Good for rest and recovery.'
   },
@@ -109,7 +109,7 @@ export const LOCATIONS: Location[] = [
     name: 'Bhawanipore',
     district: 'South Central',
     type: 'residential',
-    x: 240, y: 440,
+    x: 300, y: 550,
     resources: { food: 1 },
     description: 'A residential neighbourhood with excellent local dhabas and sweets shops.'
   },
@@ -119,7 +119,7 @@ export const LOCATIONS: Location[] = [
     name: 'Kumartuli',
     district: 'North Kolkata',
     type: 'public',
-    x: 260, y: 140,
+    x: 220, y: 90,
     resources: { mood: 1, knowledge: 1 },
     description: 'The potters\' quarter — artisans making idols. Fascinating to walk through.'
   },
@@ -128,7 +128,7 @@ export const LOCATIONS: Location[] = [
     name: 'Street Food Row',
     district: 'Central',
     type: 'food',
-    x: 300, y: 280,
+    x: 420, y: 305,
     resources: { food: 2, water: 1 },
     description: 'A legendary stretch of puchka, kathi rolls, and jhalmuri stalls.'
   },
@@ -138,7 +138,7 @@ export const LOCATIONS: Location[] = [
     name: 'Dalhousie Square',
     district: 'Central Business District',
     type: 'office',
-    x: 330, y: 270,
+    x: 500, y: 270,
     resources: { money: 1 },
     description: 'The commercial and government district. Work opportunities and formal errands available.'
   },
@@ -147,7 +147,7 @@ export const LOCATIONS: Location[] = [
     name: 'Salt Lake IT Park',
     district: 'East Kolkata',
     type: 'office',
-    x: 480, y: 230,
+    x: 710, y: 200,
     resources: { money: 2, knowledge: 1 },
     description: 'Modern tech hub. Better paying work but further away.'
   },
@@ -157,7 +157,7 @@ export const LOCATIONS: Location[] = [
     name: 'PG Hospital Area',
     district: 'Central',
     type: 'medical',
-    x: 360, y: 300,
+    x: 550, y: 340,
     resources: { health: 2 },
     description: 'Major hospital district. Can restore health and obtain medicine.'
   },
@@ -166,7 +166,7 @@ export const LOCATIONS: Location[] = [
     name: 'Local Clinic',
     district: 'South Central',
     type: 'medical',
-    x: 250, y: 420,
+    x: 350, y: 510,
     resources: { health: 1 },
     description: 'Community health clinic. Cheaper than the hospital, basic care.'
   },
@@ -176,7 +176,7 @@ export const LOCATIONS: Location[] = [
     name: 'Hooghly Riverbank',
     district: 'West Kolkata',
     type: 'public',
-    x: 150, y: 260,
+    x: 155, y: 275,
     resources: { water: 2, mood: 1, energy: 1 },
     description: 'The banks of the Hooghly. Peaceful, with tea stalls and open skies.'
   },
@@ -186,7 +186,7 @@ export const LOCATIONS: Location[] = [
     name: 'Kalighat',
     district: 'South Kolkata',
     type: 'transport',
-    x: 250, y: 450,
+    x: 280, y: 600,
     resources: { food: 1 },
     description: 'Famous temple area and metro station. Cultural importance and street vendors.'
   }

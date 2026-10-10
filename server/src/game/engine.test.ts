@@ -121,6 +121,7 @@ describe('Persona-Specific Consequences', () => {
       hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
       actionLog: [],
       dilemmasResolved: [],
+      isAlive: true,
       isConnected: true,
       isReady: true
     };
@@ -220,7 +221,7 @@ describe('Karma System', () => {
       },
       socialTrust: 50, communityImpact: 0,
       hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
-      actionLog: [], dilemmasResolved: [], isConnected: true, isReady: true
+      actionLog: [], dilemmasResolved: [], isAlive: true, isConnected: true, isReady: true
     };
   }
 
@@ -295,8 +296,8 @@ describe('Map System', () => {
     for (const loc of LOCATIONS) {
       expect(loc.x).toBeGreaterThan(0);
       expect(loc.y).toBeGreaterThan(0);
-      expect(loc.x).toBeLessThan(700);
-      expect(loc.y).toBeLessThan(700);
+      expect(loc.x).toBeLessThan(900);
+      expect(loc.y).toBeLessThan(750);
     }
   });
 

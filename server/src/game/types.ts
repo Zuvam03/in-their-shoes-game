@@ -199,6 +199,8 @@ export interface Player {
   actionLog: GameEvent[];
   dilemmasResolved: DilemmaRecord[];
   activeDilemmaId?: string;  // pending dilemma waiting for player response
+  isAlive: boolean;
+  deathTick?: number;
   isConnected: boolean;
   isReady: boolean;
 }
@@ -327,7 +329,9 @@ export type ActionType =
   | 'transfer_money'
   | 'complete_objective'
   | 'event_choice'
-  | 'dilemma_choice';
+  | 'dilemma_choice'
+  | 'buy_from_vendor'
+  | 'micro_interaction';
 
 export interface GameAction {
   playerId: string;
@@ -369,6 +373,16 @@ export interface DilemmaRecord {
   tick: number;
 }
 
+// --- Death System ---
+
+export interface DeathNarrative {
+  cause: string;
+  finalMoments: string;
+  dependents: string[];
+  lastLocation: string;
+  unfinishedBusiness: string[];
+}
+
 export interface ScoreBreakdown {
   missionPoints: number;
   optionalBonus: number;
@@ -401,6 +415,7 @@ export interface PlayerResult {
   narrative: string;
   dilemmasResolved: DilemmaRecord[];
   personaLens?: string[];
+  deathNarrative?: DeathNarrative;
   scoreBreakdown: ScoreBreakdown;
   performanceInsights: PerformanceInsight[];
 }
@@ -429,7 +444,7 @@ export interface ChatMessage {
 export interface GameNotification {
   id: string;
   tick: number;
-  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity';
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity' | 'death';
   text: string;
   playerId?: string;
   playerName?: string;
@@ -444,6 +459,8 @@ export interface ServerToClientEvents {
   dilemmaEvent: (event: DilemmaEvent) => void;
   gameStarted: (data: { yourPlayer: Player; room: PublicRoom }) => void;
   gameEnded: (result: MatchResult) => void;
+  playerDied: (data: { playerId: string; playerName: string; personaTitle: string; narrative: DeathNarrative }) => void;
+  locationSnapshot: (data: { locationId: string; snapshot: import('./locationContent').LocationSnapshot }) => void;
   error: (message: string) => void;
   tick: (tick: number) => void;
   interactionRequest: (request: InteractionRequest) => void;

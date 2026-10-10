@@ -83,6 +83,8 @@ export default function CityMap() {
     return () => cancelAnimationFrame(raf);
   }, [travelAnimation]);
 
+  const hasInitialized = useRef(false);
+
   const pinchDist = useRef(0);
 
   const onMouseDown = (e: React.MouseEvent) => {
@@ -157,6 +159,21 @@ export default function CityMap() {
   // Compute animated player position
   let playerX = 0, playerY = 0;
   const currentLocData = LOCATIONS.find(l => l.id === currentLocation);
+
+  // Center view on player's starting location
+  useEffect(() => {
+    if (!hasInitialized.current && currentLocData && svgRef.current) {
+      hasInitialized.current = true;
+      const rect = svgRef.current.getBoundingClientRect();
+      const cx = rect.width / 2;
+      const cy = rect.height / 2;
+      const svgScale = Math.min(rect.width / 900, rect.height / 750);
+      const px = currentLocData.x * svgScale;
+      const py = currentLocData.y * svgScale;
+      setPan({ x: cx - px, y: cy - py });
+    }
+  }, [currentLocData]);
+
   if (travelAnimation && animProgress < 1) {
     const fromLoc = LOCATIONS.find(l => l.id === travelAnimation.from);
     const toLoc = LOCATIONS.find(l => l.id === travelAnimation.to);
@@ -385,7 +402,7 @@ export default function CityMap() {
       <svg
         ref={svgRef}
         width="100%" height="100%"
-        viewBox="0 0 640 640"
+        viewBox="0 0 900 750"
         style={{ cursor: dragging.current ? 'grabbing' : 'grab' }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
@@ -397,62 +414,72 @@ export default function CityMap() {
         onTouchEnd={onTouchEnd}
       >
         <g transform={`translate(${pan.x},${pan.y}) scale(${scale})`}
-          style={{ transformOrigin: '320px 320px' }}>
+          style={{ transformOrigin: '450px 375px' }}>
 
-          {/* Water/river background */}
+          {/* Defs */}
           <defs>
-            <linearGradient id="riverGrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="#1a3a5c" stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#1e4a7c" stopOpacity="0.6" />
+            <linearGradient id="riverGrad" x1="0" y1="0" x2="0.3" y2="1">
+              <stop offset="0%" stopColor="#1a3a5c" stopOpacity="0.9" />
+              <stop offset="50%" stopColor="#1e4a7c" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#1a3a5c" stopOpacity="0.6" />
             </linearGradient>
             <filter id="glow">
               <feGaussianBlur stdDeviation="3" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
-            <radialGradient id="fogGrad">
-              <stop offset="0%" stopColor="transparent" />
-              <stop offset="60%" stopColor="transparent" />
-              <stop offset="100%" stopColor="rgba(6,8,16,0.7)" />
-            </radialGradient>
+            <filter id="districtGlow">
+              <feGaussianBlur stdDeviation="30" />
+            </filter>
           </defs>
 
-          {/* Hooghly River */}
+          {/* District zones — soft colored regions */}
+          <ellipse cx="300" cy="120" rx="160" ry="80" fill="#c2410c" opacity="0.04" filter="url(#districtGlow)" />
+          <text x="195" y="60" fill="rgba(194,65,12,0.18)" fontSize="13" fontWeight="700" letterSpacing="2">NORTH KOLKATA</text>
+
+          <ellipse cx="400" cy="310" rx="200" ry="90" fill="#3b82f6" opacity="0.03" filter="url(#districtGlow)" />
+          <text x="175" y="235" fill="rgba(59,130,246,0.15)" fontSize="13" fontWeight="700" letterSpacing="2">CENTRAL</text>
+
+          <ellipse cx="340" cy="490" rx="150" ry="70" fill="#a855f7" opacity="0.03" filter="url(#districtGlow)" />
+          <text x="380" y="455" fill="rgba(168,85,247,0.15)" fontSize="13" fontWeight="700" letterSpacing="2">SOUTH CENTRAL</text>
+
+          <ellipse cx="380" cy="630" rx="170" ry="70" fill="#f59e0b" opacity="0.03" filter="url(#districtGlow)" />
+          <text x="335" y="680" fill="rgba(245,158,11,0.15)" fontSize="13" fontWeight="700" letterSpacing="2">SOUTH KOLKATA</text>
+
+          <ellipse cx="700" cy="210" rx="80" ry="60" fill="#06b6d4" opacity="0.04" filter="url(#districtGlow)" />
+          <text x="660" y="145" fill="rgba(6,182,212,0.18)" fontSize="11" fontWeight="700" letterSpacing="2">EAST</text>
+
+          {/* Hooghly River — wide organic path */}
           <path
-            d="M 60 100 Q 100 200 80 320 Q 70 400 90 500"
-            fill="none" stroke="url(#riverGrad)" strokeWidth="28" opacity="0.6"
+            d="M 50 30 Q 90 120 70 250 Q 55 350 40 450 Q 30 550 50 700"
+            fill="none" stroke="url(#riverGrad)" strokeWidth="40" opacity="0.5"
+            strokeLinecap="round"
           />
           <path
-            d="M 60 100 Q 100 200 80 320 Q 70 400 90 500"
-            fill="none" stroke="#2563eb" strokeWidth="12" opacity="0.3"
+            d="M 50 30 Q 90 120 70 250 Q 55 350 40 450 Q 30 550 50 700"
+            fill="none" stroke="#2563eb" strokeWidth="16" opacity="0.2"
+            strokeLinecap="round"
           />
-
-          {/* Grid lines */}
-          {[100, 150, 200, 250, 300, 350, 400, 450, 500].map(y => (
-            <line key={`h${y}`} x1="100" y1={y} x2="540" y2={y}
-              stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-          ))}
-          {[150, 200, 250, 300, 350, 400, 450, 500].map(x => (
-            <line key={`v${x}`} x1={x} y1="100" x2={x} y2="560"
-              stroke="rgba(255,255,255,0.03)" strokeWidth="1" />
-          ))}
-
-          {/* Districts */}
-          <text x="150" y="130" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">North Kolkata</text>
-          <text x="200" y="380" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">Central</text>
-          <text x="200" y="520" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">South Kolkata</text>
-          <text x="420" y="250" fill="rgba(255,255,255,0.12)" fontSize="14" fontWeight="600">East Kolkata</text>
+          <path
+            d="M 50 30 Q 90 120 70 250 Q 55 350 40 450 Q 30 550 50 700"
+            fill="none" stroke="#60a5fa" strokeWidth="2" opacity="0.15"
+            strokeLinecap="round" strokeDasharray="8 12"
+          >
+            <animate attributeName="stroke-dashoffset" from="40" to="0" dur="4s" repeatCount="indefinite" />
+          </path>
+          <text x="20" y="200" fill="rgba(96,165,250,0.12)" fontSize="10" fontWeight="600"
+            transform="rotate(-82, 20, 200)" letterSpacing="3">HOOGHLY</text>
 
           {/* SVG rain particles inside the map */}
-          {hasWeatherEvent && Array.from({ length: 12 }).map((_, i) => (
+          {hasWeatherEvent && Array.from({ length: 16 }).map((_, i) => (
             <line key={`svgrain${i}`}
-              x1={120 + (i * 43) % 400} y1={100}
-              x2={118 + (i * 43) % 400} y2={112}
+              x1={80 + (i * 53) % 720} y1={50}
+              x2={78 + (i * 53) % 720} y2={62}
               stroke="rgba(120,170,230,0.2)"
               strokeWidth="1"
               opacity="0.3"
             >
               <animateTransform attributeName="transform" type="translate"
-                values={`0,0;-4,${360 + (i % 3) * 60}`}
+                values={`0,0;-4,${500 + (i % 3) * 80}`}
                 dur={`${1.2 + (i % 4) * 0.3}s`} repeatCount="indefinite"
               />
               <animate attributeName="opacity" values="0.3;0.15;0" dur={`${1.2 + (i % 4) * 0.3}s`} repeatCount="indefinite" />
@@ -460,9 +487,9 @@ export default function CityMap() {
           ))}
 
           {/* Fireflies at night */}
-          {isNightTime && Array.from({ length: 8 }).map((_, i) => (
+          {isNightTime && Array.from({ length: 12 }).map((_, i) => (
             <circle key={`firefly${i}`}
-              cx={150 + (i * 57) % 340} cy={150 + (i * 43) % 300}
+              cx={100 + (i * 67) % 650} cy={80 + (i * 53) % 550}
               r="1.5"
               fill={i % 2 === 0 ? 'rgba(245,200,66,0.6)' : 'rgba(129,230,217,0.5)'}
             >
@@ -615,7 +642,7 @@ export default function CityMap() {
 
                 {/* Main node */}
                 <circle
-                  r={isCurrent ? 12 : isHovered ? 11 : 9}
+                  r={isCurrent ? 14 : isHovered ? 13 : getNodeRadius(loc.type)}
                   fill={isCurrent ? color : isHovered ? `${color}cc` : isVisited ? 'var(--bg-card)' : 'rgba(20,22,30,0.9)'}
                   stroke={isVisited || isCurrent ? color : `${color}44`}
                   strokeWidth={isCurrent ? 3 : isHovered ? 2 : 1.5}
@@ -624,7 +651,7 @@ export default function CityMap() {
 
                 {/* Icon */}
                 <text textAnchor="middle" dominantBaseline="central"
-                  fontSize={isCurrent ? "11" : "9"} y="0.5"
+                  fontSize={isCurrent ? "13" : loc.type === 'transport' ? "11" : "10"} y="0.5"
                   opacity={isVisited || isCurrent ? 1 : 0.3}
                   style={{ pointerEvents: 'none', userSelect: 'none' }}>
                   {LOCATION_ICONS[loc.type]}
@@ -890,17 +917,30 @@ export default function CityMap() {
   );
 }
 
+function getNodeRadius(type: string): number {
+  switch (type) {
+    case 'transport': return 12;
+    case 'food': return 11;
+    case 'office': return 11;
+    case 'shop': return 10;
+    case 'medical': return 10;
+    case 'public': return 10;
+    default: return 8;
+  }
+}
+
 function getLabelOffset(loc: LocationInfo): { x: number; y: number; anchor: 'start' | 'middle' | 'end' } {
+  const r = getNodeRadius(loc.type) + 6;
   switch (loc.labelDir) {
     case 'top':
-      return { x: 0, y: -18, anchor: 'middle' };
+      return { x: 0, y: -r - 4, anchor: 'middle' };
     case 'left':
-      return { x: -16, y: -2, anchor: 'end' };
+      return { x: -r - 2, y: -2, anchor: 'end' };
     case 'right':
-      return { x: 16, y: -2, anchor: 'start' };
+      return { x: r + 2, y: -2, anchor: 'start' };
     case 'bottom':
     default:
-      return { x: 0, y: 18, anchor: 'middle' };
+      return { x: 0, y: r + 8, anchor: 'middle' };
   }
 }
 
