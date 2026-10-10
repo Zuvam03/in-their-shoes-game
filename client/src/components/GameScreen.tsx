@@ -11,17 +11,13 @@ import DilemmaModal from './DilemmaModal';
 import AchievementToast from './AchievementToast';
 import TutorialOverlay from './TutorialOverlay';
 import InteractionModal from './InteractionModal';
-import Minimap from './Minimap';
 import LocationDetail from './LocationDetail';
-import JourneyTimeline from './JourneyTimeline';
-import QuickEmoteBar from './QuickEmoteBar';
 import StatusEffectsBar from './StatusEffectsBar';
 import FloatingNumbers from './FloatingNumbers';
 import ActionResultToast from './ActionResultToast';
 import MissionHUD from './MissionHUD';
 import MatchTimeline from './MatchTimeline';
 import LiveLeaderboard from './LiveLeaderboard';
-import ContextualHints from './ContextualHints';
 import WeatherWidget from './WeatherWidget';
 import QuickActions from './QuickActions';
 import KeyboardShortcuts from './KeyboardShortcuts';
@@ -31,67 +27,25 @@ import PauseMenu from './PauseMenu';
 import AmbientOverlay from './AmbientOverlay';
 import DayNightCycle from './DayNightCycle';
 import PersonaInsights from './PersonaInsights';
-import ProgressSummary from './ProgressSummary';
-import AchievementGallery from './AchievementGallery';
 import DaySummary from './DaySummary';
-import NarrativeJournal from './NarrativeJournal';
 import TradePanel from './TradePanel';
 import MoodRing from './MoodRing';
-import CommunityBoard from './CommunityBoard';
-import StreetWisdom from './StreetWisdom';
-import DangerZones from './DangerZones';
 import NotificationCenter from './NotificationCenter';
 import ActionCooldowns from './ActionCooldowns';
-import EventCountdown from './EventCountdown';
 import ReflectionPrompt from './ReflectionPrompt';
-import CityEconomy from './CityEconomy';
-import CollaborativeGoals from './CollaborativeGoals';
-import SocialNetwork from './SocialNetwork';
-import DailyChallenge from './DailyChallenge';
-import InequalityIndex from './InequalityIndex';
-import CityPulse from './CityPulse';
-import QuickStats from './QuickStats';
-import MoralCompass from './MoralCompass';
-import SurvivalJournal from './SurvivalJournal';
-import TrustMap from './TrustMap';
-import RiskAssessment from './RiskAssessment';
-import EndgamePreview from './EndgamePreview';
-import PersonaCompatibility from './PersonaCompatibility';
-import DayRecap from './DayRecap';
-import PerspectiveShift from './PerspectiveShift';
-import CommunityVoice from './CommunityVoice';
-import PrivilegeMeter from './PrivilegeMeter';
-import ChoiceConsequences from './ChoiceConsequences';
-import SystemicInsights from './SystemicInsights';
-import ResilienceTracker from './ResilienceTracker';
-import SafetyNet from './SafetyNet';
-import LifeBalance from './LifeBalance';
-import ImpactRipple from './ImpactRipple';
-import StoryArc from './StoryArc';
-import EmpathyMap from './EmpathyMap';
-import CulturalContext from './CulturalContext';
-import GratitudeLog from './GratitudeLog';
-import CollectiveMemory from './CollectiveMemory';
 import CityNewsTicker from './CityNewsTicker';
-import OpportunityScanner from './OpportunityScanner';
-import PlayerArchetype from './PlayerArchetype';
 import PlayerProximity from './PlayerProximity';
-import CityEvents from './CityEvents';
 import AchievementProgress from './AchievementProgress';
-import LifeLessons from './LifeLessons';
-import NeighborhoodWatch from './NeighborhoodWatch';
-import FinalReflection from './FinalReflection';
-import CommunityHealth from './CommunityHealth';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd, playAmbient, stopAmbient, playMove, playHelp, playNotification, playAchievement } from '../game/sounds';
 import CityEventCinematic from './CityEventCinematic';
 import DeathScreen from './DeathScreen';
 import { getLocationById } from '../game/mapData';
 
-type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
+type Tab = 'actions' | 'info' | 'mission' | 'social' | 'log';
 
 export default function GameScreen() {
   const { room, myPlayer, unreadChatCount, unreadNotifCount, soundEnabled, toggleSound, notifications, chatMessages, lastActionResult, pendingDilemma } = useGameStore();
-  const [activeTab, setActiveTab] = useState<Tab>('map');
+  const [activeTab, setActiveTab] = useState<Tab>('actions');
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showSettings, setShowSettings] = useState(false);
@@ -115,7 +69,7 @@ export default function GameScreen() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA' || (e.target as HTMLElement).tagName === 'SELECT') return;
-      const tabKeys: Record<string, Tab> = { '1': 'map', '2': 'character', '3': 'mission', '4': 'players', '5': 'chat', '6': 'feed', '7': 'journey', '8': 'achievements' };
+      const tabKeys: Record<string, Tab> = { '1': 'actions', '2': 'info', '3': 'mission', '4': 'social', '5': 'log' };
       if (tabKeys[e.key]) {
         e.preventDefault();
         setActiveTab(tabKeys[e.key]);
@@ -200,14 +154,11 @@ export default function GameScreen() {
     .filter(p => p.id !== myPlayer.id && p.state.location === myPlayer.state.location && p.isConnected);
 
   const tabs: { key: Tab; icon: string; label: string; badge?: number }[] = [
-    { key: 'map', icon: '🗺️', label: 'Map' },
-    { key: 'character', icon: '👤', label: 'Stats' },
+    { key: 'actions', icon: '🗺️', label: 'Actions' },
+    { key: 'info', icon: '📊', label: 'Info' },
     { key: 'mission', icon: '🎯', label: 'Mission' },
-    { key: 'players', icon: '👥', label: 'Players' },
-    { key: 'chat', icon: '💬', label: 'Chat', badge: unreadChatCount },
-    { key: 'feed', icon: '📋', label: 'Events', badge: unreadNotifCount },
-    { key: 'journey', icon: '📜', label: 'Journey' },
-    { key: 'achievements', icon: '🏆', label: 'Awards' }
+    { key: 'social', icon: '👥', label: 'Social', badge: unreadChatCount },
+    { key: 'log', icon: '📋', label: 'Log', badge: unreadNotifCount }
   ];
 
   if (isMobile) {
@@ -279,32 +230,24 @@ export default function GameScreen() {
 
         {/* Content area */}
         <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-          {activeTab === 'map' && (
+          {activeTab === 'actions' && (
             <>
               <CityMap />
               <MissionHUD />
               <WeatherWidget />
-              <ContextualHints />
+              <div style={{
+                position: 'absolute', bottom: '0', left: '0', right: '0',
+                background: 'linear-gradient(transparent, var(--bg-secondary))',
+                padding: '8px', maxHeight: '45%', overflowY: 'auto'
+              }}>
+                <ActionPanel />
+              </div>
             </>
           )}
-          {activeTab === 'character' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
+          {activeTab === 'info' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
-          {activeTab === 'players' && <div style={{ height: '100%', overflowY: 'auto' }}><PlayerProximity /><CommunityHealth /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></div>}
-          {activeTab === 'chat' && <ChatPanel />}
-          {activeTab === 'feed' && <EventFeed />}
-          {activeTab === 'journey' && <div style={{ height: '100%', overflowY: 'auto' }}><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></div>}
-          {activeTab === 'achievements' && <div style={{ height: '100%', overflowY: 'auto' }}><AchievementProgress /><AchievementGallery /></div>}
-          {activeTab === 'map' && (
-            <div style={{
-              position: 'absolute', bottom: '0', left: '0', right: '0',
-              background: 'linear-gradient(transparent, var(--bg-secondary))',
-              padding: '8px', maxHeight: '45%', overflowY: 'auto'
-            }}>
-              <OpportunityScanner />
-              <QuickEmoteBar />
-              <ActionPanel />
-            </div>
-          )}
+          {activeTab === 'social' && <div style={{ height: '100%', overflowY: 'auto' }}><ChatPanel /><PlayerProximity /><PlayersPanel /></div>}
+          {activeTab === 'log' && <div style={{ height: '100%', overflowY: 'auto' }}><EventFeed /><AchievementProgress /></div>}
         </div>
 
         {/* Bottom tab bar */}
@@ -514,17 +457,16 @@ export default function GameScreen() {
           overflow: 'hidden',
           transition: 'width 0.2s ease, min-width 0.2s ease'
         }}>
-          {/* Minimap + Stat bars */}
-          <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
-            <Minimap />
-          </div>
-          <div style={{ padding: '12px', borderBottom: '1px solid var(--border)' }}>
-            <StatBar label="Health" value={myPlayer.state.health} color="var(--accent-red)" icon="❤️" />
-            <StatBar label="Energy" value={myPlayer.state.energy} color="var(--accent-yellow)" icon="⚡" />
-            <StatBar label="Hunger" value={myPlayer.state.hunger} color="var(--accent-orange)" icon="🍛" inverted />
-            <StatBar label="Hydration" value={myPlayer.state.hydration} color="var(--accent-blue)" icon="💧" inverted />
-            <StatBar label="Mood" value={myPlayer.state.mood} color="var(--accent-purple)" icon="😊" />
-            <StatBar label="Stress" value={myPlayer.state.stress} color="#ef4444" icon="😰" inverted />
+          {/* Compact stat grid */}
+          <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+              <CompactStat icon="❤️" value={myPlayer.state.health} color="var(--accent-red)" label="HP" />
+              <CompactStat icon="⚡" value={myPlayer.state.energy} color="var(--accent-yellow)" label="NRG" />
+              <CompactStat icon="😊" value={myPlayer.state.mood} color="var(--accent-purple)" label="Mood" />
+              <CompactStat icon="🍛" value={myPlayer.state.hunger} color="var(--accent-orange)" label="Hung" inverted />
+              <CompactStat icon="💧" value={myPlayer.state.hydration} color="var(--accent-blue)" label="Thst" inverted />
+              <CompactStat icon="😰" value={myPlayer.state.stress} color="#ef4444" label="Strs" inverted />
+            </div>
             <StatusEffectsBar />
           </div>
 
@@ -563,28 +505,32 @@ export default function GameScreen() {
           </div>
 
           {/* Tab content */}
-          <div style={{ flex: 1, overflowY: 'auto' }}>
-            {activeTab === 'character' && <CharacterPanel />}
-            {activeTab === 'mission' && <MissionPanel />}
-            {activeTab === 'players' && <><PlayerProximity /><CommunityHealth /><DailyChallenge /><CommunityBoard /><CommunityVoice /><CollaborativeGoals /><TrustMap /><PersonaCompatibility /><InequalityIndex /><CityEconomy /><CityEvents /><SocialNetwork /><PlayersPanel /></>}
-            {activeTab === 'chat' && <ChatPanel />}
-            {activeTab === 'feed' && <EventFeed />}
-            {activeTab === 'journey' && <><StoryArc /><SurvivalJournal /><LifeLessons /><CollectiveMemory /><SystemicInsights /><FinalReflection /><NarrativeJournal /></>}
-            {activeTab === 'achievements' && <><AchievementProgress /><AchievementGallery /></>}
-            {activeTab === 'map' && (
-              <div style={{ padding: '12px' }}>
-                <QuickStats />
-                <OpportunityScanner />
-                <EventCountdown />
+          <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+            {activeTab === 'actions' && (
+              <div style={{ padding: '10px' }}>
                 <LocationDetail />
-                <ActionCooldowns />
-                <QuickEmoteBar />
                 <ActionPanel />
-                <RiskAssessment />
-                <NeighborhoodWatch />
-                <CulturalContext />
                 <TradePanel />
-                <StreetWisdom />
+                <ActionCooldowns />
+              </div>
+            )}
+            {activeTab === 'info' && (
+              <div style={{ padding: '10px' }}>
+                <CharacterPanel />
+              </div>
+            )}
+            {activeTab === 'mission' && <MissionPanel />}
+            {activeTab === 'social' && (
+              <div style={{ padding: '10px' }}>
+                <ChatPanel />
+                <PlayerProximity />
+                <PlayersPanel />
+              </div>
+            )}
+            {activeTab === 'log' && (
+              <div style={{ padding: '10px' }}>
+                <EventFeed />
+                <AchievementProgress />
               </div>
             )}
           </div>
@@ -607,11 +553,7 @@ export default function GameScreen() {
           <MissionHUD />
           <LiveLeaderboard />
           <WeatherWidget />
-          <CityPulse />
-          <DangerZones />
           <QuickActions />
-          <ContextualHints />
-          <ProgressSummary />
         </div>
       </div>
 
@@ -689,6 +631,34 @@ function MiniStatBar({ label, value, color }: { label: string; value: number; co
           width: `${Math.round(value)}%`, background: color,
           transition: 'width 0.5s ease'
         }} />
+      </div>
+    </div>
+  );
+}
+
+function CompactStat({ icon, value, color, label, inverted = false }: {
+  icon: string; value: number; color: string; label: string; inverted?: boolean;
+}) {
+  const v = Math.round(value);
+  const warn = inverted ? v > 65 : v < 30;
+  const crit = inverted ? v > 85 : v < 15;
+  const displayColor = crit ? 'var(--accent-red)' : warn ? 'var(--accent-yellow)' : color;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '4px',
+      padding: '4px 6px', borderRadius: '6px',
+      background: `color-mix(in srgb, ${displayColor} 8%, transparent)`,
+      border: `1px solid color-mix(in srgb, ${displayColor} 20%, transparent)`,
+    }}>
+      <span style={{ fontSize: '11px', lineHeight: 1 }}>{icon}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: '12px', fontWeight: 700, color: displayColor,
+          lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+          ...(crit ? { animation: 'pulse 1.5s infinite' } : {})
+        }}>{v}</div>
+        <div style={{ fontSize: '8px', color: 'var(--text-muted)', lineHeight: 1, marginTop: '1px' }}>{label}</div>
       </div>
     </div>
   );

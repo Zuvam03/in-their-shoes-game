@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useGameStore, PersonaDefinition, CharacterState } from '../store/gameStore';
 
-const INSIGHT_INTERVAL = 45000;
+const INSIGHT_INTERVAL = 90000;
 
 function generateInsight(
   persona: PersonaDefinition,
@@ -61,6 +61,7 @@ export default function PersonaInsights() {
   const { myPlayer } = useGameStore();
   const [insight, setInsight] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const shownRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!myPlayer) return;
@@ -72,14 +73,15 @@ export default function PersonaInsights() {
         myPlayer.state.helpedOthersCount,
         myPlayer.socialTrust
       );
-      if (text) {
+      if (text && !shownRef.current.has(text)) {
+        shownRef.current.add(text);
         setInsight(text);
         setVisible(true);
         setTimeout(() => setVisible(false), 8000);
       }
     };
 
-    const initial = setTimeout(show, 15000);
+    const initial = setTimeout(show, 20000);
     const interval = setInterval(show, INSIGHT_INTERVAL);
     return () => { clearTimeout(initial); clearInterval(interval); };
   }, [myPlayer?.persona.name]);

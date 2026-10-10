@@ -2,9 +2,10 @@ import type {
   Player, CharacterState, Room, GameAction, ActionResult,
   PersonaDefinition, MissionDefinition, PlayerMission, GameEvent,
   CityEvent, EventChoice, MissionObjective, InteractionRequest,
-  SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative
+  SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative,
+  TransportMode
 } from './types';
-import { getRoute, getLocation } from './map';
+import { getRoute, getLocation, findShortestPath } from './map';
 import { v4 as uuidv4 } from 'uuid';
 
 // --- Seeded RNG ---
@@ -167,29 +168,44 @@ function resolveMove(action: GameAction, player: Player, room: Room, rng: Seeded
     return { success: false, message: 'Invalid destination.', changes: {} };
   }
 
-  const route = getRoute(from, destination);
-  if (!route) {
-    return { success: false, message: `No direct route from ${from} to ${destination}.`, changes: {} };
+  const transportMode = mode as TransportMode;
+
+  // Try direct route first
+  let route = getRoute(from, destination);
+  let totalTravelTime = 0;
+  let totalCost = 0;
+  let pathDescription = '';
+
+  if (route) {
+    if (!route.modes.includes(transportMode as never)) {
+      return { success: false, message: `${mode} not available on this route.`, changes: {} };
+    }
+    totalTravelTime = route.travelTime[transportMode] || 0;
+    totalCost = route.cost[transportMode] || 0;
+  } else {
+    // Multi-hop: find path through intermediate stops
+    const pathResult = findShortestPath(from, destination, transportMode);
+    if (!pathResult || pathResult.path.length < 2) {
+      return { success: false, message: `No ${mode} route to ${destination}. Try a different transport mode.`, changes: {} };
+    }
+    totalTravelTime = pathResult.time;
+    totalCost = pathResult.cost;
+    const stopNames = pathResult.path.slice(1, -1).map(id => getLocation(id)?.name || id);
+    if (stopNames.length > 0) {
+      pathDescription = ` via ${stopNames.join(', ')}`;
+    }
   }
 
-  const transportMode = mode as keyof typeof route.travelTime;
-  if (!route.modes.includes(transportMode as never)) {
-    return { success: false, message: `${mode} not available on this route.`, changes: {} };
-  }
-
-  const travelTime = route.travelTime[transportMode] || 0;
-  const cost = route.cost[transportMode] || 0;
-
-  if (player.state.cash < cost) {
-    return { success: false, message: `Insufficient cash. Need ₹${cost}, have ₹${player.state.cash}.`, changes: {} };
+  if (player.state.cash < totalCost) {
+    return { success: false, message: `Insufficient cash. Need ₹${totalCost}, have ₹${player.state.cash}.`, changes: {} };
   }
 
   // Energy cost for movement — low-state penalties increase cost
   let energyCost = 0;
   if (transportMode === 'walk') {
-    energyCost = Math.round(travelTime / 60) * 5;
+    energyCost = Math.round(totalTravelTime / 60) * 5;
   } else {
-    energyCost = 2;
+    energyCost = 2 + Math.round(totalTravelTime / 300);
   }
 
   // Exhaustion penalty: movement costs more when energy is low
@@ -226,17 +242,18 @@ function resolveMove(action: GameAction, player: Player, room: Room, rng: Seeded
 
   const destLocation = getLocation(destination);
   const destName = destLocation?.name || destination;
+  const journeyMins = Math.round(totalTravelTime / 60);
 
   return {
     success: true,
-    message: `Travelling to ${destName} by ${transportMode}.`,
-    narrative: `You head to ${destName}. The journey takes ${Math.round(travelTime / 60)} minutes.`,
+    message: `Travelling to ${destName} by ${transportMode}${pathDescription}.`,
+    narrative: `You head to ${destName}${pathDescription}. The journey takes ${journeyMins} minutes.`,
     changes: {
       location: destination,
-      cash: player.state.cash - cost,
+      cash: player.state.cash - totalCost,
       energy: Math.max(0, player.state.energy - energyCost),
-      hunger: Math.min(100, player.state.hunger + (transportMode === 'walk' ? 3 : 1)),
-      hydration: Math.min(100, player.state.hydration + (transportMode === 'walk' ? 3 : 1))
+      hunger: Math.min(100, player.state.hunger + (transportMode === 'walk' ? 3 + Math.floor(journeyMins / 5) : 1)),
+      hydration: Math.min(100, player.state.hydration + (transportMode === 'walk' ? 3 + Math.floor(journeyMins / 5) : 1))
     },
     trustChange: 0,
     communityChange: 0
