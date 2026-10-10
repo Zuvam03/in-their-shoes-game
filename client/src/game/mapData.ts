@@ -575,3 +575,41 @@ export const TRAVEL_COSTS: Record<string, Record<string, number>> = {
   tram: { default: 6 },
   taxi: { default: 80 }
 };
+
+export function findPath(from: string, to: string, mode: string): { path: string[]; time: number; cost: number } | null {
+  if (from === to) return { path: [from], time: 0, cost: 0 };
+
+  type Node = { id: string; path: string[]; time: number; cost: number };
+  const queue: Node[] = [{ id: from, path: [from], time: 0, cost: 0 }];
+  const visited = new Set<string>();
+
+  while (queue.length > 0) {
+    const { id, path, time, cost } = queue.shift()!;
+    if (visited.has(id)) continue;
+    visited.add(id);
+
+    const routes = ROUTES.filter(r =>
+      (r.from === id || r.to === id) && r.modes.includes(mode)
+    );
+
+    for (const route of routes) {
+      const next = route.from === id ? route.to : route.from;
+      if (visited.has(next)) continue;
+
+      const defaultTimes: Record<string, number> = { walk: 600, bus: 180, metro: 120, tram: 210, taxi: 150 };
+      const defaultCosts: Record<string, number> = { walk: 0, bus: 8, metro: 10, tram: 6, taxi: 40 };
+      const segTime = defaultTimes[mode] || 300;
+      const segCost = defaultCosts[mode] || 0;
+      const newPath = [...path, next];
+
+      if (next === to) return { path: newPath, time: time + segTime, cost: cost + segCost };
+      queue.push({ id: next, path: newPath, time: time + segTime, cost: cost + segCost });
+    }
+  }
+  return null;
+}
+
+export function getAvailableModesForPath(from: string, to: string): string[] {
+  const modes = ['walk', 'bus', 'metro', 'tram', 'taxi'];
+  return modes.filter(m => findPath(from, to, m) !== null);
+}

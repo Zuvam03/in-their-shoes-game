@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useGameStore } from '../store/gameStore';
 import {
   LOCATIONS, ROUTES, LOCATION_COLORS, LOCATION_ICONS,
-  getConnectedLocations, getRoutesBetween, LocationInfo
+  getConnectedLocations, getRoutesBetween, LocationInfo,
+  findPath, getAvailableModesForPath
 } from '../game/mapData';
 import RadialActionMenu from './RadialActionMenu';
 
@@ -50,15 +51,19 @@ export default function CityMap() {
 
   const handleMove = () => {
     if (!selectedLocation || !currentLocation) return;
-    const route = getRoutesBetween(currentLocation, selectedLocation);
-    const mode = route?.modes.includes(transportMode) ? transportMode : route?.modes[0] || 'walk';
+    const availModes = getAvailableModesForPath(currentLocation, selectedLocation);
+    const mode = availModes.includes(transportMode) ? transportMode : availModes[0] || 'walk';
     submitAction('move', { destination: selectedLocation, mode });
     setSelectedLocation(null);
     setRadialTarget(null);
   };
 
-  const routeBetweenSelected = selectedLocation
-    ? getRoutesBetween(currentLocation || '', selectedLocation)
+  const availableModesForSelected = selectedLocation && currentLocation && selectedLocation !== currentLocation
+    ? getAvailableModesForPath(currentLocation, selectedLocation)
+    : [];
+
+  const selectedPath = selectedLocation && currentLocation && selectedLocation !== currentLocation
+    ? findPath(currentLocation, selectedLocation, transportMode)
     : null;
 
   const TRAVEL_TIMES: Record<string, number> = {
@@ -338,40 +343,52 @@ export default function CityMap() {
       )}
 
       {/* Move panel */}
-      {selectedLocation && selectedLocation !== currentLocation && routeBetweenSelected && (
+      {selectedLocation && selectedLocation !== currentLocation && availableModesForSelected.length > 0 && (
         <div style={{
           position: 'absolute', bottom: '16px', left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 10, background: 'var(--bg-card)',
           border: '1px solid var(--border)', borderRadius: '12px',
-          padding: '14px 18px', minWidth: '280px',
+          padding: '14px 18px', minWidth: '300px', maxWidth: '400px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.6)'
         }} className="slide-up">
           <div style={{ fontWeight: 700, marginBottom: '4px' }}>
             Travel to {LOCATIONS.find(l => l.id === selectedLocation)?.name}
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '10px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '6px' }}>
             {LOCATIONS.find(l => l.id === selectedLocation)?.tagline}
           </div>
+          {selectedPath && selectedPath.path.length > 2 && (
+            <div style={{
+              fontSize: '10px', color: 'var(--accent-yellow)', marginBottom: '8px',
+              padding: '4px 8px', borderRadius: '6px',
+              background: 'rgba(245,200,66,0.08)', border: '1px solid rgba(245,200,66,0.15)'
+            }}>
+              Route: {selectedPath.path.map(id => LOCATIONS.find(l => l.id === id)?.name || id).join(' → ')}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap' }}>
-            {routeBetweenSelected.modes.map(mode => (
-              <button
-                key={mode}
-                onClick={() => setTransportMode(mode)}
-                style={{
-                  padding: '5px 12px', borderRadius: '20px', fontSize: '12px',
-                  background: transportMode === mode ? 'var(--accent-blue)' : 'var(--bg-secondary)',
-                  border: '1px solid var(--border)',
-                  color: transportMode === mode ? '#fff' : 'var(--text-secondary)',
-                  fontWeight: transportMode === mode ? 600 : 400
-                }}
-              >
-                {modeIcons[mode]} {mode}
-                <span style={{ marginLeft: '4px', opacity: 0.8 }}>
-                  {TRAVEL_COSTS[mode] === 0 ? 'free' : `₹${TRAVEL_COSTS[mode]}`}
-                </span>
-              </button>
-            ))}
+            {availableModesForSelected.map(mode => {
+              const pathForMode = findPath(currentLocation || '', selectedLocation, mode);
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setTransportMode(mode)}
+                  style={{
+                    padding: '5px 12px', borderRadius: '20px', fontSize: '12px',
+                    background: transportMode === mode ? 'var(--accent-blue)' : 'var(--bg-secondary)',
+                    border: '1px solid var(--border)',
+                    color: transportMode === mode ? '#fff' : 'var(--text-secondary)',
+                    fontWeight: transportMode === mode ? 600 : 400
+                  }}
+                >
+                  {modeIcons[mode]} {mode}
+                  <span style={{ marginLeft: '4px', opacity: 0.8 }}>
+                    {pathForMode ? (pathForMode.cost === 0 ? 'free' : `₹${pathForMode.cost}`) : '—'}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
@@ -392,7 +409,7 @@ export default function CityMap() {
                 color: '#fff', fontWeight: 700, fontSize: '13px'
               }}
             >
-              Travel ({Math.round(TRAVEL_TIMES[transportMode] / 60)}min)
+              Travel {selectedPath ? `(${Math.round(selectedPath.time / 60)}min · ₹${selectedPath.cost})` : ''}
             </button>
           </div>
         </div>
