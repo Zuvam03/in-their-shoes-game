@@ -6,7 +6,7 @@ import { setVolume as setSoundVolume } from '../game/sounds';
 export type TransportMode = 'walk' | 'bus' | 'metro' | 'tram' | 'taxi';
 export type GamePhase = 'lobby' | 'briefing' | 'playing' | 'ended';
 export type MissionStatus = 'active' | 'completed' | 'failed' | 'partial';
-export type ActionType = 'move' | 'eat' | 'drink' | 'rest' | 'work' | 'buy' | 'help_player' | 'request_help' | 'share_info' | 'transfer_money' | 'complete_objective' | 'event_choice' | 'dilemma_choice';
+export type ActionType = 'move' | 'eat' | 'drink' | 'rest' | 'work' | 'buy' | 'help_player' | 'request_help' | 'share_info' | 'transfer_money' | 'complete_objective' | 'event_choice' | 'dilemma_choice' | 'buy_from_vendor' | 'micro_interaction';
 
 export type SocialDilemmaType = 'ethics_vs_survival' | 'loyalty_vs_principle' | 'class_encounter' | 'political_pressure' | 'community_obligation' | 'bystander';
 
@@ -290,6 +290,67 @@ export interface DeathNarrative {
   unfinishedBusiness: string[];
 }
 
+// --- Location Snapshot (dynamic per-match content) ---
+
+export interface VendorItem {
+  id: string;
+  name: string;
+  cost: number;
+  effects: Partial<CharacterState>;
+  description: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  type: 'food' | 'drink' | 'medicine' | 'goods' | 'service';
+  items: VendorItem[];
+  personality: string;
+  availableHours: { start: number; end: number };
+  priceMultiplier: number;
+}
+
+export interface NPC {
+  id: string;
+  name: string;
+  role: string;
+  dialogue: string;
+  mood: string;
+}
+
+export interface MicroChoice {
+  id: string;
+  text: string;
+  effects: Partial<CharacterState>;
+  karmaChange: number;
+  narrative: string;
+}
+
+export interface MicroInteraction {
+  id: string;
+  prompt: string;
+  choices: MicroChoice[];
+  timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
+  weatherCondition?: 'rain' | 'heat' | 'clear';
+  oneShot: boolean;
+}
+
+export interface AtmosphereState {
+  description: string;
+  ambientSounds: string;
+  crowdLevel: 'empty' | 'sparse' | 'moderate' | 'crowded' | 'packed';
+  mood: string;
+}
+
+export interface LocationSnapshot {
+  locationId: string;
+  vendors: Vendor[];
+  npcs: NPC[];
+  interactions: MicroInteraction[];
+  atmosphere: AtmosphereState;
+  scarcity: { level: 'abundant' | 'normal' | 'scarce' | 'critical'; priceMultiplier: number };
+}
+
 export interface GameNotification {
   id: string;
   tick: number;
@@ -345,6 +406,9 @@ interface GameState {
 
   // Death
   deathNarrative: { playerId: string; playerName: string; personaTitle: string; narrative: DeathNarrative } | null;
+
+  // Location snapshots (dynamic per-match content)
+  currentLocationSnapshot: LocationSnapshot | null;
 
   // Incoming interaction requests
   pendingInteraction: { id: string; fromPlayerName: string; type: string; message: string } | null;
@@ -418,6 +482,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   actionFeedback: null,
   pendingCityEvent: null,
   deathNarrative: null,
+  currentLocationSnapshot: null,
   pendingInteraction: null,
   pendingDilemma: null,
   matchResult: null,
@@ -561,6 +626,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (data.playerId === state.mySocketId) {
         set({ deathNarrative: data });
       }
+    });
+
+    socket.on('locationSnapshot', (data: { locationId: string; snapshot: LocationSnapshot }) => {
+      set({ currentLocationSnapshot: data.snapshot });
     });
 
     socket.on('gameEnded', (result: MatchResult) => {
@@ -723,6 +792,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       actionFeedback: null,
       pendingCityEvent: null,
       deathNarrative: null,
+      currentLocationSnapshot: null,
       pendingInteraction: null,
       pendingDilemma: null,
       matchResult: null,

@@ -14,6 +14,10 @@ import {
   getLowStateBlockReason
 } from '../game/engine';
 import { loadContent, getContentDilemmas, getContentPersonas } from '../content/loader';
+import {
+  generateLocationSnapshots, getAvailableVendors, getAvailableInteractions,
+  getAtmosphereForTick, LocationSnapshot
+} from '../game/locationContent';
 
 loadContent();
 
@@ -24,6 +28,8 @@ const TICK_INTERVAL_MS = 1000;
 const roomIntervals = new Map<string, NodeJS.Timeout>();
 const roomBriefingTimers = new Map<string, NodeJS.Timeout>();
 const roomPrevLocations = new Map<string, Map<string, string>>();
+const roomLocationSnapshots = new Map<string, Map<string, LocationSnapshot>>();
+const roomUsedInteractions = new Map<string, Set<string>>();
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
   socket.on('createRoom', ({ playerName, matchDuration = 600, gameSpeed = 1 }) => {
@@ -166,6 +172,43 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
 
     const action: GameAction = { ...rawAction, playerId: socket.id, tick: room.tick };
     const rng = new SeededRng(room.seed + room.tick);
+
+    // Handle vendor purchases and micro-interactions directly
+    if (action.type === 'buy_from_vendor') {
+      const vendorResult = handleVendorPurchase(action, player, room);
+      socket.emit('actionResult', vendorResult);
+      if (vendorResult.success) {
+        applyStateChanges(player, vendorResult.changes);
+        player.actionLog.push({
+          id: uuidv4(), tick: room.tick, type: action.type,
+          playerId: socket.id, description: vendorResult.message,
+          statChanges: vendorResult.changes, isPublic: false
+        });
+        io.to(socket.id).emit('playerUpdate', player);
+      }
+      return;
+    }
+    if (action.type === 'micro_interaction') {
+      const interResult = handleMicroInteraction(action, player, room);
+      socket.emit('actionResult', interResult);
+      if (interResult.success) {
+        applyStateChanges(player, interResult.changes);
+        if (interResult.karmaChange) {
+          player.hidden.karma = Math.max(-100, Math.min(100, player.hidden.karma + interResult.karmaChange));
+        }
+        player.actionLog.push({
+          id: uuidv4(), tick: room.tick, type: action.type,
+          playerId: socket.id, description: interResult.message,
+          statChanges: interResult.changes, isPublic: false
+        });
+        io.to(socket.id).emit('playerUpdate', player);
+        if (interResult.narrative) {
+          emitNotification(io, roomId!, socket.id, 'action', interResult.narrative, room.tick);
+        }
+      }
+      return;
+    }
+
     const result = resolveAction(action, player, room, rng);
 
     if (result.success) {
@@ -490,6 +533,11 @@ function startMatch(io: Server, room: Room): void {
     };
   });
 
+  // Generate dynamic location content for this match
+  const snapshots = generateLocationSnapshots(LOCATIONS, rng, room.seed);
+  roomLocationSnapshots.set(room.id, snapshots);
+  roomUsedInteractions.set(room.id, new Set());
+
   room.phase = 'briefing';
   room.startTime = Date.now();
   room.tick = 0;
@@ -660,6 +708,7 @@ function startGameLoop(io: Server, room: Room): void {
       prevLocs = new Map();
       roomPrevLocations.set(room.id, prevLocs);
     }
+    const snapshots = roomLocationSnapshots.get(room.id);
     for (const [socketId, player] of Object.entries(room.players)) {
       if (!player.isConnected) continue;
       const prevLoc = prevLocs.get(socketId);
@@ -675,6 +724,23 @@ function startGameLoop(io: Server, room: Room): void {
           if (other.state.location === prevLoc) {
             emitNotification(io, room.id, otherId, 'proximity',
               `${player.name} left your area`, room.tick, socketId, player.name);
+          }
+        }
+        // Send location snapshot to arriving player
+        if (snapshots) {
+          const snapshot = snapshots.get(curLoc);
+          if (snapshot) {
+            const activeWeather = getActiveWeather(room);
+            const enriched = {
+              ...snapshot,
+              atmosphere: getAtmosphereForTick(room.tick, activeWeather),
+              vendors: getAvailableVendors(snapshot, room.tick),
+              interactions: getAvailableInteractions(
+                snapshot, room.tick, activeWeather,
+                roomUsedInteractions.get(room.id) || new Set()
+              )
+            };
+            io.to(socketId).emit('locationSnapshot', { locationId: curLoc, snapshot: enriched });
           }
         }
       }
@@ -856,5 +922,123 @@ function toPublicRoom(room: Room): PublicRoom {
     ...room,
     players: publicPlayers,
     playerCount: Object.keys(room.players).length
+  };
+}
+
+function getActiveWeather(room: Room): 'rain' | 'heat' | 'clear' {
+  const hasRain = room.cityEvents.some(e =>
+    e.type === 'weather' && e.startTick + e.duration > room.tick
+  );
+  if (hasRain) return 'rain';
+  const hasHeat = room.cityEvents.some(e =>
+    e.type === 'heat' && e.startTick + e.duration > room.tick
+  );
+  if (hasHeat) return 'heat';
+  return 'clear';
+}
+
+function handleVendorPurchase(action: GameAction, player: Player, room: Room): ActionResult {
+  const { vendorId, itemId } = action.payload as { vendorId?: string; itemId?: string };
+  if (!vendorId || !itemId) {
+    return { success: false, message: 'Invalid vendor or item.', changes: {} };
+  }
+
+  const snapshots = roomLocationSnapshots.get(room.id);
+  if (!snapshots) return { success: false, message: 'No location data available.', changes: {} };
+
+  const snapshot = snapshots.get(player.state.location);
+  if (!snapshot) return { success: false, message: 'No vendors at this location.', changes: {} };
+
+  const vendor = snapshot.vendors.find(v => v.id === vendorId);
+  if (!vendor) return { success: false, message: 'That vendor is not here today.', changes: {} };
+
+  // Check time availability
+  const dayPct = (room.tick % 600) / 600;
+  if (dayPct < vendor.availableFrom || dayPct > vendor.availableUntil) {
+    return { success: false, message: `${vendor.name} is not open right now.`, changes: {} };
+  }
+
+  const item = vendor.items.find(it => it.id === itemId);
+  if (!item) return { success: false, message: 'That item is not available.', changes: {} };
+
+  if (player.state.cash < item.cost) {
+    return { success: false, message: `Not enough cash. ${item.name} costs ₹${item.cost}.`, changes: {} };
+  }
+
+  // Check limited stock
+  if (item.limited !== undefined && item.limited <= 0) {
+    return { success: false, message: `${item.name} is sold out.`, changes: {} };
+  }
+
+  // Deduct cost and apply effects
+  const changes: Partial<CharacterState> = { cash: player.state.cash - item.cost };
+  for (const [stat, val] of Object.entries(item.effects)) {
+    if (val === undefined) continue;
+    const key = stat as keyof CharacterState;
+    if (typeof player.state[key] === 'number') {
+      (changes as Record<string, number>)[key] = Math.max(0, Math.min(100,
+        (player.state[key] as number) + val
+      ));
+    }
+  }
+
+  // Reduce stock
+  if (item.limited !== undefined) item.limited--;
+
+  return {
+    success: true,
+    message: `Bought ${item.name} from ${vendor.name} for ₹${item.cost}.`,
+    changes,
+    narrative: item.description
+  };
+}
+
+function handleMicroInteraction(action: GameAction, player: Player, room: Room): ActionResult {
+  const { interactionId, choiceId } = action.payload as { interactionId?: string; choiceId?: string };
+  if (!interactionId || !choiceId) {
+    return { success: false, message: 'Invalid interaction.', changes: {} };
+  }
+
+  const snapshots = roomLocationSnapshots.get(room.id);
+  if (!snapshots) return { success: false, message: 'No location data.', changes: {} };
+
+  const snapshot = snapshots.get(player.state.location);
+  if (!snapshot) return { success: false, message: 'No interactions here.', changes: {} };
+
+  const usedSet = roomUsedInteractions.get(room.id) || new Set();
+  const interaction = snapshot.interactions.find(i => i.id === interactionId);
+  if (!interaction) return { success: false, message: 'That moment has passed.', changes: {} };
+
+  if (interaction.oneShot && usedSet.has(interactionId)) {
+    return { success: false, message: 'That moment has passed.', changes: {} };
+  }
+
+  const choice = interaction.choices.find(c => c.id === choiceId);
+  if (!choice) return { success: false, message: 'Invalid choice.', changes: {} };
+
+  // Mark as used
+  if (interaction.oneShot) usedSet.add(interactionId);
+  roomUsedInteractions.set(room.id, usedSet);
+
+  // Apply effects
+  const changes: Partial<CharacterState> = {};
+  for (const [stat, val] of Object.entries(choice.effects)) {
+    if (val === undefined) continue;
+    const key = stat as keyof CharacterState;
+    if (key === 'cash') {
+      changes.cash = player.state.cash + val;
+    } else if (typeof player.state[key] === 'number') {
+      (changes as Record<string, number>)[key] = Math.max(0, Math.min(100,
+        (player.state[key] as number) + val
+      ));
+    }
+  }
+
+  return {
+    success: true,
+    message: choice.narrative,
+    changes,
+    narrative: choice.narrative,
+    karmaChange: choice.karmaChange
   };
 }

@@ -151,6 +151,9 @@ export function resolveAction(
     case 'complete_objective': return resolveCompleteObjective(action, player, room, rng);
     case 'event_choice': return resolveEventChoice(action, player, room, rng);
     case 'dilemma_choice': return resolveDilemmaChoice(action, player, room, rng);
+    case 'buy_from_vendor':
+    case 'micro_interaction':
+      return { success: false, message: 'Handled by room handler.', changes: {} };
     default:
       return { success: false, message: 'Unknown action type.', changes: {} };
   }

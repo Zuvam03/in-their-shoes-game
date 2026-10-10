@@ -329,7 +329,9 @@ export type ActionType =
   | 'transfer_money'
   | 'complete_objective'
   | 'event_choice'
-  | 'dilemma_choice';
+  | 'dilemma_choice'
+  | 'buy_from_vendor'
+  | 'micro_interaction';
 
 export interface GameAction {
   playerId: string;
@@ -458,6 +460,7 @@ export interface ServerToClientEvents {
   gameStarted: (data: { yourPlayer: Player; room: PublicRoom }) => void;
   gameEnded: (result: MatchResult) => void;
   playerDied: (data: { playerId: string; playerName: string; personaTitle: string; narrative: DeathNarrative }) => void;
+  locationSnapshot: (data: { locationId: string; snapshot: import('./locationContent').LocationSnapshot }) => void;
   error: (message: string) => void;
   tick: (tick: number) => void;
   interactionRequest: (request: InteractionRequest) => void;
