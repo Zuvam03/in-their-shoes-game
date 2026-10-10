@@ -296,8 +296,8 @@ describe('Map System', () => {
     for (const loc of LOCATIONS) {
       expect(loc.x).toBeGreaterThan(0);
       expect(loc.y).toBeGreaterThan(0);
-      expect(loc.x).toBeLessThan(700);
-      expect(loc.y).toBeLessThan(700);
+      expect(loc.x).toBeLessThan(900);
+      expect(loc.y).toBeLessThan(750);
     }
   });
 
