@@ -32,6 +32,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 1.6, moodFromSocial: 0.7, analyticsBonus: 1.5,
       spendingResistance: 1.1, socialRecovery: 0.7, riskRewardBonus: 1.1,
       cooperationBonus: 0.9, stressThreshold: 70, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'upper-middle',
+      communityIdentity: 'Bengali Hindu Brahmin, South Kolkata, IIM aspirant circle',
+      politicalPressures: [
+        'Family expects him to succeed visibly — a public failure would humiliate the lineage',
+        'His company\'s culture rewards ruthlessness disguised as meritocracy',
+        'Peers from less privileged backgrounds resent his obliviousness to his own advantages'
+      ],
+      hiddenObligations: [
+        'Promised his mother he would attend her cousin\'s wedding — he hasn\'t told his boss he needs the day off',
+        'Owes a favour to a college friend who helped him through a crisis — the friend is now asking',
+        'Carries guilt about a junior colleague he didn\'t defend during a layoff'
+      ],
+      decisionWeights: {
+        groupLoyalty: 4,
+        selfPreservation: 8,
+        principledAction: 5,
+        statusAnxiety: 9,
+        communityDuty: 3
+      },
+      insightLines: [
+        'Arjun\'s relentless drive isn\'t ambition — it\'s the terror of being his father, overlooked and uncelebrated.',
+        'He mistakes exhaustion for effort and visibility for value. The city doesn\'t grade on hours worked.',
+        'His privilege lets him treat every setback as temporary. For others in his path, the same setback is permanent.'
+      ],
+      dilemmaProfile: 'Defaults to self-interest rationalized as pragmatism; genuinely surprised when called selfish'
     }
   },
   {
@@ -65,6 +92,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.9, moodFromSocial: 2.0, analyticsBonus: 0.8,
       spendingResistance: 0.85, socialRecovery: 1.8, riskRewardBonus: 0.8,
       cooperationBonus: 1.5, stressThreshold: 50, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'middle',
+      communityIdentity: 'Bengali Hindu, North Kolkata joint family, neighbourhood aunty network',
+      politicalPressures: [
+        'Expected to be emotionally available to everyone — her own needs are invisible',
+        'Neighbours assume she will mediate every family dispute on the block',
+        'Her mother-in-law sees her empathy as weakness and openly says so'
+      ],
+      hiddenObligations: [
+        'Supporting a school friend through a divorce in secret — it\'s draining her',
+        'Her sister relies on her financially but never acknowledges it',
+        'Carrying knowledge of a neighbour\'s domestic abuse she doesn\'t know how to act on'
+      ],
+      decisionWeights: {
+        groupLoyalty: 7,
+        selfPreservation: 3,
+        principledAction: 8,
+        statusAnxiety: 5,
+        communityDuty: 9
+      },
+      insightLines: [
+        'Priya\'s empathy isn\'t a personality trait — it\'s a survival strategy learned from being the only one who listened in a loud family.',
+        'She helps compulsively not from kindness alone, but because saying no triggers a guilt she can\'t metabolize.',
+        'The city tests whether she can exist for herself. Most of her choices reveal she still doesn\'t know how.'
+      ],
+      dilemmaProfile: 'Instinctively sacrifices for others; internal conflict only surfaces when the cost becomes physical'
     }
   },
   {
@@ -98,6 +152,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.8, moodFromSocial: 0.6, analyticsBonus: 2.0,
       spendingResistance: 1.5, socialRecovery: 0.5, riskRewardBonus: 0.7,
       cooperationBonus: 0.8, stressThreshold: 60, independencePenalty: 5
+    },
+    socialContext: {
+      class: 'upper-middle',
+      communityIdentity: 'Bengali Hindu, Salt Lake IT corridor, IIT alumni network',
+      politicalPressures: [
+        'His data-driven worldview clashes with the emotional politics of his workplace',
+        'Colleagues think he\'s cold; he thinks they\'re irrational — both are partly right',
+        'His parents want him to marry soon; he has a spreadsheet of reasons he\'s not ready'
+      ],
+      hiddenObligations: [
+        'Privately tutoring his driver\'s son in maths — the only relationship where his precision is appreciated',
+        'Owes his career break to a mentor he hasn\'t spoken to in two years',
+        'Knows his company\'s product is being used unethically but has modelled the personal cost of whistleblowing'
+      ],
+      decisionWeights: {
+        groupLoyalty: 3,
+        selfPreservation: 7,
+        principledAction: 7,
+        statusAnxiety: 6,
+        communityDuty: 4
+      },
+      insightLines: [
+        'Debashish\'s rigidity isn\'t arrogance — it\'s fear. Chaos reminds him that the world doesn\'t run on logic.',
+        'His spreadsheets are a wall between him and discomfort. The city forces him to feel what he normally models.',
+        'When he finally acts without data, the choice reveals more about him than ten optimized decisions ever could.'
+      ],
+      dilemmaProfile: 'Paralysis under ambiguity; principled when cost is calculable, evasive when it is not'
     }
   },
   {
@@ -131,6 +212,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.9, moodFromSocial: 1.3, analyticsBonus: 0.6,
       spendingResistance: 0.5, socialRecovery: 1.3, riskRewardBonus: 1.2,
       cooperationBonus: 1.1, stressThreshold: 45, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'middle',
+      communityIdentity: 'Bengali Hindu, South Kolkata, former influencer circle',
+      politicalPressures: [
+        'Her Instagram-curated lifestyle masks growing debt she won\'t discuss',
+        'Friends assume she\'s doing well — she\'s performing wellness, not living it',
+        'Family sees her spending as irresponsibility; she sees it as the only thing that feels real'
+      ],
+      hiddenObligations: [
+        'Owes ₹40,000 to a friend who quietly covered her rent two months ago',
+        'Promised her younger cousin a birthday gift she can\'t actually afford',
+        'Hiding from her parents that she left her stable job three months ago'
+      ],
+      decisionWeights: {
+        groupLoyalty: 5,
+        selfPreservation: 4,
+        principledAction: 4,
+        statusAnxiety: 9,
+        communityDuty: 3
+      },
+      insightLines: [
+        'Ritika\'s spending isn\'t reckless — it\'s the only language her anxiety understands. Each purchase is a tiny vote that things are still okay.',
+        'She performs generosity to maintain her social image. The city strips that performance and asks what she\'d give with no audience.',
+        'Her crisis isn\'t financial. It\'s the moment she realizes the person she\'s curated isn\'t the person she actually is.'
+      ],
+      dilemmaProfile: 'Avoids discomfort through acquisition; generous in public, panicking in private'
     }
   },
   {
@@ -164,6 +272,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.9, moodFromSocial: 1.0, analyticsBonus: 0.8,
       spendingResistance: 0.7, socialRecovery: 1.0, riskRewardBonus: 1.0,
       cooperationBonus: 1.0, stressThreshold: 55, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'middle',
+      communityIdentity: 'Bengali Hindu, Gariahat food scene, amateur food blogger community',
+      politicalPressures: [
+        'The food blogging world is petty — one bad review and you\'re blacklisted from restaurant invites',
+        'His parents want him to take his father\'s garment business seriously; he can\'t tell them blogging is his real ambition',
+        'Local vendors give him free samples expecting five-star reviews — honesty has a social cost'
+      ],
+      hiddenObligations: [
+        'A street vendor gave him credit when he was broke — he still hasn\'t paid ₹200 back',
+        'Promised a restaurant owner he\'d delete a harsh review; it\'s still cached online',
+        'His grandmother\'s recipe is his most popular post — she doesn\'t know he monetized it'
+      ],
+      decisionWeights: {
+        groupLoyalty: 5,
+        selfPreservation: 5,
+        principledAction: 4,
+        statusAnxiety: 4,
+        communityDuty: 5
+      },
+      insightLines: [
+        'Sourav uses food as a buffer between himself and emotional complexity. Feed him and he\'s fine; ask him to be vulnerable and he orders another plate.',
+        'His apparent simplicity hides an avoidance pattern — exploring the city is easier than exploring why he\'s stuck.',
+        'The game reveals whether he can care about people as much as he cares about what they eat.'
+      ],
+      dilemmaProfile: 'Defaults to the comfortable option; confrontation is a last resort'
     }
   },
   {
@@ -197,6 +332,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.7, moodFromSocial: 0.8, analyticsBonus: 1.2,
       spendingResistance: 2.5, socialRecovery: 0.8, riskRewardBonus: 0.7,
       cooperationBonus: 0.9, stressThreshold: 75, independencePenalty: 3
+    },
+    socialContext: {
+      class: 'working',
+      communityIdentity: 'Bengali Scheduled Caste, Behala, domestic worker network',
+      politicalPressures: [
+        'Caste is invisible until it isn\'t — a casual question about her surname reveals everything',
+        'The welfare office treats her like a supplicant; she has to perform gratitude for entitlements',
+        'Her children\'s school assumes working-class parents don\'t care about education'
+      ],
+      hiddenObligations: [
+        'Sending ₹500/month to her mother in the village — it\'s more than she can afford',
+        'Her younger brother needs surgery; she\'s been quietly collecting from three different charities',
+        'Promised her daughter she\'d attend the school play — it\'s during work hours she can\'t miss'
+      ],
+      decisionWeights: {
+        groupLoyalty: 6,
+        selfPreservation: 8,
+        principledAction: 6,
+        statusAnxiety: 3,
+        communityDuty: 7
+      },
+      insightLines: [
+        'Mita\'s frugality isn\'t a personality — it\'s a scar. Every paisa saved is a day her children don\'t go hungry.',
+        'She navigates systems designed to exclude her with more skill than anyone in the game. That skill was expensive to learn.',
+        'Her independence is a fortress. She won\'t accept help because every time she did, it came with conditions she couldn\'t meet.'
+      ],
+      dilemmaProfile: 'Calculates survival cost before ethics; fierce protector of family even at personal expense'
     }
   },
   {
@@ -230,6 +392,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 1.0, moodFromSocial: 2.5, analyticsBonus: 0.9,
       spendingResistance: 0.9, socialRecovery: 2.2, riskRewardBonus: 0.9,
       cooperationBonus: 1.8, stressThreshold: 55, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'upper-middle',
+      communityIdentity: 'Bengali Hindu, Park Street professional circle, alumni network maven',
+      politicalPressures: [
+        'Her network is her identity — losing connections feels like losing herself',
+        'Expected to make introductions that benefit powerful people, not just good ones',
+        'Knows secrets about people in her circle that make her both valuable and vulnerable'
+      ],
+      hiddenObligations: [
+        'Introduced two people who started a business — it failed and both blame her',
+        'A powerful contact asked her to vouch for someone she doesn\'t trust; she hasn\'t refused yet',
+        'Her closest friend confided a serious professional misconduct; Neha\'s silence makes her complicit'
+      ],
+      decisionWeights: {
+        groupLoyalty: 8,
+        selfPreservation: 5,
+        principledAction: 5,
+        statusAnxiety: 7,
+        communityDuty: 7
+      },
+      insightLines: [
+        'Neha connects people because being the bridge means she\'s always needed. Without the network, she fears she\'s nobody.',
+        'Her warmth is genuine but strategic — she learned early that likability is a currency that pays more reliably than talent.',
+        'The game asks whether she can make a choice that costs her a relationship. That\'s the one thing she\'s never been willing to lose.'
+      ],
+      dilemmaProfile: 'Prioritizes social harmony; avoids positions that alienate any faction in her network'
     }
   },
   {
@@ -263,6 +452,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.8, moodFromSocial: 0.3, analyticsBonus: 1.2,
       spendingResistance: 1.2, socialRecovery: 0.3, riskRewardBonus: 1.1,
       cooperationBonus: 0.5, stressThreshold: 80, independencePenalty: 8
+    },
+    socialContext: {
+      class: 'lower-middle',
+      communityIdentity: 'Bengali Hindu, Howrah, machinist background, union-adjacent',
+      politicalPressures: [
+        'Trusting a business partner cost him everything — the legal system sided with the one who could afford a lawyer',
+        'His ex-colleagues think he\'s antisocial; he thinks they\'re naive about how people really operate',
+        'Local politicians tried to recruit him for his technical skills — he sees all groups as traps'
+      ],
+      hiddenObligations: [
+        'Still paying off a debt from the failed partnership — the other partner walks free',
+        'His estranged sister needs help; he\'s the only family she has, and he\'s avoiding her calls',
+        'A younger mechanic at his old shop looks up to him — Suman pretends not to notice'
+      ],
+      decisionWeights: {
+        groupLoyalty: 2,
+        selfPreservation: 10,
+        principledAction: 6,
+        statusAnxiety: 3,
+        communityDuty: 2
+      },
+      insightLines: [
+        'Suman\'s isolation isn\'t strength — it\'s a wound that healed wrong. He\'s not self-reliant; he\'s self-imprisoned.',
+        'Every dilemma he avoids confirms his worldview that people are unreliable. The game asks if he\'s brave enough to be proven wrong.',
+        'His competence is real. His loneliness is the price he pays for never risking trust again.'
+      ],
+      dilemmaProfile: 'Withdraws from group dynamics; acts only when personal cost is calculable and bounded'
     }
   },
   {
@@ -296,6 +512,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.9, moodFromSocial: 1.1, analyticsBonus: 0.9,
       spendingResistance: 0.8, socialRecovery: 1.0, riskRewardBonus: 1.8,
       cooperationBonus: 1.1, stressThreshold: 65, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'middle',
+      communityIdentity: 'Bengali Hindu Kayastha, Tollygunge, ex-trading circle',
+      politicalPressures: [
+        'The stock market is his religion — it rewards the bold and punishes the careful, which suits him',
+        'Friends borrow money from him because he always seems flush; he can\'t say no without losing face',
+        'His family thinks he\'s saving; he\'s actually running a risky portfolio on margin'
+      ],
+      hiddenObligations: [
+        'Owes a debt to a moneylender he\'d rather not explain to anyone',
+        'Promised his mother he\'d stop "gambling" — he hasn\'t, he just hides it better',
+        'A friend invested based on his tip and lost heavily — Rohan hasn\'t acknowledged it'
+      ],
+      decisionWeights: {
+        groupLoyalty: 5,
+        selfPreservation: 6,
+        principledAction: 4,
+        statusAnxiety: 7,
+        communityDuty: 4
+      },
+      insightLines: [
+        'Rohan\'s risk appetite isn\'t courage — it\'s a coping mechanism. The rush of uncertainty numbs the anxiety of an ordinary life.',
+        'He sees every situation as a trade with an expected value. The game forces him to encounter situations where the math doesn\'t apply.',
+        'His biggest risk is emotional: admitting that his wins haven\'t made him happy and his losses have hurt people he cares about.'
+      ],
+      dilemmaProfile: 'Treats moral situations like probability assessments; uncomfortable with choices that have no upside'
     }
   },
   {
@@ -329,6 +572,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.8, moodFromSocial: 1.4, analyticsBonus: 0.9,
       spendingResistance: 1.3, socialRecovery: 1.5, riskRewardBonus: 0.8,
       cooperationBonus: 1.6, stressThreshold: 55, independencePenalty: 2
+    },
+    socialContext: {
+      class: 'working',
+      communityIdentity: 'Bengali Christian, Bowbazar, parish community, elder care network',
+      politicalPressures: [
+        'As a minority faith in a Hindu-majority city, she\'s learned to make herself small and useful',
+        'Her church expects her to volunteer but never asks if she needs help herself',
+        'Neighbours treat her Christianity as exotic — she\'s tired of explaining Christmas every year'
+      ],
+      hiddenObligations: [
+        'Her father\'s medicine costs more than her stated income — she\'s working two side jobs nobody knows about',
+        'Her brother asked for money to "start a business" — she gave it knowing she\'d never see it back',
+        'A family at church relies on her to cook for their sick mother — she hasn\'t missed a day in three months'
+      ],
+      decisionWeights: {
+        groupLoyalty: 7,
+        selfPreservation: 4,
+        principledAction: 8,
+        statusAnxiety: 2,
+        communityDuty: 10
+      },
+      insightLines: [
+        'Anita\'s selflessness isn\'t a virtue — it\'s an identity. Take away the people who need her and she doesn\'t know who she is.',
+        'She has never asked for help in a way that expects to receive it. The city tests whether she can learn.',
+        'Her quiet endurance is invisible labour. The game makes it visible — and asks whether anyone notices before it breaks her.'
+      ],
+      dilemmaProfile: 'Sacrifices instinctively; the only dilemma she struggles with is choosing herself'
     }
   },
   {
@@ -362,6 +632,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 1.4, moodFromSocial: 0.8, analyticsBonus: 1.9,
       spendingResistance: 1.2, socialRecovery: 0.6, riskRewardBonus: 0.6,
       cooperationBonus: 0.8, stressThreshold: 40, independencePenalty: 3
+    },
+    socialContext: {
+      class: 'upper-middle',
+      communityIdentity: 'Bengali Hindu, Ballygunge, academic family, competitive peer cohort',
+      politicalPressures: [
+        'Her mother is a professor who expects academic perfection as a baseline, not an achievement',
+        'Her peer group at work is fiercely competitive — vulnerability is weakness',
+        'The mental health crisis in her generation is invisible to the institution she works in'
+      ],
+      hiddenObligations: [
+        'Her therapist costs ₹3,000/session — she tells her parents it\'s a hobby class',
+        'A classmate she competed with is struggling with depression; Kavya feels guilty for winning the position',
+        'Her younger sister idolizes her — Kavya can\'t let her see that she\'s falling apart'
+      ],
+      decisionWeights: {
+        groupLoyalty: 5,
+        selfPreservation: 7,
+        principledAction: 8,
+        statusAnxiety: 10,
+        communityDuty: 5
+      },
+      insightLines: [
+        'Kavya\'s perfectionism isn\'t discipline — it\'s a trauma response. She believes that any visible flaw will be the one that undoes her.',
+        'Her anxiety makes her the most careful player in the game. It also makes her the most exhausted.',
+        'The city doesn\'t grade her. That absence of evaluation is either liberating or terrifying — her choices reveal which.'
+      ],
+      dilemmaProfile: 'Overthinks every choice to the point of paralysis; defaults to whatever protects her image'
     }
   },
   {
@@ -395,6 +692,33 @@ export const PERSONAS: PersonaDefinition[] = [
       stressFromWork: 0.8, moodFromSocial: 1.2, analyticsBonus: 1.1,
       spendingResistance: 1.3, socialRecovery: 1.1, riskRewardBonus: 1.3,
       cooperationBonus: 1.2, stressThreshold: 60, independencePenalty: 0
+    },
+    socialContext: {
+      class: 'lower-middle',
+      communityIdentity: 'Bengali Hindu, Shyambazar market, informal economy hustler',
+      politicalPressures: [
+        'The police know him — not as a criminal, but as someone who operates in the grey zone where permits are optional',
+        'Local dadas (strongmen) want a cut from anyone who does well in their area',
+        'His charm works everywhere except the bank, where his lack of paperwork makes him invisible'
+      ],
+      hiddenObligations: [
+        'His mother thinks he has a stable job — she doesn\'t know he\'s freelancing in the informal economy',
+        'Helped a neighbour bypass a permit process; the neighbour now expects this as a standing arrangement',
+        'A younger cousin wants to join his hustle — Tapas knows the life will chew him up but can\'t say that'
+      ],
+      decisionWeights: {
+        groupLoyalty: 6,
+        selfPreservation: 7,
+        principledAction: 4,
+        statusAnxiety: 5,
+        communityDuty: 6
+      },
+      insightLines: [
+        'Tapas\'s street smarts are the product of a city that gave him no formal path. His hustle is not personality — it\'s survival infrastructure.',
+        'He reads people brilliantly because misreading them once cost him three months of earnings and a friendship.',
+        'The game asks whether he\'ll use his skills to help others or only himself. His answer reveals what the city made of him.'
+      ],
+      dilemmaProfile: 'Reads angles instinctively; loyal to people, sceptical of systems; bends rules before breaking them'
     }
   }
 ];
@@ -403,8 +727,13 @@ export function getPersonaById(id: string): PersonaDefinition | undefined {
   return PERSONAS.find(p => p.id === id);
 }
 
-export function shufflePersonas(playerCount: number, seed: number): PersonaDefinition[] {
+export function shufflePersonas(playerCount: number, seed: number, extraPersonas?: PersonaDefinition[]): PersonaDefinition[] {
   const pool = [...PERSONAS];
+  if (extraPersonas) {
+    for (const ep of extraPersonas) {
+      if (!pool.some(p => p.id === ep.id)) pool.push(ep);
+    }
+  }
   // Seeded shuffle (Fisher-Yates)
   let s = seed;
   const rand = () => {

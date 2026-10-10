@@ -1153,7 +1153,7 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
       helpedCount: player.state.receivedHelpCount,
       narrative,
       dilemmasResolved: player.dilemmasResolved || [],
-      personaLens: player.persona.socialContext?.insightLines,
+      personaLens: generatePersonaLens(player),
       scoreBreakdown,
       performanceInsights
     });
@@ -1178,6 +1178,47 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
     totalTicks: room.tick,
     highlightEvents
   };
+}
+
+export function generatePersonaLens(player: Player): string[] {
+  const lens: string[] = [];
+  const sc = player.persona.socialContext;
+
+  if (!sc) {
+    lens.push(`${player.persona.name} navigated the city as ${player.persona.title}.`);
+    return lens;
+  }
+
+  lens.push(...sc.insightLines);
+
+  const dw = sc.decisionWeights;
+  const dilemmas = player.dilemmasResolved || [];
+
+  if (dilemmas.length > 0) {
+    const selfInterest = dw.selfPreservation + dw.statusAnxiety;
+    const communal = dw.groupLoyalty + dw.communityDuty;
+    const principled = dw.principledAction;
+
+    if (selfInterest > communal + 4) {
+      lens.push(`As ${sc.communityIdentity.split(',')[0]}, self-preservation was always the rational default. The question isn't whether they chose it — it's what it cost them to keep choosing it.`);
+    } else if (communal > selfInterest + 4) {
+      lens.push(`Their ${sc.class} background made community obligation feel like gravity — not a choice but a force. The game revealed how much weight they were carrying.`);
+    } else if (principled >= 7) {
+      lens.push(`They approached each dilemma through principle first, which sounds noble until you see the toll: principled people in an unprincipled city pay a quiet, accumulating price.`);
+    }
+
+    if (sc.hiddenObligations.length > 0) {
+      lens.push(`What the game couldn't show: ${sc.hiddenObligations[0].toLowerCase()}`);
+    }
+  }
+
+  if (player.socialTrust > 70 && dw.communityDuty >= 7) {
+    lens.push('Their high trust was not earned cheaply — it came from choices that cost energy, cash, or time they did not have. That is the definition of real community.');
+  } else if (player.socialTrust < 30 && dw.selfPreservation >= 7) {
+    lens.push('Low trust does not mean they are bad — it means the system they navigate punishes generosity. Understanding that is the first step past judgment.');
+  }
+
+  return lens;
 }
 
 function generatePlayerNarrative(player: Player, mission: PlayerMission): string {

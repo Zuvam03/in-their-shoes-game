@@ -12,7 +12,7 @@ import {
   checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
   pickDilemmaForTick, buildDilemmaEvent
 } from '../game/engine';
-import { loadContent, getContentDilemmas } from '../content/loader';
+import { loadContent, getContentDilemmas, getContentPersonas } from '../content/loader';
 
 loadContent();
 
@@ -441,8 +441,8 @@ function startMatch(io: Server, room: Room): void {
   const playerIds = Object.keys(room.players);
   const rng = new SeededRng(room.seed);
 
-  // Assign personas
-  const personas = shufflePersonas(playerIds.length, room.seed);
+  // Assign personas (include content-loaded personas in the pool)
+  const personas = shufflePersonas(playerIds.length, room.seed, getContentPersonas());
   // Assign missions (unique per player)
   const missions = shuffleMissions(playerIds.length, room.seed);
 
