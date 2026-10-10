@@ -10,7 +10,8 @@ import { LOCATIONS } from '../game/map';
 import {
   createCharacterState, tickCharacterState, resolveAction, evaluateKarma,
   checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
-  pickDilemmaForTick, buildDilemmaEvent
+  pickDilemmaForTick, buildDilemmaEvent, checkForDeath, generateDeathNarrative,
+  getLowStateBlockReason
 } from '../game/engine';
 import { loadContent, getContentDilemmas, getContentPersonas } from '../content/loader';
 
@@ -149,6 +150,19 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
 
     const player = room.players[socket.id];
     if (!player) return;
+
+    // Block actions from dead players
+    if (!player.isAlive) {
+      socket.emit('actionResult', { success: false, message: 'You have collapsed. Your journey is over.', changes: {} });
+      return;
+    }
+
+    // Check low-state blocks
+    const blockReason = getLowStateBlockReason(player, rawAction.type);
+    if (blockReason) {
+      socket.emit('actionResult', { success: false, message: blockReason, changes: {} });
+      return;
+    }
 
     const action: GameAction = { ...rawAction, playerId: socket.id, tick: room.tick };
     const rng = new SeededRng(room.seed + room.tick);
@@ -516,7 +530,7 @@ function startGameLoop(io: Server, room: Room): void {
 
     // Tick each player's character state
     for (const [socketId, player] of Object.entries(room.players)) {
-      if (!player.isConnected) continue;
+      if (!player.isConnected || !player.isAlive) continue;
 
       const { newState, events } = tickCharacterState(player.state, player.persona, room.tick);
       player.state = newState;
@@ -591,6 +605,48 @@ function startGameLoop(io: Server, room: Room): void {
           const evt = buildDilemmaEvent(dilemma, room.tick);
           io.to(socketId).emit('dilemmaEvent', evt);
           emitNotification(io, room.id, socketId, 'dilemma', `Dilemma: ${dilemma.title}`, room.tick);
+        }
+      }
+
+      // Check for death
+      if (checkForDeath(player)) {
+        player.isAlive = false;
+        player.deathTick = room.tick;
+        player.mission.status = 'failed';
+
+        const narrative = generateDeathNarrative(player, room.tick);
+
+        player.actionLog.push({
+          id: uuidv4(),
+          tick: room.tick,
+          type: 'system',
+          playerId: socketId,
+          description: `${player.name} has collapsed. ${narrative.cause}.`,
+          isPublic: true
+        });
+
+        io.to(socketId).emit('playerDied', {
+          playerId: socketId,
+          playerName: player.name,
+          personaTitle: player.persona.title,
+          narrative
+        });
+
+        // Notify all other players
+        for (const [otherId, other] of Object.entries(room.players)) {
+          if (otherId === socketId || !other.isConnected) continue;
+          emitNotification(io, room.id, otherId, 'death',
+            `${player.name} (${player.persona.title}) has collapsed at ${narrative.lastLocation}.`,
+            room.tick, socketId, player.name);
+        }
+
+        // Check if all players are dead — end match early
+        const anyAlive = Object.values(room.players).some(p => p.isAlive && p.isConnected);
+        if (!anyAlive) {
+          io.to(socketId).emit('playerUpdate', player);
+          endMatch(io, room);
+          clearInterval(interval);
+          return;
         }
       }
 
@@ -716,6 +772,7 @@ function addPlayerToRoom(room: Room, socketId: string, name: string): void {
     hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
     actionLog: [],
     dilemmasResolved: [],
+    isAlive: true,
     isConnected: true,
     isReady: false
   };

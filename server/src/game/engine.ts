@@ -2,7 +2,7 @@ import type {
   Player, CharacterState, Room, GameAction, ActionResult,
   PersonaDefinition, MissionDefinition, PlayerMission, GameEvent,
   CityEvent, EventChoice, MissionObjective, InteractionRequest,
-  SocialDilemma, DilemmaEvent, DilemmaRecord
+  SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative
 } from './types';
 import { getRoute, getLocation } from './map';
 import { v4 as uuidv4 } from 'uuid';
@@ -80,10 +80,31 @@ export function tickCharacterState(state: CharacterState, persona: PersonaDefini
     }
   }
 
-  // Energy consequences
+  // Energy consequences — cascading penalties
   if (s.energy < 20) {
     s.mood = Math.max(0, s.mood - 0.2);
     s.stress = Math.min(100, s.stress + 0.1);
+    if (s.energy < 10) {
+      s.health = Math.max(0, s.health - 0.15);
+      s.mood = Math.max(0, s.mood - 0.3);
+      if (tick % 20 === 0) events.push('Your body is shutting down from exhaustion.');
+    } else if (tick % 40 === 0) {
+      events.push('You are running on fumes. Rest soon.');
+    }
+  }
+
+  // Low mood cascade — despair prevents productive action
+  if (s.mood < 15) {
+    s.energy = Math.max(0, s.energy - 0.15);
+    s.stress = Math.min(100, s.stress + 0.15);
+    if (tick % 30 === 0) events.push('Despair weighs on you. Everything feels pointless.');
+  }
+
+  // Critical health — body failing
+  if (s.health < 20 && s.health > 0) {
+    s.energy = Math.max(0, s.energy - 0.25);
+    s.mood = Math.max(0, s.mood - 0.2);
+    if (tick % 20 === 0) events.push('Your body is failing. Find food, water, or rest immediately.');
   }
 
   // High stress consequences
@@ -160,12 +181,24 @@ function resolveMove(action: GameAction, player: Player, room: Room, rng: Seeded
     return { success: false, message: `Insufficient cash. Need ₹${cost}, have ₹${player.state.cash}.`, changes: {} };
   }
 
-  // Energy cost for movement
+  // Energy cost for movement — low-state penalties increase cost
   let energyCost = 0;
   if (transportMode === 'walk') {
-    energyCost = Math.round(travelTime / 60) * 5; // 5 energy per minute walking
+    energyCost = Math.round(travelTime / 60) * 5;
   } else {
-    energyCost = 2; // minor energy to travel
+    energyCost = 2;
+  }
+
+  // Exhaustion penalty: movement costs more when energy is low
+  if (player.state.energy < 10) {
+    energyCost = Math.round(energyCost * 2);
+  } else if (player.state.energy < 20) {
+    energyCost = Math.round(energyCost * 1.5);
+  }
+
+  // Failing body: movement costs more when health is low
+  if (player.state.health < 30) {
+    energyCost = Math.round(energyCost * 1.3);
   }
 
   // Apply city event effects (e.g. rain)
@@ -325,6 +358,14 @@ function resolveWork(action: GameAction, player: Player, rng: SeededRng): Action
     return { success: false, message: 'Too exhausted to work. Rest first.', changes: {} };
   }
 
+  if (s.mood < 15) {
+    return { success: false, message: 'You cannot bring yourself to work. The despair is too heavy.', changes: {} };
+  }
+
+  if (s.health < 15) {
+    return { success: false, message: 'Your body will not cooperate. You need medical attention or rest.', changes: {} };
+  }
+
   const baseEarnings = workType === 'skilled' ? 80 : 40;
   const workBonus = persona.traits.workOrientation >= 8 ? 1.3 : 1.0;
   const earnings = Math.round(baseEarnings * workBonus);
@@ -390,6 +431,10 @@ function resolveHelpPlayer(action: GameAction, player: Player, room: Room, rng: 
   const target = room.players[targetPlayerId];
   if (!target) {
     return { success: false, message: 'That player is not in this game.', changes: {} };
+  }
+
+  if (player.state.mood < 15) {
+    return { success: false, message: 'You are too withdrawn to help anyone right now.', changes: {} };
   }
 
   const persona = player.persona;
@@ -1134,7 +1179,7 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
     const narrative = generatePlayerNarrative(player, mission);
     const performanceInsights = generatePerformanceInsights(player, mission, scoreBreakdown);
 
-    playerResults.push({
+    const playerResult: import('./types').PlayerResult = {
       playerId: player.id,
       playerName: player.name,
       personaName: player.persona.title,
@@ -1156,7 +1201,13 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
       personaLens: generatePersonaLens(player),
       scoreBreakdown,
       performanceInsights
-    });
+    };
+
+    if (!player.isAlive) {
+      playerResult.deathNarrative = generateDeathNarrative(player, player.deathTick || room.tick);
+    }
+
+    playerResults.push(playerResult);
   }
 
   // Sort and rank
@@ -1252,6 +1303,152 @@ function generatePlayerNarrative(player: Player, mission: PlayerMission): string
   }
 
   return parts.join(' ');
+}
+
+// --- Death System ---
+
+export function checkForDeath(player: Player): boolean {
+  if (!player.isAlive) return false;
+  return player.state.health <= 0;
+}
+
+export function generateDeathNarrative(player: Player, tick: number): DeathNarrative {
+  const persona = player.persona;
+  const sc = persona.socialContext;
+  const location = player.state.location;
+
+  // Determine cause of death
+  let cause: string;
+  if (player.state.hunger >= 95 && player.state.hydration >= 85) {
+    cause = 'Collapsed from starvation and dehydration';
+  } else if (player.state.hunger >= 95) {
+    cause = 'Collapsed from severe malnutrition';
+  } else if (player.state.hydration >= 90) {
+    cause = 'Collapsed from severe dehydration';
+  } else if (player.state.energy <= 0) {
+    cause = 'Body gave out from complete exhaustion';
+  } else {
+    cause = 'Succumbed to accumulated physical deterioration';
+  }
+
+  // Persona-specific final moments
+  const finalMoments = generateFinalMoments(persona, location, cause);
+  const dependents = getPersonaDependents(persona);
+  const unfinishedBusiness = getUnfinishedBusiness(player);
+
+  return { cause, finalMoments, dependents, lastLocation: location, unfinishedBusiness };
+}
+
+function generateFinalMoments(persona: PersonaDefinition, location: string, cause: string): string {
+  const sc = persona.socialContext;
+
+  if (!sc) {
+    return `${persona.name} — ${persona.title} — fell at ${location}. ${cause}. The city moved on around them, indifferent.`;
+  }
+
+  const classNarratives: Record<string, string> = {
+    'working': `${persona.name} sank to the ground at ${location}, another body the city steps around. ${cause}. No ambulance was called — just a crowd that formed and dispersed. In the newspapers tomorrow, they will not even be a statistic.`,
+    'lower-middle': `${persona.name} collapsed at ${location}. ${cause}. A few people stopped, but none for long. The phone in their pocket kept buzzing — calls from home they would never answer. The precariousness they always managed to hide finally became visible.`,
+    'middle': `${persona.name} fell at ${location}, and for a moment the crowd froze. ${cause}. Someone from the neighborhood recognized them. "But they seemed fine yesterday," they said. Nobody sees the slow unraveling of someone who learned to perform normalcy.`,
+    'upper-middle': `${persona.name} collapsed at ${location}, and the irony was stark. ${cause}. In another life, in another zip code, this would have been a hospital visit, not an ending. Privilege is a buffer, but today the buffer ran out.`,
+    'privileged': `${persona.name} fell at ${location}. ${cause}. It proved what the city always knew: that beneath the surface, everyone is equally fragile. The difference was never about strength — only about how far the safety net extends.`
+  };
+
+  return classNarratives[sc.class] || classNarratives['working'];
+}
+
+function getPersonaDependents(persona: PersonaDefinition): string[] {
+  const dependents: string[] = [];
+  const sc = persona.socialContext;
+  const backstory = persona.backstory.toLowerCase();
+
+  if (backstory.includes('mother') || backstory.includes('maa') || backstory.includes('parent')) {
+    dependents.push('An aging parent who counts the days by their phone calls');
+  }
+  if (backstory.includes('wife') || backstory.includes('husband') || backstory.includes('spouse') || backstory.includes('partner')) {
+    dependents.push('A partner who will learn the news from a stranger');
+  }
+  if (backstory.includes('child') || backstory.includes('son') || backstory.includes('daughter') || backstory.includes('kids')) {
+    dependents.push('Children who will grow up filling in the gaps of a missing parent');
+  }
+  if (backstory.includes('sister') || backstory.includes('brother') || backstory.includes('sibling')) {
+    dependents.push('A sibling who always assumed there would be more time');
+  }
+  if (backstory.includes('student') || backstory.includes('teach') || backstory.includes('mentor')) {
+    dependents.push('Students who will arrive tomorrow to find an empty chair');
+  }
+  if (backstory.includes('worker') || backstory.includes('employ') || backstory.includes('colleague')) {
+    dependents.push('Colleagues who will divide their work among themselves by afternoon');
+  }
+
+  if (sc) {
+    for (const obligation of sc.hiddenObligations) {
+      const lower = obligation.toLowerCase();
+      if (lower.includes('rent') || lower.includes('loan') || lower.includes('debt')) {
+        dependents.push('A landlord or lender who will move to the next name on the list');
+      } else if (lower.includes('community') || lower.includes('neighborhood') || lower.includes('union')) {
+        dependents.push('A community that will hold a brief meeting and then carry on');
+      } else if (lower.includes('patient') || lower.includes('sick') || lower.includes('medical')) {
+        dependents.push('Someone whose medical bills they were quietly covering');
+      }
+    }
+  }
+
+  if (dependents.length === 0) {
+    dependents.push('A neighborhood that knew their face but not their name');
+    dependents.push('A chai stall owner who will keep their usual order ready for a few more days');
+  }
+
+  return dependents;
+}
+
+function getUnfinishedBusiness(player: Player): string[] {
+  const unfinished: string[] = [];
+
+  const incomplete = player.mission.objectives
+    .filter(o => !o.completed && !o.optional)
+    .map(o => o.description);
+  if (incomplete.length > 0) {
+    unfinished.push(`Mission incomplete: ${incomplete[0]}`);
+  }
+
+  if (player.state.cash > 50) {
+    unfinished.push(`Had ₹${Math.round(player.state.cash)} left — money that will never reach who it was meant for`);
+  }
+
+  if (player.state.helpedOthersCount > 0) {
+    unfinished.push(`Helped ${player.state.helpedOthersCount} people today — the last good thing they did`);
+  }
+
+  if (player.dilemmasResolved.length > 0) {
+    const last = player.dilemmasResolved[player.dilemmasResolved.length - 1];
+    unfinished.push(`Last moral choice: "${last.choiceLabel}" — and nobody will ever know why`);
+  }
+
+  return unfinished;
+}
+
+// --- Low-state action blocking ---
+
+export function getLowStateBlockReason(player: Player, actionType: string): string | null {
+  if (!player.isAlive) {
+    return 'You have collapsed. Your journey is over.';
+  }
+
+  if (actionType === 'work' && player.state.energy < 10) {
+    return 'You are too exhausted to work. Your body refuses.';
+  }
+  if (actionType === 'work' && player.state.mood < 15) {
+    return 'You cannot bring yourself to work. The despair is too heavy.';
+  }
+  if (actionType === 'help_player' && player.state.mood < 15) {
+    return 'You are too withdrawn to help anyone right now.';
+  }
+  if (actionType === 'move' && player.state.energy < 3 && player.state.health < 15) {
+    return 'You cannot move. Your body has nothing left to give.';
+  }
+
+  return null;
 }
 
 function generatePerformanceInsights(

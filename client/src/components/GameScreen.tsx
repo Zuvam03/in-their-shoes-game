@@ -84,6 +84,7 @@ import FinalReflection from './FinalReflection';
 import CommunityHealth from './CommunityHealth';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd, playAmbient, stopAmbient, playMove, playHelp, playNotification, playAchievement } from '../game/sounds';
 import CityEventCinematic from './CityEventCinematic';
+import DeathScreen from './DeathScreen';
 import { getLocationById } from '../game/mapData';
 
 type Tab = 'map' | 'character' | 'mission' | 'players' | 'chat' | 'feed' | 'journey' | 'achievements';
@@ -356,6 +357,7 @@ export default function GameScreen() {
         <ReflectionPrompt />
         <NotificationCenter />
         <ConnectionStatus />
+        <DeathScreen />
         {showSettings && <PauseMenu onClose={() => setShowSettings(false)} />}
       </div>
     );
@@ -627,6 +629,7 @@ export default function GameScreen() {
       <NotificationCenter />
       <KeyboardShortcuts />
       <ConnectionStatus />
+      <DeathScreen />
       {showSettings && <PauseMenu onClose={() => setShowSettings(false)} />}
     </div>
   );

@@ -166,6 +166,8 @@ export interface Player {
   socialTrust: number;
   communityImpact: number;
   actionLog: GameEvent[];
+  isAlive: boolean;
+  deathTick?: number;
   isConnected: boolean;
   isReady: boolean;
 }
@@ -179,6 +181,7 @@ export interface PublicPlayer {
   mission: { title: string; status: MissionStatus; objectives: MissionObjective[]; partialProgress: number };
   socialTrust: number;
   communityImpact: number;
+  isAlive: boolean;
   isConnected: boolean;
   isReady: boolean;
 }
@@ -255,6 +258,7 @@ export interface PlayerResult {
   narrative: string;
   dilemmasResolved: DilemmaRecord[];
   personaLens?: string[];
+  deathNarrative?: DeathNarrative;
   scoreBreakdown: ScoreBreakdown;
   performanceInsights: PerformanceInsight[];
 }
@@ -278,10 +282,18 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface DeathNarrative {
+  cause: string;
+  finalMoments: string;
+  dependents: string[];
+  lastLocation: string;
+  unfinishedBusiness: string[];
+}
+
 export interface GameNotification {
   id: string;
   tick: number;
-  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity';
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity' | 'death';
   text: string;
   playerId?: string;
   playerName?: string;
@@ -330,6 +342,9 @@ interface GameState {
   pendingCityEvent: CityEvent | null;
   pendingDilemma: DilemmaEvent | null;
   matchResult: MatchResult | null;
+
+  // Death
+  deathNarrative: { playerId: string; playerName: string; personaTitle: string; narrative: DeathNarrative } | null;
 
   // Incoming interaction requests
   pendingInteraction: { id: string; fromPlayerName: string; type: string; message: string } | null;
@@ -402,6 +417,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastActionResult: null,
   actionFeedback: null,
   pendingCityEvent: null,
+  deathNarrative: null,
   pendingInteraction: null,
   pendingDilemma: null,
   matchResult: null,
@@ -538,6 +554,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     socket.on('dilemmaEvent', (event: DilemmaEvent) => {
       set({ pendingDilemma: event });
+    });
+
+    socket.on('playerDied', (data: { playerId: string; playerName: string; personaTitle: string; narrative: DeathNarrative }) => {
+      const state = get();
+      if (data.playerId === state.mySocketId) {
+        set({ deathNarrative: data });
+      }
     });
 
     socket.on('gameEnded', (result: MatchResult) => {
@@ -699,6 +722,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       lastActionResult: null,
       actionFeedback: null,
       pendingCityEvent: null,
+      deathNarrative: null,
       pendingInteraction: null,
       pendingDilemma: null,
       matchResult: null,

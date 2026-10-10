@@ -121,6 +121,7 @@ describe('Persona-Specific Consequences', () => {
       hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
       actionLog: [],
       dilemmasResolved: [],
+      isAlive: true,
       isConnected: true,
       isReady: true
     };
@@ -220,7 +221,7 @@ describe('Karma System', () => {
       },
       socialTrust: 50, communityImpact: 0,
       hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
-      actionLog: [], dilemmasResolved: [], isConnected: true, isReady: true
+      actionLog: [], dilemmasResolved: [], isAlive: true, isConnected: true, isReady: true
     };
   }
 
