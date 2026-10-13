@@ -20,7 +20,7 @@ export default function CommunityLeaderboard() {
       entries: players
         .map(p => ({
           name: p.name, isMe: p.id === myPlayer.id,
-          score: p.state.helpedOthersCount, icon: '🤝'
+          score: p.helpedOthersCount, icon: '🤝'
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, 3),

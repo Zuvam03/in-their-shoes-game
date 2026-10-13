@@ -22,7 +22,7 @@ export default function CityNewsTicker() {
   const players = Object.values(room.players);
   const tick = room.tick;
   const dayNum = Math.floor(tick / 600) + 1;
-  const totalHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
+  const totalHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
   const avgTrust = Math.round(players.reduce((s, p) => s + p.socialTrust, 0) / players.length);
   const activeEvents = room.cityEvents.length;
 

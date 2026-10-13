@@ -41,6 +41,7 @@ import CityEventCinematic from './CityEventCinematic';
 import DeathScreen from './DeathScreen';
 import LocationContent from './LocationContent';
 import ArrivalToast from './ArrivalToast';
+import ConstraintPanel from './ConstraintPanel';
 import { getLocationById } from '../game/mapData';
 
 type Tab = 'actions' | 'info' | 'mission' | 'social' | 'log';
@@ -153,7 +154,7 @@ export default function GameScreen() {
   ));
 
   const nearbyPlayers = Object.values(room.players)
-    .filter(p => p.id !== myPlayer.id && p.state.location === myPlayer.state.location && p.isConnected);
+    .filter(p => p.id !== myPlayer.id && p.approximateState.location === myPlayer.state.location && p.isConnected);
 
   const tabs: { key: Tab; icon: string; label: string; badge?: number }[] = [
     { key: 'actions', icon: '🗺️', label: 'Actions' },
@@ -247,7 +248,7 @@ export default function GameScreen() {
               </div>
             </>
           )}
-          {activeTab === 'info' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /></div>}
+          {activeTab === 'info' && <div style={{ height: '100%', overflowY: 'auto' }}><CharacterPanel /><ConstraintPanel /></div>}
           {activeTab === 'mission' && <div style={{ height: '100%', overflowY: 'auto' }}><MissionPanel /></div>}
           {activeTab === 'social' && <div style={{ height: '100%', overflowY: 'auto' }}><ChatPanel /><PlayerProximity /><PlayersPanel /></div>}
           {activeTab === 'log' && <div style={{ height: '100%', overflowY: 'auto' }}><EventFeed /><AchievementProgress /></div>}
@@ -522,6 +523,7 @@ export default function GameScreen() {
             {activeTab === 'info' && (
               <div style={{ padding: '10px' }}>
                 <CharacterPanel />
+                <ConstraintPanel />
               </div>
             )}
             {activeTab === 'mission' && <MissionPanel />}

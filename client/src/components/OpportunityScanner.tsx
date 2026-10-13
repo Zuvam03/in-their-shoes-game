@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 import { LOCATIONS } from '../game/mapData';
 
 interface Opportunity {
@@ -77,9 +77,11 @@ export default function OpportunityScanner() {
   }
 
   const players = Object.values(room.players);
-  const needyPlayers = players.filter(p =>
-    p.id !== myPlayer.id && (p.state.health < 25 || p.state.energy < 15)
-  );
+  const needyPlayers = players.filter(p => {
+    if (p.id === myPlayer.id) return false;
+    const pState = approximateStateToNumbers(p.approximateState);
+    return pState.health < 25 || pState.energy < 15;
+  });
   if (needyPlayers.length > 0 && state.energy > 30) {
     opportunities.push({
       icon: '🤝', label: `Help ${needyPlayers[0].name}`,

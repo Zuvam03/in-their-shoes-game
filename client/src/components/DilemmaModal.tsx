@@ -191,7 +191,7 @@ export default function DilemmaModal() {
         {phase !== 'enter' && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            opacity: phase === 'enter' ? 0 : 1,
+            opacity: (phase as string) === 'enter' ? 0 : 1,
             transition: 'opacity 0.6s ease 0.4s',
           }}>
             <span style={{ fontSize: '16px' }}>{theme.icon}</span>
@@ -290,8 +290,8 @@ export default function DilemmaModal() {
               borderRadius: '12px',
               padding: '14px 16px',
               marginBottom: '24px',
-              opacity: phase === 'narrative' ? 0 : 1,
-              transform: phase === 'narrative' ? 'translateY(10px)' : 'translateY(0)',
+              opacity: (phase as string) === 'narrative' ? 0 : 1,
+              transform: (phase as string) === 'narrative' ? 'translateY(10px)' : 'translateY(0)',
               transition: 'all 0.5s ease',
             }}>
               <div style={{
@@ -323,7 +323,7 @@ export default function DilemmaModal() {
           {(phase === 'choices' || phase === 'deciding' || phase === 'chosen') && (
             <div style={{
               display: 'flex', flexDirection: 'column', gap: '10px',
-              opacity: phase === 'narrative' ? 0 : 1,
+              opacity: (phase as string) === 'narrative' ? 0 : 1,
               transition: 'opacity 0.6s ease 0.2s',
             }}>
               {pendingDilemma.choices.map((choice, idx) => {

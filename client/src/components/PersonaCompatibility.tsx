@@ -11,43 +11,26 @@ export default function PersonaCompatibility() {
   const others = players.filter(p => p.id !== me.id);
 
   const compatibilities = others.map(other => {
-    const myTraits = me.persona.traits;
-    const theirTraits = other.persona.traits;
-
     let synergy = 0;
-    let tension = 0;
     const insights: string[] = [];
 
-    if (myTraits.cooperation >= 7 && theirTraits.cooperation >= 7) {
+    // Without full persona traits for other players, estimate compatibility from social stats
+    const trustDiff = Math.abs(me.socialTrust - other.socialTrust);
+    if (trustDiff < 10) {
       synergy += 20;
-      insights.push('Both cooperative');
+      insights.push('Similar trust');
     }
-    if (myTraits.socialOrientation >= 7 && theirTraits.socialOrientation >= 7) {
+    const impactAlign = (me.communityImpact >= 0) === (other.communityImpact >= 0);
+    if (impactAlign) {
       synergy += 15;
-      insights.push('Social match');
+      insights.push('Aligned impact');
     }
-    if (Math.abs(myTraits.riskTolerance - theirTraits.riskTolerance) > 5) {
-      tension += 15;
-      insights.push('Risk mismatch');
-    }
-    if (Math.abs(myTraits.spendingStyle - theirTraits.spendingStyle) > 5) {
-      tension += 10;
-      insights.push('Spending clash');
-    }
-    if (myTraits.emotionalSensitivity >= 7 && theirTraits.emotionalSensitivity >= 7) {
-      synergy += 15;
-      insights.push('Empathetic bond');
-    }
-    if (myTraits.resilience >= 7 && theirTraits.resilience < 4) {
+    if (other.helpedOthersCount >= 2) {
       synergy += 10;
-      insights.push('You can support them');
-    }
-    if (myTraits.adaptability >= 7 && theirTraits.adaptability >= 7) {
-      synergy += 10;
-      insights.push('Both flexible');
+      insights.push('Helpful neighbor');
     }
 
-    const score = Math.min(100, Math.max(0, 50 + synergy - tension));
+    const score = Math.min(100, Math.max(0, 50 + synergy));
     const label = score >= 80 ? 'Great Match' : score >= 60 ? 'Compatible' :
       score >= 40 ? 'Neutral' : score >= 20 ? 'Challenging' : 'Friction';
     const color = score >= 80 ? 'var(--accent-green)' : score >= 60 ? 'var(--accent-blue)' :

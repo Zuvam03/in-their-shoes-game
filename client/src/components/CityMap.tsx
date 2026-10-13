@@ -602,7 +602,7 @@ export default function CityMap() {
             const isSelected = loc.id === selectedLocation;
             const isConnected = selectedLocation ? isConnectedToSelected(loc.id) : false;
             const isHovered = loc.id === hoveredLocation;
-            const otherPlayersHere = otherPlayers.filter(p => p.state.location === loc.id);
+            const otherPlayersHere = otherPlayers.filter(p => p.approximateState.location === loc.id);
             const color = LOCATION_COLORS[loc.type];
             const affected = isLocationAffected(loc.id);
             const isVisited = visitedLocations.has(loc.id);

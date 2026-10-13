@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, StatBand, CashBand } from '../store/gameStore';
 import { getLocationById, getConnectedLocations } from '../game/mapData';
 import ReputationBadge from './ReputationBadge';
-import PlayerComparison from './PlayerComparison';
 
 type Proximity = 'same' | 'nearby' | 'far';
 
@@ -19,12 +18,30 @@ const PROXIMITY_CONFIG: Record<Proximity, { label: string; color: string; icon: 
   far: { label: 'Far', color: 'var(--text-muted)', icon: '🌐' },
 };
 
+const BAND_LABELS: Record<StatBand, { label: string; color: string }> = {
+  critical: { label: 'Critical', color: 'var(--accent-red)' },
+  low: { label: 'Low', color: '#f59e0b' },
+  moderate: { label: 'OK', color: 'var(--text-muted)' },
+  good: { label: 'Good', color: 'var(--accent-green)' },
+  excellent: { label: 'Strong', color: '#22d3ee' },
+};
+
+const CASH_LABELS: Record<CashBand, { label: string; color: string }> = {
+  broke: { label: 'Broke', color: 'var(--accent-red)' },
+  tight: { label: 'Tight', color: '#f59e0b' },
+  comfortable: { label: 'OK', color: 'var(--accent-green)' },
+  flush: { label: 'Flush', color: '#22d3ee' },
+};
+
+const BAND_WIDTH: Record<StatBand, number> = {
+  critical: 10, low: 30, moderate: 50, good: 75, excellent: 95,
+};
+
 export default function PlayersPanel() {
   const { room, myPlayer, mySocketId, submitAction, playerEmotes } = useGameStore();
   const [transferTarget, setTransferTarget] = useState<string | null>(null);
   const [transferAmount, setTransferAmount] = useState('');
   const [expandedPlayer, setExpandedPlayer] = useState<string | null>(null);
-  const [comparePlayer, setComparePlayer] = useState<string | null>(null);
 
   if (!room) return null;
 
@@ -32,8 +49,8 @@ export default function PlayersPanel() {
   const myLoc = myPlayer?.state.location || '';
 
   const sortedPlayers = [...otherPlayers].sort((a, b) => {
-    const pa = getProximity(myLoc, a.state.location);
-    const pb = getProximity(myLoc, b.state.location);
+    const pa = getProximity(myLoc, a.approximateState.location);
+    const pb = getProximity(myLoc, b.approximateState.location);
     const order: Record<Proximity, number> = { same: 0, nearby: 1, far: 2 };
     return order[pa] - order[pb];
   });
@@ -66,13 +83,13 @@ export default function PlayersPanel() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
       }}>
         <span>Other Players ({otherPlayers.length})</span>
-        {otherPlayers.filter(p => getProximity(myLoc, p.state.location) === 'same').length > 0 && (
+        {otherPlayers.filter(p => getProximity(myLoc, p.approximateState.location) === 'same').length > 0 && (
           <span style={{
             fontSize: '10px', padding: '2px 8px', borderRadius: '10px',
             background: 'rgba(34,197,94,0.12)', color: 'var(--accent-green)',
             fontWeight: 600
           }}>
-            {otherPlayers.filter(p => getProximity(myLoc, p.state.location) === 'same').length} here
+            {otherPlayers.filter(p => getProximity(myLoc, p.approximateState.location) === 'same').length} here
           </span>
         )}
       </div>
@@ -87,13 +104,22 @@ export default function PlayersPanel() {
       )}
 
       {sortedPlayers.map(player => {
-        const location = getLocationById(player.state.location);
+        const location = getLocationById(player.approximateState.location);
         const isTransferring = transferTarget === player.id;
-        const proximity = getProximity(myLoc, player.state.location);
+        const proximity = getProximity(myLoc, player.approximateState.location);
         const proxCfg = PROXIMITY_CONFIG[proximity];
         const isExpanded = expandedPlayer === player.id;
         const emote = playerEmotes[player.id];
         const isSameLocation = proximity === 'same';
+        const approx = player.approximateState;
+
+        const statusBand = approx.energy;
+        const statusLabel = statusBand === 'critical' ? 'exhausted'
+          : approx.health === 'critical' ? 'struggling'
+          : approx.stress === 'excellent' ? 'stressed'
+          : statusBand === 'low' ? 'tired' : 'active';
+        const statusColor = statusBand === 'critical' || approx.health === 'critical'
+          ? 'var(--accent-red)' : 'var(--accent-green)';
 
         return (
           <div key={player.id} style={{
@@ -140,19 +166,15 @@ export default function PlayersPanel() {
                     <span style={{
                       display: 'inline-flex', alignItems: 'center', gap: '3px',
                       fontSize: '10px', padding: '1px 6px', borderRadius: '8px',
-                      background: player.state.energy < 20
+                      background: statusColor === 'var(--accent-red)'
                         ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
-                      color: player.state.energy < 20
-                        ? 'var(--accent-red)' : 'var(--accent-green)'
+                      color: statusColor,
                     }}>
                       <span style={{
                         width: '5px', height: '5px', borderRadius: '50%',
-                        background: player.state.energy < 20
-                          ? 'var(--accent-red)' : 'var(--accent-green)'
+                        background: statusColor,
                       }} />
-                      {player.state.energy < 20 ? 'exhausted' :
-                       player.state.health < 30 ? 'struggling' :
-                       player.state.stress > 70 ? 'stressed' : 'active'}
+                      {statusLabel}
                     </span>
                   )}
                 </div>
@@ -176,14 +198,14 @@ export default function PlayersPanel() {
               </div>
             </div>
 
-            {/* Stats visible to other players */}
+            {/* Approximate stats — bands instead of exact numbers */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px',
               marginBottom: '8px'
             }}>
-              <MiniStat label="Health" value={player.state.health} color="var(--accent-red)" />
-              <MiniStat label="Energy" value={player.state.energy} color="var(--accent-yellow)" />
-              <MiniStat label="Mood" value={player.state.mood} color="var(--accent-purple)" />
+              <BandStat label="Health" band={approx.health} color="var(--accent-red)" />
+              <BandStat label="Energy" band={approx.energy} color="var(--accent-yellow)" />
+              <BandStat label="Mood" band={approx.mood} color="var(--accent-purple)" />
             </div>
 
             {/* Location & trust row */}
@@ -191,7 +213,7 @@ export default function PlayersPanel() {
               fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px',
               display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
-              <span>📍 {location?.name || player.state.location}</span>
+              <span>📍 {location?.name || approx.location}</span>
               <div style={{ display: 'flex', gap: '6px' }}>
                 <span style={{
                   fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
@@ -201,11 +223,15 @@ export default function PlayersPanel() {
                 </span>
                 <span style={{
                   fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                  background: player.communityImpact >= 0
-                    ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
-                  color: player.communityImpact >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'
+                  ...(() => {
+                    const c = CASH_LABELS[approx.cash];
+                    return {
+                      background: approx.cash === 'broke' ? 'rgba(239,68,68,0.1)' : 'rgba(34,197,94,0.1)',
+                      color: c.color,
+                    };
+                  })()
                 }}>
-                  Impact: {player.communityImpact >= 0 ? '+' : ''}{player.communityImpact}
+                  💰 {CASH_LABELS[approx.cash].label}
                 </span>
               </div>
             </div>
@@ -232,16 +258,30 @@ export default function PlayersPanel() {
                   </span>
                 </div>
                 <div style={{ marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600 }}>Helped:</span> {player.state.helpedOthersCount} people
+                  <span style={{ fontWeight: 600 }}>Helped:</span> {player.helpedOthersCount} people
                   &nbsp;·&nbsp;
-                  <span style={{ fontWeight: 600 }}>Received:</span> {player.state.receivedHelpCount} times
+                  <span style={{ fontWeight: 600 }}>Received:</span> {player.receivedHelpCount} times
                 </div>
-                {player.persona.strengths && player.persona.strengths.length > 0 && (
-                  <div>
-                    <span style={{ fontWeight: 600, color: 'var(--accent-green)' }}>Strengths:</span>{' '}
-                    {player.persona.strengths.slice(0, 2).join(', ')}
-                  </div>
-                )}
+                <div style={{ marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600 }}>Stress:</span>{' '}
+                  <span style={{ color: BAND_LABELS[approx.stress].color }}>
+                    {BAND_LABELS[approx.stress].label}
+                  </span>
+                  &nbsp;·&nbsp;
+                  <span style={{ fontWeight: 600 }}>Hunger:</span>{' '}
+                  <span style={{ color: BAND_LABELS[approx.hunger].color }}>
+                    {BAND_LABELS[approx.hunger].label}
+                  </span>
+                </div>
+                <div style={{
+                  marginTop: '6px', padding: '4px 8px', borderRadius: '6px',
+                  background: 'rgba(168,85,247,0.06)',
+                  border: '1px solid rgba(168,85,247,0.1)',
+                  fontSize: '10px', color: 'var(--text-muted)',
+                  fontStyle: 'italic',
+                }}>
+                  {player.persona.description}
+                </div>
               </div>
             )}
 
@@ -293,17 +333,6 @@ export default function PlayersPanel() {
               >
                 💰 Send
               </button>
-              <button
-                onClick={() => setComparePlayer(player.id)}
-                style={{
-                  padding: '6px 8px', borderRadius: '6px',
-                  background: 'rgba(139,146,168,0.1)',
-                  border: '1px solid rgba(139,146,168,0.2)',
-                  color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600
-                }}
-              >
-                📊
-              </button>
             </div>
 
             {/* Proximity bonus hint */}
@@ -352,27 +381,26 @@ export default function PlayersPanel() {
           </div>
         );
       })}
-
-      {comparePlayer && (
-        <PlayerComparison playerId={comparePlayer} onClose={() => setComparePlayer(null)} />
-      )}
     </div>
   );
 }
 
-function MiniStat({ label, value, color }: { label: string; value: number; color: string }) {
+function BandStat({ label, band, color }: { label: string; band: StatBand; color: string }) {
+  const info = BAND_LABELS[band];
+  const width = BAND_WIDTH[band];
   return (
     <div>
       <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginBottom: '2px' }}>{label}</div>
       <div style={{ height: '3px', background: 'var(--border)', borderRadius: '2px' }}>
         <div style={{
-          height: '100%', borderRadius: '2px', width: `${value}%`, background: color
+          height: '100%', borderRadius: '2px', width: `${width}%`, background: color,
+          transition: 'width 0.5s ease',
         }} />
       </div>
       <div style={{
-        fontSize: '9px', textAlign: 'right', color: 'var(--text-muted)'
+        fontSize: '9px', textAlign: 'right', color: info.color,
       }}>
-        {Math.round(value)}
+        {info.label}
       </div>
     </div>
   );

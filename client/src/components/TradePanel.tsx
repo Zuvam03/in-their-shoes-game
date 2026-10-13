@@ -11,7 +11,7 @@ export default function TradePanel() {
 
   const nearbyPlayers = Object.values(room.players).filter(
     p => p.id !== mySocketId &&
-    p.state.location === myPlayer.state.location &&
+    p.approximateState.location === myPlayer.state.location &&
     p.isConnected
   );
 

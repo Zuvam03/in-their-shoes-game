@@ -91,7 +91,7 @@ export default function Minimap() {
         })}
 
         {players.map((p, i) => {
-          const loc = getLocationById(p.state.location);
+          const loc = getLocationById(p.approximateState.location);
           if (!loc) return null;
           const isMe = p.id === mySocketId;
           return (

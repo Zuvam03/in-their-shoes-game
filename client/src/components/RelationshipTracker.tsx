@@ -13,7 +13,7 @@ interface Relationship {
 
 function buildRelationships(
   myId: string,
-  players: Record<string, { id: string; name: string; state: { location: string }; isConnected: boolean }>,
+  players: Record<string, { id: string; name: string; approximateState: { location: string }; isConnected: boolean }>,
   myLocation: string,
   chatMessages: Array<{ senderId: string; target: string }>,
   actionLog: Array<{ type: string; description: string; playerId?: string }>
@@ -33,7 +33,7 @@ function buildRelationships(
       e.type === 'received_help' && e.playerId === p.id
     ).length;
 
-    const isNearby = p.state.location === myLocation && p.isConnected;
+    const isNearby = p.approximateState.location === myLocation && p.isConnected;
 
     const score = Math.min(100, chatCount * 3 + helpGiven * 15 + helpReceived * 10 + (isNearby ? 5 : 0));
 

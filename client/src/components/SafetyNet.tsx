@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function SafetyNet() {
   const { myPlayer, room } = useGameStore();
@@ -17,12 +17,12 @@ export default function SafetyNet() {
   ];
 
   const potentialHelpers = otherPlayers.filter(p =>
-    p.socialTrust >= 50 && p.state.helpedOthersCount >= 1
+    p.socialTrust >= 50 && p.helpedOthersCount >= 1
   ).length;
 
   const communityStrength = Math.round(
     (players.reduce((s, p) => s + p.socialTrust, 0) / players.length) +
-    players.reduce((s, p) => s + p.state.helpedOthersCount, 0) * 2
+    players.reduce((s, p) => s + p.helpedOthersCount, 0) * 2
   );
 
   const safeResources = resources.filter(r => r.value >= r.threshold).length;

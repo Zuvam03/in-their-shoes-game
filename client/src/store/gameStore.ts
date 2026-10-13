@@ -172,15 +172,57 @@ export interface Player {
   isReady: boolean;
 }
 
+export type StatBand = 'critical' | 'low' | 'moderate' | 'good' | 'excellent';
+export type CashBand = 'broke' | 'tight' | 'comfortable' | 'flush';
+
+const STAT_BAND_MID: Record<StatBand, number> = { critical: 8, low: 25, moderate: 48, good: 70, excellent: 90 };
+const CASH_BAND_MID: Record<CashBand, number> = { broke: 10, tight: 50, comfortable: 140, flush: 300 };
+
+export function approximateStateToNumbers(approx: ApproximateState): CharacterState {
+  return {
+    health: STAT_BAND_MID[approx.health],
+    energy: STAT_BAND_MID[approx.energy],
+    hunger: STAT_BAND_MID[approx.hunger],
+    mood: STAT_BAND_MID[approx.mood],
+    stress: STAT_BAND_MID[approx.stress],
+    cash: CASH_BAND_MID[approx.cash],
+    location: approx.location,
+    hydration: STAT_BAND_MID[approx.hunger],
+    helpedOthersCount: 0,
+    receivedHelpCount: 0,
+    lastMealTime: 0,
+    overeatingPenalty: 0,
+  };
+}
+
+export interface ApproximateState {
+  health: StatBand;
+  energy: StatBand;
+  hunger: StatBand;
+  mood: StatBand;
+  stress: StatBand;
+  cash: CashBand;
+  location: string;
+}
+
+export interface PublicPersona {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+}
+
 export interface PublicPlayer {
   id: string;
   socketId: string;
   name: string;
-  persona: PersonaDefinition;
-  state: CharacterState;
-  mission: { title: string; status: MissionStatus; objectives: MissionObjective[]; partialProgress: number };
+  persona: PublicPersona;
+  approximateState: ApproximateState;
+  mission: { title: string; status: MissionStatus };
   socialTrust: number;
   communityImpact: number;
+  helpedOthersCount: number;
+  receivedHelpCount: number;
   isAlive: boolean;
   isConnected: boolean;
   isReady: boolean;
@@ -368,7 +410,7 @@ export interface LocationSnapshot {
 export interface GameNotification {
   id: string;
   tick: number;
-  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity' | 'death';
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity' | 'death' | 'obligation';
   text: string;
   playerId?: string;
   playerName?: string;

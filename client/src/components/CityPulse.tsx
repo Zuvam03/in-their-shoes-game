@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function CityPulse() {
   const { room } = useGameStore();
@@ -9,10 +9,11 @@ export default function CityPulse() {
   const dayPct = (tick % 600) / 600;
   const dayNum = Math.floor(tick / 600) + 1;
 
-  const avgHealth = Math.round(players.reduce((s, p) => s + p.state.health, 0) / players.length);
-  const avgMood = Math.round(players.reduce((s, p) => s + p.state.mood, 0) / players.length);
-  const avgEnergy = Math.round(players.reduce((s, p) => s + p.state.energy, 0) / players.length);
-  const totalHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
+  const playersWithState = players.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+  const avgHealth = Math.round(playersWithState.reduce((s, p) => s + p._state.health, 0) / players.length);
+  const avgMood = Math.round(playersWithState.reduce((s, p) => s + p._state.mood, 0) / players.length);
+  const avgEnergy = Math.round(playersWithState.reduce((s, p) => s + p._state.energy, 0) / players.length);
+  const totalHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
   const activeEvents = room.cityEvents.length;
 
   const isNight = dayPct > 2 / 3;

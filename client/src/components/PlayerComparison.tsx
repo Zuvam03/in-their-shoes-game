@@ -1,4 +1,4 @@
-import { useGameStore, PublicPlayer } from '../store/gameStore';
+import { useGameStore, PublicPlayer, approximateStateToNumbers } from '../store/gameStore';
 import ReputationBadge from './ReputationBadge';
 
 interface Props {
@@ -63,20 +63,22 @@ export default function PlayerComparison({ playerId, onClose }: Props) {
   const other: PublicPlayer | undefined = room.players[playerId];
   if (!other) return null;
 
+  const otherState = approximateStateToNumbers(other.approximateState);
+
   const myAdvantages: string[] = [];
   const theirAdvantages: string[] = [];
 
-  if (myPlayer.state.health > other.state.health + 10) myAdvantages.push('Healthier');
-  else if (other.state.health > myPlayer.state.health + 10) theirAdvantages.push('Healthier');
+  if (myPlayer.state.health > otherState.health + 10) myAdvantages.push('Healthier');
+  else if (otherState.health > myPlayer.state.health + 10) theirAdvantages.push('Healthier');
 
-  if (myPlayer.state.cash > other.state.cash + 20) myAdvantages.push('Wealthier');
-  else if (other.state.cash > myPlayer.state.cash + 20) theirAdvantages.push('Wealthier');
+  if (myPlayer.state.cash > otherState.cash + 20) myAdvantages.push('Wealthier');
+  else if (otherState.cash > myPlayer.state.cash + 20) theirAdvantages.push('Wealthier');
 
   if (myPlayer.socialTrust > other.socialTrust + 10) myAdvantages.push('More trusted');
   else if (other.socialTrust > myPlayer.socialTrust + 10) theirAdvantages.push('More trusted');
 
-  if (myPlayer.state.helpedOthersCount > other.state.helpedOthersCount) myAdvantages.push('More helpful');
-  else if (other.state.helpedOthersCount > myPlayer.state.helpedOthersCount) theirAdvantages.push('More helpful');
+  if (myPlayer.state.helpedOthersCount > other.helpedOthersCount) myAdvantages.push('More helpful');
+  else if (other.helpedOthersCount > myPlayer.state.helpedOthersCount) theirAdvantages.push('More helpful');
 
   return (
     <div style={{
@@ -145,11 +147,11 @@ export default function PlayerComparison({ playerId, onClose }: Props) {
         </div>
 
         {/* Stat bars */}
-        <CompareBar label="Health" myVal={myPlayer.state.health} theirVal={other.state.health} color="var(--accent-red)" />
-        <CompareBar label="Energy" myVal={myPlayer.state.energy} theirVal={other.state.energy} color="var(--accent-yellow)" />
-        <CompareBar label="Mood" myVal={myPlayer.state.mood} theirVal={other.state.mood} color="var(--accent-purple)" />
-        <CompareBar label="Hunger" myVal={myPlayer.state.hunger} theirVal={other.state.hunger} color="var(--accent-orange)" inverted />
-        <CompareBar label="Stress" myVal={myPlayer.state.stress} theirVal={other.state.stress} color="var(--accent-red)" inverted />
+        <CompareBar label="Health" myVal={myPlayer.state.health} theirVal={otherState.health} color="var(--accent-red)" />
+        <CompareBar label="Energy" myVal={myPlayer.state.energy} theirVal={otherState.energy} color="var(--accent-yellow)" />
+        <CompareBar label="Mood" myVal={myPlayer.state.mood} theirVal={otherState.mood} color="var(--accent-purple)" />
+        <CompareBar label="Hunger" myVal={myPlayer.state.hunger} theirVal={otherState.hunger} color="var(--accent-orange)" inverted />
+        <CompareBar label="Stress" myVal={myPlayer.state.stress} theirVal={otherState.stress} color="var(--accent-red)" inverted />
 
         {/* Cash */}
         <div style={{
@@ -162,7 +164,7 @@ export default function PlayerComparison({ playerId, onClose }: Props) {
           </span>
           <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cash</span>
           <span style={{ fontWeight: 700, color: 'var(--accent-green)', fontSize: '14px' }}>
-            ₹{other.state.cash}
+            ₹{otherState.cash}
           </span>
         </div>
 
@@ -172,8 +174,8 @@ export default function PlayerComparison({ playerId, onClose }: Props) {
         }}>
           <CompactStat label="Trust" myVal={myPlayer.socialTrust} theirVal={other.socialTrust} />
           <CompactStat label="Impact" myVal={myPlayer.communityImpact} theirVal={other.communityImpact} />
-          <CompactStat label="Helped" myVal={myPlayer.state.helpedOthersCount} theirVal={other.state.helpedOthersCount} />
-          <CompactStat label="Got Help" myVal={myPlayer.state.receivedHelpCount} theirVal={other.state.receivedHelpCount} />
+          <CompactStat label="Helped" myVal={myPlayer.state.helpedOthersCount} theirVal={other.helpedOthersCount} />
+          <CompactStat label="Got Help" myVal={myPlayer.state.receivedHelpCount} theirVal={other.receivedHelpCount} />
         </div>
 
         {/* Advantages summary */}

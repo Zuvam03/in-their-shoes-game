@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function LiveLeaderboard() {
   const { room, myPlayer } = useGameStore();
@@ -10,17 +10,12 @@ export default function LiveLeaderboard() {
   const players = Object.values(room.players)
     .filter(p => p.isConnected)
     .map(p => {
-      const completedRequired = p.mission.objectives
-        .filter((o: { optional: boolean; completed: boolean }) => !o.optional && o.completed).length;
-      const totalRequired = p.mission.objectives
-        .filter((o: { optional: boolean }) => !o.optional).length;
-      const completedOptional = p.mission.objectives
-        .filter((o: { optional: boolean; completed: boolean }) => o.optional && o.completed).length;
+      const approxState = approximateStateToNumbers(p.approximateState);
+      const missionDone = p.mission.status === 'completed' ? 1 : 0;
 
       const score = Math.min(100, Math.max(0,
-        Math.round((completedRequired / Math.max(1, totalRequired)) * 60)
-        + completedOptional * 10
-        + Math.round(p.state.cash / 10)
+        Math.round(missionDone * 60)
+        + Math.round(approxState.cash / 10)
         + Math.round(p.socialTrust / 2)
         + Math.round(p.communityImpact)
       ));
@@ -29,11 +24,9 @@ export default function LiveLeaderboard() {
         id: p.id,
         name: p.name,
         score,
-        cash: p.state.cash,
-        health: p.state.health,
-        missionProgress: totalRequired > 0
-          ? Math.round((completedRequired / totalRequired) * 100)
-          : 0,
+        cash: approxState.cash,
+        health: approxState.health,
+        missionProgress: missionDone * 100,
         trust: p.socialTrust,
         isMe: p.id === myPlayer.id
       };

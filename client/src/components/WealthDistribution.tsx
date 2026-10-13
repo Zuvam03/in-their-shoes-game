@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function WealthDistribution() {
   const { myPlayer, room } = useGameStore();
@@ -7,7 +7,7 @@ export default function WealthDistribution() {
   const players = Object.values(room.players);
   if (players.length < 2) return null;
 
-  const cashValues = players.map(p => p.state.cash).sort((a, b) => a - b);
+  const cashValues = players.map(p => approximateStateToNumbers(p.approximateState).cash).sort((a, b) => a - b);
   const totalCash = cashValues.reduce((s, v) => s + v, 0);
   const avgCash = Math.round(totalCash / players.length);
   const maxCash = cashValues[cashValues.length - 1];

@@ -1,26 +1,27 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function CityEconomy() {
   const { room, myPlayer } = useGameStore();
   if (!room || !myPlayer) return null;
 
   const players = Object.values(room.players);
-  const totalCash = players.reduce((s, p) => s + p.state.cash, 0);
+  const playersWithState = players.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+  const totalCash = playersWithState.reduce((s, p) => s + p._state.cash, 0);
   const avgCash = Math.round(totalCash / players.length);
   const myCash = myPlayer.state.cash;
 
-  const totalHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
+  const totalHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
   const totalTransfers = 0;
 
-  const wealthGap = Math.max(...players.map(p => p.state.cash)) -
-    Math.min(...players.map(p => p.state.cash));
+  const wealthGap = Math.max(...playersWithState.map(p => p._state.cash)) -
+    Math.min(...playersWithState.map(p => p._state.cash));
 
   const tick = room.tick;
   const dayNum = Math.floor(tick / 600) + 1;
 
-  const cashDistribution = players.map(p => ({
-    name: p.name, cash: p.state.cash,
-    pct: totalCash > 0 ? Math.round((p.state.cash / totalCash) * 100) : 0
+  const cashDistribution = playersWithState.map(p => ({
+    name: p.name, cash: p._state.cash,
+    pct: totalCash > 0 ? Math.round((p._state.cash / totalCash) * 100) : 0
   })).sort((a, b) => b.cash - a.cash);
 
   return (

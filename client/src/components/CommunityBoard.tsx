@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 import ReputationBadge from './ReputationBadge';
 
 export default function CommunityBoard() {
@@ -8,14 +8,15 @@ export default function CommunityBoard() {
   const players = Object.values(room.players);
   if (players.length <= 1) return null;
 
-  const totalHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
-  const totalReceived = players.reduce((s, p) => s + p.state.receivedHelpCount, 0);
+  const totalHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
+  const totalReceived = players.reduce((s, p) => s + p.receivedHelpCount, 0);
   const avgTrust = Math.round(players.reduce((s, p) => s + p.socialTrust, 0) / players.length);
   const totalImpact = players.reduce((s, p) => s + p.communityImpact, 0);
-  const avgHealth = Math.round(players.reduce((s, p) => s + p.state.health, 0) / players.length);
-  const avgCash = Math.round(players.reduce((s, p) => s + p.state.cash, 0) / players.length);
+  const playersWithState = players.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+  const avgHealth = Math.round(playersWithState.reduce((s, p) => s + p._state.health, 0) / players.length);
+  const avgCash = Math.round(playersWithState.reduce((s, p) => s + p._state.cash, 0) / players.length);
 
-  const mostHelpful = [...players].sort((a, b) => b.state.helpedOthersCount - a.state.helpedOthersCount)[0];
+  const mostHelpful = [...players].sort((a, b) => b.helpedOthersCount - a.helpedOthersCount)[0];
   const mostTrusted = [...players].sort((a, b) => b.socialTrust - a.socialTrust)[0];
 
   const communityMood = totalImpact > 20 ? 'Thriving' :
@@ -67,7 +68,7 @@ export default function CommunityBoard() {
 
       {/* Spotlights */}
       <div style={{ display: 'flex', gap: '6px' }}>
-        {mostHelpful && mostHelpful.state.helpedOthersCount > 0 && (
+        {mostHelpful && mostHelpful.helpedOthersCount > 0 && (
           <div style={{
             flex: 1, padding: '6px 8px', borderRadius: '6px',
             background: 'rgba(34,197,94,0.06)',

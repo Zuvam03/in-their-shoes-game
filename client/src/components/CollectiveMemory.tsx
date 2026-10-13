@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function CollectiveMemory() {
   const { room } = useGameStore();
@@ -10,10 +10,11 @@ export default function CollectiveMemory() {
   const tick = room.tick;
   const dayNum = Math.floor(tick / 600) + 1;
 
-  const totalHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
+  const totalHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
   const totalImpact = players.reduce((s, p) => s + p.communityImpact, 0);
   const avgTrust = Math.round(players.reduce((s, p) => s + p.socialTrust, 0) / players.length);
-  const totalCash = players.reduce((s, p) => s + p.state.cash, 0);
+  const playersWithState = players.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+  const totalCash = playersWithState.reduce((s, p) => s + p._state.cash, 0);
 
   const memories: { text: string; icon: string; type: 'proud' | 'sad' | 'neutral' }[] = [];
 
@@ -43,7 +44,7 @@ export default function CollectiveMemory() {
     });
   }
 
-  const minCash = Math.min(...players.map(p => p.state.cash));
+  const minCash = Math.min(...playersWithState.map(p => p._state.cash));
   if (minCash < 10) {
     memories.push({
       text: 'Some among us went hungry — the gaps remained',
@@ -58,8 +59,8 @@ export default function CollectiveMemory() {
     });
   }
 
-  const mostHelpful = [...players].sort((a, b) => b.state.helpedOthersCount - a.state.helpedOthersCount)[0];
-  if (mostHelpful.state.helpedOthersCount >= 3) {
+  const mostHelpful = [...players].sort((a, b) => b.helpedOthersCount - a.helpedOthersCount)[0];
+  if (mostHelpful.helpedOthersCount >= 3) {
     memories.push({
       text: `${mostHelpful.name} became known for their generosity`,
       icon: '⭐', type: 'proud'

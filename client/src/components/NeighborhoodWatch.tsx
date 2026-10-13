@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 import { LOCATIONS } from '../game/mapData';
 
 export default function NeighborhoodWatch() {
@@ -9,15 +9,16 @@ export default function NeighborhoodWatch() {
   const myLoc = LOCATIONS.find(l => l.id === myPlayer.state.location);
   if (!myLoc) return null;
 
-  const sameLocPlayers = players.filter(p => p.id !== myPlayer.id && p.state.location === myPlayer.state.location);
-  const avgHealth = sameLocPlayers.length > 0
-    ? Math.round(sameLocPlayers.reduce((s, p) => s + p.state.health, 0) / sameLocPlayers.length)
+  const sameLocPlayers = players.filter(p => p.id !== myPlayer.id && p.approximateState.location === myPlayer.state.location);
+  const sameLocWithState = sameLocPlayers.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+  const avgHealth = sameLocWithState.length > 0
+    ? Math.round(sameLocWithState.reduce((s, p) => s + p._state.health, 0) / sameLocWithState.length)
     : 0;
-  const avgMood = sameLocPlayers.length > 0
-    ? Math.round(sameLocPlayers.reduce((s, p) => s + p.state.mood, 0) / sameLocPlayers.length)
+  const avgMood = sameLocWithState.length > 0
+    ? Math.round(sameLocWithState.reduce((s, p) => s + p._state.mood, 0) / sameLocWithState.length)
     : 0;
 
-  const needyNearby = sameLocPlayers.filter(p => p.state.health < 30 || p.state.energy < 20);
+  const needyNearby = sameLocWithState.filter(p => p._state.health < 30 || p._state.energy < 20);
   const activeEvents = room.cityEvents.filter(e =>
     e.affectedLocations.includes(myLoc.id) || e.affectedLocations.includes(myLoc.name)
   );
@@ -85,7 +86,7 @@ export default function NeighborhoodWatch() {
           </div>
           {needyNearby.map(p => (
             <div key={p.id} style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
-              {p.name} — HP: {Math.round(p.state.health)}%, EN: {Math.round(p.state.energy)}%
+              {p.name} — HP: {Math.round(p._state.health)}%, EN: {Math.round(p._state.energy)}%
             </div>
           ))}
         </div>

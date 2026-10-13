@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function HelpBeacon() {
   const { room, myPlayer, mySocketId } = useGameStore();
@@ -8,13 +8,14 @@ export default function HelpBeacon() {
     p.id !== mySocketId && p.isConnected
   );
 
-  const playersInNeed = otherPlayers.filter(p =>
-    p.state.health < 25 || p.state.energy < 15 ||
-    p.state.hunger > 80 || p.state.hydration > 80
+  const otherPlayersWithState = otherPlayers.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+  const playersInNeed = otherPlayersWithState.filter(p =>
+    p._state.health < 25 || p._state.energy < 15 ||
+    p._state.hunger > 80 || p._state.hydration > 80
   );
 
   const nearbyInNeed = playersInNeed.filter(p =>
-    p.state.location === myPlayer.state.location
+    p.approximateState.location === myPlayer.state.location
   );
 
   if (playersInNeed.length === 0) return null;
@@ -39,12 +40,12 @@ export default function HelpBeacon() {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {playersInNeed.slice(0, 3).map(p => {
-          const isNearby = p.state.location === myPlayer.state.location;
+          const isNearby = p.approximateState.location === myPlayer.state.location;
           const needs: string[] = [];
-          if (p.state.health < 25) needs.push('low health');
-          if (p.state.energy < 15) needs.push('exhausted');
-          if (p.state.hunger > 80) needs.push('starving');
-          if (p.state.hydration > 80) needs.push('dehydrated');
+          if (p._state.health < 25) needs.push('low health');
+          if (p._state.energy < 15) needs.push('exhausted');
+          if (p._state.hunger > 80) needs.push('starving');
+          if (p._state.hydration > 80) needs.push('dehydrated');
 
           return (
             <div key={p.id} style={{

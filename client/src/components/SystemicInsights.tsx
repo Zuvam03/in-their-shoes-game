@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 interface Insight {
   title: string;
@@ -36,8 +36,9 @@ export default function SystemicInsights() {
   }
 
   if (players.length > 1) {
-    const maxCash = Math.max(...players.map(p => p.state.cash));
-    const minCash = Math.min(...players.map(p => p.state.cash));
+    const cashVals = players.map(p => approximateStateToNumbers(p.approximateState).cash);
+    const maxCash = Math.max(...cashVals);
+    const minCash = Math.min(...cashVals);
     if (maxCash > minCash * 3 && minCash > 0) {
       insights.push({
         title: 'Wealth Inequality',

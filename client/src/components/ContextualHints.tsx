@@ -70,7 +70,7 @@ export default function ContextualHints() {
     }
 
     const nearbyPlayers = Object.values(room.players)
-      .filter(p => p.id !== myPlayer.id && p.state.location === s.location && p.isConnected);
+      .filter(p => p.id !== myPlayer.id && p.approximateState.location === s.location && p.isConnected);
 
     if (nearbyPlayers.length > 0 && myPlayer.socialTrust < 30) {
       hints.push({ id: 'socialize', text: 'Players nearby — helping them builds social trust for bonus points.', icon: '🤝', priority: 3 });

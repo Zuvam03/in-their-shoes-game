@@ -8,7 +8,7 @@ export default function PopulationDensity() {
   const players = Object.values(room.players);
 
   const locationCounts = LOCATIONS.map(loc => {
-    const count = players.filter(p => p.state.location === loc.id).length;
+    const count = players.filter(p => p.approximateState.location === loc.id).length;
     return { name: loc.name, district: loc.district, type: loc.type, count };
   }).filter(l => l.count > 0).sort((a, b) => b.count - a.count);
 

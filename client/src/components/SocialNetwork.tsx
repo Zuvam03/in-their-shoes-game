@@ -13,7 +13,7 @@ export default function SocialNetwork() {
   const connections = others.map(other => {
     const trustDiff = Math.abs(me.socialTrust - other.socialTrust);
     const impactAlign = (me.communityImpact >= 0) === (other.communityImpact >= 0);
-    const helpBalance = me.state.helpedOthersCount + other.state.helpedOthersCount;
+    const helpBalance = me.state.helpedOthersCount + other.helpedOthersCount;
 
     let strength = 50;
     if (trustDiff < 10) strength += 20;

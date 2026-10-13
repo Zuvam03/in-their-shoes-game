@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function CommunityHealth() {
   const { room } = useGameStore();
@@ -7,17 +7,19 @@ export default function CommunityHealth() {
   const players = Object.values(room.players);
   if (players.length === 0) return null;
 
+  const playersWithState = players.map(p => ({ ...p, _state: approximateStateToNumbers(p.approximateState) }));
+
   const metrics = [
     {
       label: 'Average Health',
-      value: Math.round(players.reduce((s, p) => s + p.state.health, 0) / players.length),
+      value: Math.round(playersWithState.reduce((s, p) => s + p._state.health, 0) / players.length),
       icon: '❤️',
       color: 'var(--accent-red)',
       unit: '%'
     },
     {
       label: 'Average Mood',
-      value: Math.round(players.reduce((s, p) => s + p.state.mood, 0) / players.length),
+      value: Math.round(playersWithState.reduce((s, p) => s + p._state.mood, 0) / players.length),
       icon: '😊',
       color: 'var(--accent-purple)',
       unit: '%'
@@ -31,15 +33,15 @@ export default function CommunityHealth() {
     },
     {
       label: 'Total Helps',
-      value: players.reduce((s, p) => s + p.state.helpedOthersCount, 0),
+      value: players.reduce((s, p) => s + p.helpedOthersCount, 0),
       icon: '🤝',
       color: 'var(--accent-green)',
       unit: ''
     },
   ];
 
-  const criticalCount = players.filter(p => p.state.health < 25 || p.state.energy < 15).length;
-  const prosperingCount = players.filter(p => p.state.health > 70 && p.state.mood > 60 && p.state.cash > 50).length;
+  const criticalCount = playersWithState.filter(p => p._state.health < 25 || p._state.energy < 15).length;
+  const prosperingCount = playersWithState.filter(p => p._state.health > 70 && p._state.mood > 60 && p._state.cash > 50).length;
 
   let communityStatus: string;
   let statusColor: string;

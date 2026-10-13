@@ -182,6 +182,13 @@ export interface PlayerMission {
 
 // --- Multiplayer ---
 
+export interface ObligationTrigger {
+  obligationIndex: number;
+  firedAtTick: number;
+  cashCost: number;
+  narrative: string;
+}
+
 export interface Player {
   id: string;
   socketId: string;
@@ -195,6 +202,8 @@ export interface Player {
     karma: number;           // -100 to +100, server-only
     karmaActions: number;    // count for anti-farming
     lastKarmaActionTick: number;
+    obligationsFired: number[];
+    revealedConstraints: string[];
   };
   actionLog: GameEvent[];
   dilemmasResolved: DilemmaRecord[];
@@ -356,7 +365,7 @@ export interface ActionResult {
 export interface GameEvent {
   id: string;
   tick: number;
-  type: ActionType | 'city_event' | 'mission_update' | 'system';
+  type: ActionType | 'city_event' | 'mission_update' | 'system' | 'obligation';
   playerId?: string;
   description: string;
   statChanges?: Partial<CharacterState>;
@@ -444,7 +453,7 @@ export interface ChatMessage {
 export interface GameNotification {
   id: string;
   tick: number;
-  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity' | 'death';
+  type: 'action' | 'event' | 'fortune' | 'warning' | 'chat' | 'system' | 'dilemma' | 'proximity' | 'death' | 'obligation';
   text: string;
   playerId?: string;
   playerName?: string;
@@ -496,10 +505,45 @@ export interface InteractionRequest {
   expiresAtTick: number;
 }
 
+// --- Asymmetric information: what other players see ---
+
+export type StatBand = 'critical' | 'low' | 'moderate' | 'good' | 'excellent';
+export type CashBand = 'broke' | 'tight' | 'comfortable' | 'flush';
+
+export interface ApproximateState {
+  health: StatBand;
+  energy: StatBand;
+  hunger: StatBand;
+  mood: StatBand;
+  stress: StatBand;
+  cash: CashBand;
+  location: string;
+}
+
+export interface PublicPersona {
+  id: string;
+  name: string;
+  title: string;
+  description: string;
+}
+
 // --- Public views (safe to send to clients) ---
-export type PublicPlayer = Omit<Player, 'hidden'> & {
-  mission: Omit<PlayerMission, 'definition'> & { title: string; status: MissionStatus };
-};
+
+export interface PublicPlayer {
+  id: string;
+  socketId: string;
+  name: string;
+  persona: PublicPersona;
+  approximateState: ApproximateState;
+  mission: { title: string; status: MissionStatus };
+  socialTrust: number;
+  communityImpact: number;
+  helpedOthersCount: number;
+  receivedHelpCount: number;
+  isAlive: boolean;
+  isConnected: boolean;
+  isReady: boolean;
+}
 
 export type PublicRoom = Omit<Room, 'players'> & {
   players: Record<string, PublicPlayer>;

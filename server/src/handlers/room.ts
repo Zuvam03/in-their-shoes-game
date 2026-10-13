@@ -11,7 +11,7 @@ import {
   createCharacterState, tickCharacterState, resolveAction, evaluateKarma,
   checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
   pickDilemmaForTick, buildDilemmaEvent, checkForDeath, generateDeathNarrative,
-  getLowStateBlockReason
+  getLowStateBlockReason, toApproximateState, processHiddenObligations
 } from '../game/engine';
 import { loadContent, getContentDilemmas, getContentPersonas } from '../content/loader';
 import {
@@ -643,6 +643,27 @@ function startGameLoop(io: Server, room: Room): void {
         emitNotification(io, room.id, socketId, 'fortune', fortune.description, room.tick, socketId, player.name);
       }
 
+      // Process hidden obligations
+      const obligation = processHiddenObligations(player, room.tick, rng);
+      if (obligation) {
+        player.actionLog.push({
+          id: uuidv4(),
+          tick: room.tick,
+          type: 'obligation',
+          playerId: socketId,
+          description: obligation.narrative,
+          statChanges: { cash: player.state.cash, mood: player.state.mood, stress: player.state.stress },
+          isPublic: false,
+        });
+        io.to(socketId).emit('actionResult', {
+          success: true,
+          message: obligation.narrative,
+          changes: { cash: player.state.cash, mood: player.state.mood, stress: player.state.stress },
+          narrative: obligation.narrative,
+        });
+        emitNotification(io, room.id, socketId, 'obligation', obligation.narrative, room.tick, socketId, player.name);
+      }
+
       // Fire social dilemma if eligible
       const dilemmas = getContentDilemmas();
       if (dilemmas.length > 0) {
@@ -835,7 +856,7 @@ function addPlayerToRoom(room: Room, socketId: string, name: string): void {
     },
     socialTrust: 50,
     communityImpact: 0,
-    hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0 },
+    hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0, obligationsFired: [], revealedConstraints: [] },
     actionLog: [],
     dilemmasResolved: [],
     isAlive: true,
@@ -907,14 +928,28 @@ function generateRoomCode(): string {
 function toPublicRoom(room: Room): PublicRoom {
   const publicPlayers: Record<string, PublicPlayer> = {};
   for (const [id, player] of Object.entries(room.players)) {
-    const { hidden, ...publicPlayer } = player;
     publicPlayers[id] = {
-      ...publicPlayer,
+      id: player.id,
+      socketId: player.socketId,
+      name: player.name,
+      persona: {
+        id: player.persona.id,
+        name: player.persona.name,
+        title: player.persona.title,
+        description: player.persona.description,
+      },
+      approximateState: toApproximateState(player.state),
       mission: {
-        ...player.mission,
         title: player.mission.definition.title,
-        status: player.mission.status
-      }
+        status: player.mission.status,
+      },
+      socialTrust: player.socialTrust,
+      communityImpact: player.communityImpact,
+      helpedOthersCount: player.state.helpedOthersCount,
+      receivedHelpCount: player.state.receivedHelpCount,
+      isAlive: player.isAlive,
+      isConnected: player.isConnected,
+      isReady: player.isReady,
     };
   }
 

@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 import { LOCATIONS } from '../game/mapData';
 
 export default function PlayerProximity() {
@@ -9,15 +9,15 @@ export default function PlayerProximity() {
   const myLoc = myPlayer.state.location;
   const myLocInfo = LOCATIONS.find(l => l.id === myLoc);
 
-  const nearby = players.filter(p => p.state.location === myLoc);
+  const nearby = players.filter(p => p.approximateState.location === myLoc);
   const sameDistrict = players.filter(p => {
-    if (p.state.location === myLoc) return false;
-    const pLoc = LOCATIONS.find(l => l.id === p.state.location);
+    if (p.approximateState.location === myLoc) return false;
+    const pLoc = LOCATIONS.find(l => l.id === p.approximateState.location);
     return pLoc?.district === myLocInfo?.district;
   });
   const farAway = players.filter(p => {
-    const pLoc = LOCATIONS.find(l => l.id === p.state.location);
-    return p.state.location !== myLoc && pLoc?.district !== myLocInfo?.district;
+    const pLoc = LOCATIONS.find(l => l.id === p.approximateState.location);
+    return p.approximateState.location !== myLoc && pLoc?.district !== myLocInfo?.district;
   });
 
   if (players.length === 0) return null;
@@ -33,7 +33,7 @@ export default function PlayerProximity() {
           {title} ({group.length})
         </div>
         {group.map(p => {
-          const pLoc = LOCATIONS.find(l => l.id === p.state.location);
+          const pLoc = LOCATIONS.find(l => l.id === p.approximateState.location);
           return (
             <div key={p.id} style={{
               display: 'flex', alignItems: 'center', gap: '6px',
@@ -42,7 +42,7 @@ export default function PlayerProximity() {
             }}>
               <div style={{
                 width: '6px', height: '6px', borderRadius: '50%',
-                background: p.state.health > 50 ? 'var(--accent-green)' : 'var(--accent-red)',
+                background: approximateStateToNumbers(p.approximateState).health > 50 ? 'var(--accent-green)' : 'var(--accent-red)',
                 flexShrink: 0
               }} />
               <span style={{ fontSize: '10px', color: 'var(--text-primary)', flex: 1 }}>

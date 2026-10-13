@@ -10,7 +10,8 @@ const TYPE_CONFIG: Record<GameNotification['type'], { icon: string; color: strin
   system: { icon: '●', color: 'var(--text-muted)', label: 'System', bg: 'transparent' },
   dilemma: { icon: '⬥', color: 'var(--accent-yellow)', label: 'Dilemma', bg: 'rgba(245,200,66,0.06)' },
   proximity: { icon: '📍', color: 'var(--accent-orange)', label: 'Nearby', bg: 'rgba(249,115,22,0.06)' },
-  death: { icon: '💀', color: '#c45d2c', label: 'Death', bg: 'rgba(196,93,44,0.06)' }
+  death: { icon: '💀', color: '#c45d2c', label: 'Death', bg: 'rgba(196,93,44,0.06)' },
+  obligation: { icon: '⚖', color: 'var(--accent-yellow)', label: 'Obligation', bg: 'rgba(245,200,66,0.06)' }
 };
 
 type FilterType = 'all' | GameNotification['type'];

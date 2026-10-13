@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function PrivilegeMeter() {
   const { myPlayer, room } = useGameStore();
@@ -8,8 +8,9 @@ export default function PrivilegeMeter() {
   if (players.length <= 1) return null;
 
   const me = myPlayer;
-  const avgCash = players.reduce((s, p) => s + p.state.cash, 0) / players.length;
-  const avgHealth = players.reduce((s, p) => s + p.state.health, 0) / players.length;
+  const playersWithState = players.map(p => approximateStateToNumbers(p.approximateState));
+  const avgCash = playersWithState.reduce((s, p) => s + p.cash, 0) / players.length;
+  const avgHealth = playersWithState.reduce((s, p) => s + p.health, 0) / players.length;
   const avgTrust = players.reduce((s, p) => s + p.socialTrust, 0) / players.length;
 
   const dimensions = [

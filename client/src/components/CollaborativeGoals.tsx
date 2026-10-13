@@ -1,11 +1,11 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 interface CommunityGoal {
   id: string;
   title: string;
   icon: string;
   target: number;
-  getCurrent: (players: { state: { helpedOthersCount: number; cash: number }; socialTrust: number; communityImpact: number }[]) => number;
+  getCurrent: (players: { helpedOthersCount: number; cash: number; socialTrust: number; communityImpact: number }[]) => number;
   reward: string;
 }
 
@@ -13,7 +13,7 @@ const COMMUNITY_GOALS: CommunityGoal[] = [
   {
     id: 'help_10', title: 'Community Spirit', icon: '🤝',
     target: 10, reward: 'Community pride',
-    getCurrent: (ps) => ps.reduce((s, p) => s + p.state.helpedOthersCount, 0)
+    getCurrent: (ps) => ps.reduce((s, p) => s + p.helpedOthersCount, 0)
   },
   {
     id: 'trust_avg_50', title: 'Trust Network', icon: '💚',
@@ -28,7 +28,7 @@ const COMMUNITY_GOALS: CommunityGoal[] = [
   {
     id: 'economy', title: 'Shared Prosperity', icon: '💰',
     target: 200, reward: 'Economic stability',
-    getCurrent: (ps) => ps.reduce((s, p) => s + p.state.cash, 0)
+    getCurrent: (ps) => ps.reduce((s, p) => s + p.cash, 0)
   },
 ];
 
@@ -40,7 +40,13 @@ export default function CollaborativeGoals() {
   if (players.length <= 1) return null;
 
   const goals = COMMUNITY_GOALS.map(goal => {
-    const current = goal.getCurrent(players as Parameters<typeof goal.getCurrent>[0]);
+    const mappedPlayers = players.map(p => ({
+      helpedOthersCount: p.helpedOthersCount,
+      cash: approximateStateToNumbers(p.approximateState).cash,
+      socialTrust: p.socialTrust,
+      communityImpact: p.communityImpact,
+    }));
+    const current = goal.getCurrent(mappedPlayers);
     const pct = Math.min(100, Math.round((current / goal.target) * 100));
     const completed = current >= goal.target;
     return { ...goal, current, pct, completed };

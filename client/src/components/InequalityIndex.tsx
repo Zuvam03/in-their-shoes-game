@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 export default function InequalityIndex() {
   const { room } = useGameStore();
@@ -7,8 +7,9 @@ export default function InequalityIndex() {
   const players = Object.values(room.players);
   if (players.length <= 1) return null;
 
-  const cashValues = players.map(p => p.state.cash).sort((a, b) => a - b);
-  const healthValues = players.map(p => p.state.health).sort((a, b) => a - b);
+  const playersWithState = players.map(p => approximateStateToNumbers(p.approximateState));
+  const cashValues = playersWithState.map(p => p.cash).sort((a, b) => a - b);
+  const healthValues = playersWithState.map(p => p.health).sort((a, b) => a - b);
   const trustValues = players.map(p => p.socialTrust).sort((a, b) => a - b);
 
   function gini(values: number[]): number {

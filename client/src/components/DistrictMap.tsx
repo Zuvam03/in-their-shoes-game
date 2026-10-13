@@ -23,7 +23,7 @@ export default function DistrictMap() {
   const districtStats = DISTRICTS.map(d => {
     const locs = LOCATIONS.filter(l => l.district === d.name);
     const playersHere = players.filter(p => {
-      const pLoc = LOCATIONS.find(l => l.id === p.state.location);
+      const pLoc = LOCATIONS.find(l => l.id === p.approximateState.location);
       return pLoc?.district === d.name;
     });
     return {

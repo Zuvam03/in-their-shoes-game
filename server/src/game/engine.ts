@@ -3,7 +3,7 @@ import type {
   PersonaDefinition, MissionDefinition, PlayerMission, GameEvent,
   CityEvent, EventChoice, MissionObjective, InteractionRequest,
   SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative,
-  TransportMode
+  TransportMode, StatBand, CashBand, ApproximateState, ObligationTrigger
 } from './types';
 import { getRoute, getLocation, findShortestPath } from './map';
 import { v4 as uuidv4 } from 'uuid';
@@ -35,6 +35,130 @@ export function createCharacterState(persona: PersonaDefinition, startLocation: 
     receivedHelpCount: 0,
     lastMealTime: 0,
     overeatingPenalty: 0
+  };
+}
+
+// --- Stat approximation (asymmetric information) ---
+
+export function toStatBand(value: number): StatBand {
+  if (value <= 15) return 'critical';
+  if (value <= 35) return 'low';
+  if (value <= 60) return 'moderate';
+  if (value <= 80) return 'good';
+  return 'excellent';
+}
+
+export function toCashBand(cash: number): CashBand {
+  if (cash <= 20) return 'broke';
+  if (cash <= 80) return 'tight';
+  if (cash <= 200) return 'comfortable';
+  return 'flush';
+}
+
+export function toApproximateState(state: CharacterState): ApproximateState {
+  return {
+    health: toStatBand(state.health),
+    energy: toStatBand(state.energy),
+    hunger: toStatBand(state.hunger),
+    mood: toStatBand(state.mood),
+    stress: toStatBand(state.stress),
+    cash: toCashBand(state.cash),
+    location: state.location,
+  };
+}
+
+// --- Hidden constraints (obligation system) ---
+
+const OBLIGATION_NARRATIVES: Record<string, { narrative: string; cashRange: [number, number]; moodCost: number }[]> = {};
+
+function getObligationEffects(obligationText: string, rng: SeededRng): { narrative: string; cashCost: number; moodCost: number } {
+  const lower = obligationText.toLowerCase();
+
+  if (lower.includes('wedding') || lower.includes('marriage') || lower.includes('dowry')) {
+    return {
+      narrative: `A family message arrives: "${obligationText}" — you send what you can.`,
+      cashCost: rng.between(15, 35),
+      moodCost: rng.between(3, 8),
+    };
+  }
+  if (lower.includes('medical') || lower.includes('medicine') || lower.includes('hospital') || lower.includes('doctor') || lower.includes('health')) {
+    return {
+      narrative: `An urgent call about a medical expense: "${obligationText}"`,
+      cashCost: rng.between(20, 40),
+      moodCost: rng.between(5, 12),
+    };
+  }
+  if (lower.includes('rent') || lower.includes('loan') || lower.includes('debt') || lower.includes('emi')) {
+    return {
+      narrative: `A reminder pings your phone: "${obligationText}"`,
+      cashCost: rng.between(20, 50),
+      moodCost: rng.between(2, 6),
+    };
+  }
+  if (lower.includes('school') || lower.includes('education') || lower.includes('tuition') || lower.includes('fees')) {
+    return {
+      narrative: `You remember with a sinking feeling: "${obligationText}"`,
+      cashCost: rng.between(15, 30),
+      moodCost: rng.between(4, 8),
+    };
+  }
+  if (lower.includes('guilt') || lower.includes('favour') || lower.includes('promise') || lower.includes('friend')) {
+    return {
+      narrative: `A pang of conscience: "${obligationText}"`,
+      cashCost: rng.between(5, 20),
+      moodCost: rng.between(6, 15),
+    };
+  }
+
+  return {
+    narrative: `A hidden obligation weighs on you: "${obligationText}"`,
+    cashCost: rng.between(10, 25),
+    moodCost: rng.between(3, 10),
+  };
+}
+
+export function processHiddenObligations(
+  player: Player,
+  tick: number,
+  rng: SeededRng
+): ObligationTrigger | null {
+  if (!player.isAlive) return null;
+
+  const sc = player.persona.socialContext;
+  if (!sc || !sc.hiddenObligations || sc.hiddenObligations.length === 0) return null;
+
+  const fired = player.hidden.obligationsFired || [];
+  const interval = 100 + rng.between(0, 40);
+
+  if (tick < 60) return null;
+  if (tick % interval !== 0) return null;
+
+  const unfired = sc.hiddenObligations
+    .map((obl, idx) => ({ obl, idx }))
+    .filter(({ idx }) => !fired.includes(idx));
+
+  if (unfired.length === 0) return null;
+
+  const pick = unfired[rng.between(0, unfired.length - 1)];
+  const effects = getObligationEffects(pick.obl, rng);
+
+  const actualCashCost = Math.min(effects.cashCost, Math.max(0, player.state.cash));
+
+  player.state.cash = Math.max(0, player.state.cash - actualCashCost);
+  player.state.mood = Math.max(0, player.state.mood - effects.moodCost);
+  player.state.stress = Math.min(100, player.state.stress + Math.round(effects.moodCost * 0.7));
+
+  if (!player.hidden.obligationsFired) player.hidden.obligationsFired = [];
+  player.hidden.obligationsFired.push(pick.idx);
+
+  if (!player.hidden.revealedConstraints) player.hidden.revealedConstraints = [];
+  player.hidden.revealedConstraints.push(pick.obl);
+
+  return {
+    obligationIndex: pick.idx,
+    firedAtTick: tick,
+    cashCost: actualCashCost,
+    narrative: effects.narrative,
   };
 }
 

@@ -8,7 +8,7 @@ export default function ImpactRipple() {
   if (players.length <= 1) return null;
 
   const me = myPlayer;
-  const totalPlayerHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
+  const totalPlayerHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
   const myHelpShare = totalPlayerHelps > 0
     ? Math.round((me.state.helpedOthersCount / totalPlayerHelps) * 100) : 0;
 

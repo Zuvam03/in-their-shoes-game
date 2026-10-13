@@ -56,7 +56,7 @@ export default function LocationDetail() {
   const scene = SCENE_CONFIGS[loc.type] || SCENE_CONFIGS.public;
 
   const nearbyPlayers = Object.values(room.players)
-    .filter(p => p.id !== myPlayer.id && p.state.location === myPlayer.state.location && p.isConnected);
+    .filter(p => p.id !== myPlayer.id && p.approximateState.location === myPlayer.state.location && p.isConnected);
 
   const connectedLocs = getConnectedLocations(myPlayer.state.location)
     .map(id => getLocationById(id))

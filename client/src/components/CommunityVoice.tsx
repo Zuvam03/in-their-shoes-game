@@ -1,4 +1,4 @@
-import { useGameStore } from '../store/gameStore';
+import { useGameStore, approximateStateToNumbers } from '../store/gameStore';
 
 const VOICES = [
   {
@@ -46,9 +46,9 @@ export default function CommunityVoice() {
   const players = Object.values(room.players);
   if (players.length <= 1) return null;
 
-  const totalHelps = players.reduce((s, p) => s + p.state.helpedOthersCount, 0);
+  const totalHelps = players.reduce((s, p) => s + p.helpedOthersCount, 0);
   const avgTrust = Math.round(players.reduce((s, p) => s + p.socialTrust, 0) / players.length);
-  const cashValues = players.map(p => p.state.cash);
+  const cashValues = players.map(p => approximateStateToNumbers(p.approximateState).cash);
   const gap = Math.max(...cashValues) - Math.min(...cashValues);
 
   const voice = VOICES.find(v => v.condition(totalHelps, avgTrust, gap)) || VOICES[VOICES.length - 1];
