@@ -2,7 +2,7 @@ import { Server, Socket } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
 import type {
   Room, Player, GameAction, ActionResult, GameEvent, PublicRoom, PublicPlayer, CharacterState,
-  SocialDilemma, ChatMessage, GameNotification, InteractionRequest
+  SocialDilemma, ChatMessage, GameNotification, InteractionRequest, NegotiationOffer, NegotiationRound
 } from '../game/types';
 import { PERSONAS, shufflePersonas } from '../game/personas';
 import { MISSIONS, shuffleMissions } from '../game/missions';
@@ -12,7 +12,8 @@ import {
   checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
   pickDilemmaForTick, buildDilemmaEvent, checkForDeath, generateDeathNarrative,
   getLowStateBlockReason, toApproximateState, processHiddenObligations,
-  checkProximityEvents, resetProximityTracking, computeDynamicScarcity
+  checkProximityEvents, resetProximityTracking, computeDynamicScarcity,
+  applyReputationToVendorPrice, getReputationBias
 } from '../game/engine';
 import { loadContent, getContentDilemmas, getContentPersonas } from '../content/loader';
 import {
@@ -32,6 +33,7 @@ const roomPrevLocations = new Map<string, Map<string, string>>();
 const roomLocationSnapshots = new Map<string, Map<string, LocationSnapshot>>();
 const roomUsedInteractions = new Map<string, Set<string>>();
 const roomBaseScarcity = new Map<string, Map<string, ResourceScarcity>>();
+const activeNegotiations = new Map<string, NegotiationOffer>(); // offerId -> NegotiationOffer
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
   socket.on('createRoom', ({ playerName, matchDuration = 600, gameSpeed = 1 }) => {
@@ -480,6 +482,200 @@ export function setupRoomHandlers(io: Server, socket: Socket): void {
     }
   });
 
+  socket.on('startNegotiation', ({ targetPlayerId, type, offeredAmount, requestedAmount, message }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    const target = room.players[targetPlayerId];
+    if (!player || !target) return;
+
+    if (player.state.location !== target.state.location) {
+      socket.emit('actionResult', { success: false, message: 'You must be at the same location to negotiate.', changes: {} });
+      return;
+    }
+
+    if (type === 'money' && offeredAmount > player.state.cash) {
+      socket.emit('actionResult', { success: false, message: `You only have ₹${player.state.cash}.`, changes: {} });
+      return;
+    }
+
+    const bias = getReputationBias(player);
+    const offerId = uuidv4();
+    const offer: NegotiationOffer = {
+      id: offerId,
+      fromPlayerId: socket.id,
+      fromPlayerName: player.name,
+      toPlayerId: targetPlayerId,
+      toPlayerName: target.name,
+      type,
+      offeredAmount,
+      requestedAmount,
+      message: message || `${player.name} wants to negotiate.`,
+      fromTrust: player.socialTrust,
+      toTrust: target.socialTrust,
+      round: 1,
+      maxRounds: 3,
+      status: 'pending',
+      createdAtTick: room.tick,
+      expiresAtTick: room.tick + 90,
+      history: [{
+        round: 1,
+        playerId: socket.id,
+        playerName: player.name,
+        offeredAmount,
+        requestedAmount,
+        message: message || '',
+        tick: room.tick,
+      }],
+    };
+
+    activeNegotiations.set(offerId, offer);
+
+    io.to(targetPlayerId).emit('negotiationOffer', offer);
+    socket.emit('negotiationUpdate', offer);
+    emitNotification(io, roomId, targetPlayerId, 'action',
+      `${player.name} wants to negotiate with you! (Trust: ${bias.trustLevel})`,
+      room.tick, socket.id, player.name);
+  });
+
+  socket.on('respondToNegotiation', ({ offerId, action, counterOffer, counterRequest, message }) => {
+    const roomId = playerToRoom.get(socket.id);
+    if (!roomId) return;
+    const room = rooms.get(roomId);
+    if (!room || room.phase !== 'playing') return;
+    const player = room.players[socket.id];
+    if (!player) return;
+
+    const offer = activeNegotiations.get(offerId);
+    if (!offer) {
+      socket.emit('actionResult', { success: false, message: 'That negotiation has expired.', changes: {} });
+      return;
+    }
+
+    if (offer.status !== 'pending' && offer.status !== 'countered') {
+      socket.emit('actionResult', { success: false, message: 'This negotiation is already resolved.', changes: {} });
+      return;
+    }
+
+    if (room.tick > offer.expiresAtTick) {
+      offer.status = 'expired';
+      activeNegotiations.delete(offerId);
+      io.to(offer.fromPlayerId).emit('negotiationUpdate', offer);
+      io.to(offer.toPlayerId).emit('negotiationUpdate', offer);
+      return;
+    }
+
+    const isFrom = socket.id === offer.fromPlayerId;
+    const isTo = socket.id === offer.toPlayerId;
+    if (!isFrom && !isTo) return;
+
+    const otherPlayerId = isFrom ? offer.toPlayerId : offer.fromPlayerId;
+    const otherPlayer = room.players[otherPlayerId];
+    if (!otherPlayer) return;
+
+    if (action === 'decline') {
+      offer.status = 'declined';
+      activeNegotiations.delete(offerId);
+      io.to(offer.fromPlayerId).emit('negotiationUpdate', offer);
+      io.to(offer.toPlayerId).emit('negotiationUpdate', offer);
+      emitNotification(io, roomId, otherPlayerId, 'action',
+        `${player.name} declined the negotiation.`, room.tick, socket.id, player.name);
+      return;
+    }
+
+    if (action === 'counter') {
+      if (offer.round >= offer.maxRounds) {
+        offer.status = 'declined';
+        activeNegotiations.delete(offerId);
+        io.to(offer.fromPlayerId).emit('negotiationUpdate', offer);
+        io.to(offer.toPlayerId).emit('negotiationUpdate', offer);
+        emitNotification(io, roomId, otherPlayerId, 'action',
+          `Negotiation with ${player.name} ended — too many rounds.`, room.tick);
+        return;
+      }
+
+      offer.round++;
+      offer.status = 'countered';
+      offer.offeredAmount = counterOffer ?? offer.offeredAmount;
+      offer.requestedAmount = counterRequest ?? offer.requestedAmount;
+      offer.expiresAtTick = room.tick + 60;
+
+      offer.history.push({
+        round: offer.round,
+        playerId: socket.id,
+        playerName: player.name,
+        offeredAmount: offer.offeredAmount,
+        requestedAmount: offer.requestedAmount,
+        message: message || '',
+        tick: room.tick,
+      });
+
+      io.to(offer.fromPlayerId).emit('negotiationUpdate', offer);
+      io.to(offer.toPlayerId).emit('negotiationUpdate', offer);
+      io.to(otherPlayerId).emit('negotiationOffer', offer);
+      emitNotification(io, roomId, otherPlayerId, 'action',
+        `${player.name} made a counter-offer!`, room.tick, socket.id, player.name);
+      return;
+    }
+
+    if (action === 'accept') {
+      // Execute the deal
+      const giver = isFrom ? room.players[offer.fromPlayerId] : room.players[offer.toPlayerId];
+      const receiver = isFrom ? room.players[offer.toPlayerId] : room.players[offer.fromPlayerId];
+      if (!giver || !receiver) return;
+
+      if (offer.type === 'money') {
+        const fromPlayer = room.players[offer.fromPlayerId];
+        const toPlayer = room.players[offer.toPlayerId];
+        if (!fromPlayer || !toPlayer) return;
+
+        if (fromPlayer.state.cash < offer.offeredAmount) {
+          socket.emit('actionResult', { success: false, message: `${fromPlayer.name} doesn't have enough cash.`, changes: {} });
+          return;
+        }
+
+        fromPlayer.state.cash -= offer.offeredAmount;
+        toPlayer.state.cash += offer.offeredAmount;
+
+        if (offer.requestedAmount > 0 && toPlayer.state.cash >= offer.requestedAmount) {
+          toPlayer.state.cash -= offer.requestedAmount;
+          fromPlayer.state.cash += offer.requestedAmount;
+        }
+      }
+
+      // Trust and karma bonuses for successful negotiation
+      const trustGain = Math.min(8, 3 + offer.round);
+      const fromP = room.players[offer.fromPlayerId];
+      const toP = room.players[offer.toPlayerId];
+      if (fromP) {
+        fromP.socialTrust = Math.max(0, Math.min(100, fromP.socialTrust + trustGain));
+        fromP.state.helpedOthersCount++;
+        fromP.communityImpact += 2;
+      }
+      if (toP) {
+        toP.socialTrust = Math.max(0, Math.min(100, toP.socialTrust + trustGain));
+        toP.state.helpedOthersCount++;
+        toP.communityImpact += 2;
+      }
+
+      offer.status = 'accepted';
+      activeNegotiations.delete(offerId);
+
+      io.to(offer.fromPlayerId).emit('negotiationUpdate', offer);
+      io.to(offer.toPlayerId).emit('negotiationUpdate', offer);
+
+      if (fromP) io.to(offer.fromPlayerId).emit('playerUpdate', fromP);
+      if (toP) io.to(offer.toPlayerId).emit('playerUpdate', toP);
+
+      emitNotification(io, roomId, offer.fromPlayerId, 'action',
+        `Deal with ${toP?.name} completed! +${trustGain} trust`, room.tick);
+      emitNotification(io, roomId, offer.toPlayerId, 'action',
+        `Deal with ${fromP?.name} completed! +${trustGain} trust`, room.tick);
+    }
+  });
+
   socket.on('disconnect', () => {
     const roomId = playerToRoom.get(socket.id);
     if (roomId) {
@@ -900,6 +1096,13 @@ function endMatch(io: Server, room: Room): void {
   roomBaseScarcity.delete(room.id);
   resetProximityTracking(room.id);
 
+  // Clean up active negotiations for this room
+  for (const [offerId, offer] of activeNegotiations) {
+    if (room.players[offer.fromPlayerId] || room.players[offer.toPlayerId]) {
+      activeNegotiations.delete(offerId);
+    }
+  }
+
   const result = calculateMatchResult(room);
   room.matchResult = result;
   io.to(room.id).emit('gameEnded', result);
@@ -1074,8 +1277,10 @@ function handleVendorPurchase(action: GameAction, player: Player, room: Room): A
   const item = vendor.items.find(it => it.id === itemId);
   if (!item) return { success: false, message: 'That item is not available.', changes: {} };
 
-  if (player.state.cash < item.cost) {
-    return { success: false, message: `Not enough cash. ${item.name} costs ₹${item.cost}.`, changes: {} };
+  const reputationPrice = applyReputationToVendorPrice(item.cost, player.socialTrust);
+
+  if (player.state.cash < reputationPrice) {
+    return { success: false, message: `Not enough cash. ${item.name} costs ₹${reputationPrice}.`, changes: {} };
   }
 
   // Check limited stock
@@ -1083,8 +1288,8 @@ function handleVendorPurchase(action: GameAction, player: Player, room: Room): A
     return { success: false, message: `${item.name} is sold out.`, changes: {} };
   }
 
-  // Deduct cost and apply effects
-  const changes: Partial<CharacterState> = { cash: player.state.cash - item.cost };
+  // Deduct reputation-adjusted cost and apply effects
+  const changes: Partial<CharacterState> = { cash: player.state.cash - reputationPrice };
   for (const [stat, val] of Object.entries(item.effects)) {
     if (val === undefined) continue;
     const key = stat as keyof CharacterState;
@@ -1098,9 +1303,13 @@ function handleVendorPurchase(action: GameAction, player: Player, room: Room): A
   // Reduce stock
   if (item.limited !== undefined) item.limited--;
 
+  const priceNote = reputationPrice !== item.cost
+    ? ` (${reputationPrice < item.cost ? 'loyalty discount' : 'newcomer surcharge'})`
+    : '';
+
   return {
     success: true,
-    message: `Bought ${item.name} from ${vendor.name} for ₹${item.cost}.`,
+    message: `Bought ${item.name} from ${vendor.name} for ₹${reputationPrice}.${priceNote}`,
     changes,
     narrative: item.description
   };

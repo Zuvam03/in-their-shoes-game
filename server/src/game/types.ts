@@ -473,6 +473,8 @@ export interface ServerToClientEvents {
   error: (message: string) => void;
   tick: (tick: number) => void;
   interactionRequest: (request: InteractionRequest) => void;
+  negotiationOffer: (offer: NegotiationOffer) => void;
+  negotiationUpdate: (offer: NegotiationOffer) => void;
   chatMessage: (msg: ChatMessage) => void;
   chatReaction: (reaction: { messageId: string; emoji: string; fromPlayerId: string; fromPlayerName: string }) => void;
   playerEmote: (data: { playerId: string; playerName: string; emoji: string }) => void;
@@ -487,6 +489,8 @@ export interface ClientToServerEvents {
   startMatch: () => void;
   submitAction: (action: Omit<GameAction, 'tick'>) => void;
   respondToInteraction: (data: { requestId: string; accept: boolean }) => void;
+  startNegotiation: (data: { targetPlayerId: string; type: 'money' | 'help' | 'info'; offeredAmount: number; requestedAmount: number; message: string }) => void;
+  respondToNegotiation: (data: { offerId: string; action: 'accept' | 'decline' | 'counter'; counterOffer?: number; counterRequest?: number; message?: string }) => void;
   setGameSpeed: (data: { speed: number }) => void;
   chatReaction: (data: { messageId: string; emoji: string }) => void;
   playerEmote: (data: { emoji: string }) => void;
@@ -499,10 +503,58 @@ export interface InteractionRequest {
   id: string;
   fromPlayerId: string;
   fromPlayerName: string;
-  type: 'help_request' | 'money_transfer' | 'info_share';
+  type: 'help_request' | 'money_transfer' | 'info_share' | 'negotiate';
   message: string;
   amount?: number;
   expiresAtTick: number;
+}
+
+export interface NegotiationOffer {
+  id: string;
+  fromPlayerId: string;
+  fromPlayerName: string;
+  toPlayerId: string;
+  toPlayerName: string;
+  type: 'money' | 'help' | 'info';
+  offeredAmount: number;
+  requestedAmount: number;
+  message: string;
+  fromTrust: number;
+  toTrust: number;
+  round: number;
+  maxRounds: number;
+  status: 'pending' | 'accepted' | 'declined' | 'countered' | 'expired';
+  createdAtTick: number;
+  expiresAtTick: number;
+  history: NegotiationRound[];
+}
+
+export interface NegotiationRound {
+  round: number;
+  playerId: string;
+  playerName: string;
+  offeredAmount: number;
+  requestedAmount: number;
+  message: string;
+  tick: number;
+}
+
+export type TrustLevel = 'distrusted' | 'stranger' | 'acquaintance' | 'trusted' | 'ally';
+
+export function getTrustLevel(trust: number): TrustLevel {
+  if (trust < 15) return 'distrusted';
+  if (trust < 35) return 'stranger';
+  if (trust < 55) return 'acquaintance';
+  if (trust < 80) return 'trusted';
+  return 'ally';
+}
+
+export function getTrustPriceMultiplier(trust: number): number {
+  if (trust < 15) return 1.25;
+  if (trust < 35) return 1.1;
+  if (trust < 55) return 1.0;
+  if (trust < 80) return 0.92;
+  return 0.85;
 }
 
 // --- Asymmetric information: what other players see ---

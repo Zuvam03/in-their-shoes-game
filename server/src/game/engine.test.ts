@@ -1,6 +1,7 @@
-import { SeededRng, tickCharacterState, resolveAction, evaluateKarma, createCharacterState, checkProximityEvents, computeDynamicScarcity, resetProximityTracking } from './engine';
+import { SeededRng, tickCharacterState, resolveAction, evaluateKarma, createCharacterState, checkProximityEvents, computeDynamicScarcity, resetProximityTracking, getReputationBias, applyReputationToVendorPrice, computeNegotiationFairness } from './engine';
 import { PERSONAS, getPersonaById } from './personas';
 import type { Player, Room, GameAction, CharacterState } from './types';
+import { getTrustLevel, getTrustPriceMultiplier } from './types';
 import { MISSIONS } from './missions';
 
 describe('Persona System', () => {
@@ -467,5 +468,79 @@ describe('Map System', () => {
       expect(locationIds.has(route.from)).toBe(true);
       expect(locationIds.has(route.to)).toBe(true);
     }
+  });
+});
+
+describe('Reputation Bias', () => {
+  it('trust levels map correctly', () => {
+    expect(getTrustLevel(5)).toBe('distrusted');
+    expect(getTrustLevel(25)).toBe('stranger');
+    expect(getTrustLevel(45)).toBe('acquaintance');
+    expect(getTrustLevel(65)).toBe('trusted');
+    expect(getTrustLevel(90)).toBe('ally');
+  });
+
+  it('distrusted players pay more, allies pay less', () => {
+    const distrustedPrice = getTrustPriceMultiplier(10);
+    const strangerPrice = getTrustPriceMultiplier(25);
+    const normalPrice = getTrustPriceMultiplier(50);
+    const trustedPrice = getTrustPriceMultiplier(70);
+    const allyPrice = getTrustPriceMultiplier(90);
+
+    expect(distrustedPrice).toBe(1.25);
+    expect(strangerPrice).toBe(1.1);
+    expect(normalPrice).toBe(1.0);
+    expect(trustedPrice).toBe(0.92);
+    expect(allyPrice).toBe(0.85);
+  });
+
+  it('applyReputationToVendorPrice adjusts costs correctly', () => {
+    expect(applyReputationToVendorPrice(100, 10)).toBe(125);
+    expect(applyReputationToVendorPrice(100, 50)).toBe(100);
+    expect(applyReputationToVendorPrice(100, 90)).toBe(85);
+    expect(applyReputationToVendorPrice(20, 70)).toBe(18);
+  });
+
+  it('getReputationBias returns correct structure', () => {
+    const persona = PERSONAS[0];
+    const state = createCharacterState(persona, 'howrah_station');
+    const player: Player = {
+      id: 'test-player',
+      socketId: 'test-socket',
+      name: 'TestPlayer',
+      persona,
+      state,
+      mission: { definition: MISSIONS[0], objectives: [], status: 'active', startTick: 0, partialProgress: 0, journeyNotes: [] },
+      actionLog: [],
+      socialTrust: 75,
+      communityImpact: 10,
+      dilemmasResolved: [],
+      activeDilemmaId: undefined,
+      isAlive: true,
+      isConnected: true,
+      isReady: true,
+      hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0, obligationsFired: [], revealedConstraints: [] }
+    };
+
+    const bias = getReputationBias(player);
+    expect(bias.trustLevel).toBe('trusted');
+    expect(bias.vendorPriceMultiplier).toBe(0.92);
+    expect(bias.helpAcceptChance).toBeGreaterThan(0.5);
+    expect(bias.negotiationLeverage).toBeGreaterThan(0);
+  });
+
+  it('computeNegotiationFairness rewards generous offers', () => {
+    const generous = computeNegotiationFairness(50, 20, 70, 30);
+    const stingy = computeNegotiationFairness(10, 50, 20, 60);
+
+    expect(generous.fairnessScore).toBeGreaterThan(stingy.fairnessScore);
+    expect(generous.biasedAcceptChance).toBeGreaterThan(stingy.biasedAcceptChance);
+  });
+
+  it('high trust offerer gets better fairness score', () => {
+    const highTrust = computeNegotiationFairness(30, 30, 80, 40);
+    const lowTrust = computeNegotiationFairness(30, 30, 20, 40);
+
+    expect(highTrust.fairnessScore).toBeGreaterThan(lowTrust.fairnessScore);
   });
 });

@@ -28,7 +28,7 @@ import AmbientOverlay from './AmbientOverlay';
 import DayNightCycle from './DayNightCycle';
 import PersonaInsights from './PersonaInsights';
 import DaySummary from './DaySummary';
-import TradePanel from './TradePanel';
+import NegotiationPanel, { NegotiationModal } from './NegotiationPanel';
 import MoodRing from './MoodRing';
 import NotificationCenter from './NotificationCenter';
 import ActionCooldowns from './ActionCooldowns';
@@ -300,6 +300,7 @@ export default function GameScreen() {
         <CityEventCinematic />
         <DilemmaModal />
         <InteractionModal />
+        <NegotiationModal />
         <AchievementToast />
         <TutorialOverlay />
         <ReflectionPrompt />
@@ -516,7 +517,7 @@ export default function GameScreen() {
                 <LocationDetail />
                 <LocationContent />
                 <ActionPanel />
-                <TradePanel />
+                <NegotiationPanel />
                 <ActionCooldowns />
               </div>
             )}
@@ -573,6 +574,7 @@ export default function GameScreen() {
       <CityEventCinematic />
       <DilemmaModal />
       <InteractionModal />
+      <NegotiationModal />
       <AchievementToast />
       <TutorialOverlay />
       <ReflectionPrompt />

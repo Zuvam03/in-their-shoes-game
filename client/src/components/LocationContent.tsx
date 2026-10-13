@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { useGameStore, Vendor, VendorItem, MicroInteraction, ResourceScarcity } from '../store/gameStore';
+import { useGameStore, Vendor, VendorItem, MicroInteraction, ResourceScarcity, getTrustLevel } from '../store/gameStore';
 
 const VENDOR_TYPE_ICONS: Record<string, string> = {
   food: '🍛', drink: '☕', medicine: '💊', goods: '🛍️', service: '🔧'
 };
+
+function getTrustPriceMultiplier(trust: number): number {
+  if (trust < 15) return 1.25;
+  if (trust < 35) return 1.1;
+  if (trust < 55) return 1.0;
+  if (trust < 80) return 0.92;
+  return 0.85;
+}
 
 const EFFECT_LABELS: Record<string, { label: string; icon: string; good: boolean }> = {
   energy: { label: 'Energy', icon: '⚡', good: true },
@@ -38,10 +46,12 @@ function EffectPills({ effects }: { effects: Partial<Record<string, number>> }) 
   );
 }
 
-function VendorCard({ vendor, onBuy, cash, disabled }: {
+function VendorCard({ vendor, onBuy, cash, disabled, playerTrust }: {
   vendor: Vendor; onBuy: (vendorId: string, itemId: string) => void;
-  cash: number; disabled: boolean;
+  cash: number; disabled: boolean; playerTrust: number;
 }) {
+  const priceMultiplier = getTrustPriceMultiplier(playerTrust);
+  const trustLevel = getTrustLevel(playerTrust);
   const [expanded, setExpanded] = useState(false);
   const icon = VENDOR_TYPE_ICONS[vendor.type] || '🏪';
 
@@ -67,6 +77,16 @@ function VendorCard({ vendor, onBuy, cash, disabled }: {
           </div>
           <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '1px' }}>
             {vendor.personality}
+            {priceMultiplier < 1 && (
+              <span style={{ color: '#22c55e', marginLeft: '4px' }}>
+                ({Math.round((1 - priceMultiplier) * 100)}% loyalty discount)
+              </span>
+            )}
+            {priceMultiplier > 1 && (
+              <span style={{ color: '#f59e0b', marginLeft: '4px' }}>
+                (+{Math.round((priceMultiplier - 1) * 100)}% newcomer price)
+              </span>
+            )}
           </div>
         </div>
         <span style={{
@@ -83,7 +103,10 @@ function VendorCard({ vendor, onBuy, cash, disabled }: {
           display: 'flex', flexDirection: 'column', gap: '4px',
         }}>
           {vendor.items.map((item: VendorItem) => {
-            const canAfford = cash >= item.cost;
+            const adjustedCost = Math.round(item.cost * priceMultiplier);
+            const canAfford = cash >= adjustedCost;
+            const hasDiscount = priceMultiplier < 1;
+            const hasSurcharge = priceMultiplier > 1;
             return (
               <button
                 key={item.id}
@@ -104,12 +127,24 @@ function VendorCard({ vendor, onBuy, cash, disabled }: {
                   <div style={{ fontSize: '11px', color: 'var(--text-primary)', fontWeight: 500 }}>
                     {item.name}
                   </div>
-                  <span style={{
-                    fontSize: '11px', fontWeight: 700, flexShrink: 0,
-                    color: canAfford ? 'var(--accent-green)' : 'var(--accent-red)',
-                  }}>
-                    ₹{item.cost}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+                    {adjustedCost !== item.cost && (
+                      <span style={{
+                        fontSize: '9px', textDecoration: 'line-through',
+                        color: 'var(--text-muted)',
+                      }}>
+                        ₹{item.cost}
+                      </span>
+                    )}
+                    <span style={{
+                      fontSize: '11px', fontWeight: 700,
+                      color: canAfford
+                        ? (hasDiscount ? '#22c55e' : hasSurcharge ? '#f59e0b' : 'var(--accent-green)')
+                        : 'var(--accent-red)',
+                    }}>
+                      ₹{adjustedCost}
+                    </span>
+                  </div>
                 </div>
                 <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   {item.description}
@@ -288,6 +323,7 @@ export default function LocationContent() {
                 onBuy={handleBuy}
                 cash={myPlayer.state.cash}
                 disabled={isOnCooldown}
+                playerTrust={myPlayer.socialTrust}
               />
             ))}
           </div>

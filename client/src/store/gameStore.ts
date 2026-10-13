@@ -8,6 +8,46 @@ export type GamePhase = 'lobby' | 'briefing' | 'playing' | 'ended';
 export type MissionStatus = 'active' | 'completed' | 'failed' | 'partial';
 export type ActionType = 'move' | 'eat' | 'drink' | 'rest' | 'work' | 'buy' | 'help_player' | 'request_help' | 'share_info' | 'transfer_money' | 'complete_objective' | 'event_choice' | 'dilemma_choice' | 'buy_from_vendor' | 'micro_interaction';
 
+export type TrustLevel = 'distrusted' | 'stranger' | 'acquaintance' | 'trusted' | 'ally';
+
+export function getTrustLevel(trust: number): TrustLevel {
+  if (trust < 15) return 'distrusted';
+  if (trust < 35) return 'stranger';
+  if (trust < 55) return 'acquaintance';
+  if (trust < 80) return 'trusted';
+  return 'ally';
+}
+
+export interface NegotiationRound {
+  round: number;
+  playerId: string;
+  playerName: string;
+  offeredAmount: number;
+  requestedAmount: number;
+  message: string;
+  tick: number;
+}
+
+export interface NegotiationOffer {
+  id: string;
+  fromPlayerId: string;
+  fromPlayerName: string;
+  toPlayerId: string;
+  toPlayerName: string;
+  type: 'money' | 'help' | 'info';
+  offeredAmount: number;
+  requestedAmount: number;
+  message: string;
+  fromTrust: number;
+  toTrust: number;
+  round: number;
+  maxRounds: number;
+  status: 'pending' | 'accepted' | 'declined' | 'countered' | 'expired';
+  createdAtTick: number;
+  expiresAtTick: number;
+  history: NegotiationRound[];
+}
+
 export type SocialDilemmaType = 'ethics_vs_survival' | 'loyalty_vs_principle' | 'class_encounter' | 'political_pressure' | 'community_obligation' | 'bystander';
 
 export interface DilemmaChoice {
@@ -469,6 +509,10 @@ interface GameState {
   // Incoming interaction requests
   pendingInteraction: { id: string; fromPlayerName: string; type: string; message: string } | null;
 
+  // Negotiation
+  activeNegotiation: NegotiationOffer | null;
+  incomingNegotiation: NegotiationOffer | null;
+
   // Selected persona panel
   viewingPersonaId: string | null;
 
@@ -508,6 +552,9 @@ interface GameState {
   submitAction: (type: ActionType, payload: Record<string, unknown>) => void;
   respondToEvent: (eventId: string, choiceId: string) => void;
   respondToInteraction: (requestId: string, accept: boolean) => void;
+  startNegotiation: (targetPlayerId: string, type: 'money' | 'help' | 'info', offeredAmount: number, requestedAmount: number, message: string) => void;
+  respondToNegotiation: (offerId: string, action: 'accept' | 'decline' | 'counter', counterOffer?: number, counterRequest?: number, message?: string) => void;
+  dismissNegotiation: () => void;
   respondToDilemma: (dilemmaId: string, choiceId: string, choiceLabel: string) => void;
   dismissBriefing: () => void;
   setViewingPersona: (id: string | null) => void;
@@ -540,6 +587,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   deathNarrative: null,
   currentLocationSnapshot: null,
   pendingInteraction: null,
+  activeNegotiation: null,
+  incomingNegotiation: null,
   pendingDilemma: null,
   matchResult: null,
   viewingPersonaId: null,
@@ -673,6 +722,28 @@ export const useGameStore = create<GameState>((set, get) => ({
       set({ pendingInteraction: request });
     });
 
+    socket.on('negotiationOffer', (offer: NegotiationOffer) => {
+      const state = get();
+      if (offer.toPlayerId === state.mySocketId || offer.fromPlayerId === state.mySocketId) {
+        const isIncoming = offer.status === 'pending' || (offer.status === 'countered' &&
+          offer.history[offer.history.length - 1]?.playerId !== state.mySocketId);
+        if (isIncoming) {
+          set({ incomingNegotiation: offer });
+        }
+      }
+    });
+
+    socket.on('negotiationUpdate', (offer: NegotiationOffer) => {
+      set({ activeNegotiation: offer });
+      if (offer.status === 'accepted' || offer.status === 'declined' || offer.status === 'expired') {
+        setTimeout(() => set(s => {
+          if (s.activeNegotiation?.id === offer.id) return { activeNegotiation: null };
+          return {};
+        }), 3000);
+        set({ incomingNegotiation: null });
+      }
+    });
+
     socket.on('dilemmaEvent', (event: DilemmaEvent) => {
       set({ pendingDilemma: event });
     });
@@ -791,6 +862,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ pendingInteraction: null });
   },
 
+  startNegotiation: (targetPlayerId, type, offeredAmount, requestedAmount, message) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('startNegotiation', { targetPlayerId, type, offeredAmount, requestedAmount, message });
+  },
+
+  respondToNegotiation: (offerId, action, counterOffer, counterRequest, message) => {
+    const { socket } = get();
+    if (!socket) return;
+    socket.emit('respondToNegotiation', { offerId, action, counterOffer, counterRequest, message });
+    set({ incomingNegotiation: null });
+  },
+
+  dismissNegotiation: () => {
+    set({ activeNegotiation: null, incomingNegotiation: null });
+  },
+
   respondToDilemma: (dilemmaId, choiceId, choiceLabel) => {
     const { socket } = get();
     if (!socket) return;
@@ -850,6 +938,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       deathNarrative: null,
       currentLocationSnapshot: null,
       pendingInteraction: null,
+      activeNegotiation: null,
+      incomingNegotiation: null,
       pendingDilemma: null,
       matchResult: null,
       viewingPersonaId: null,

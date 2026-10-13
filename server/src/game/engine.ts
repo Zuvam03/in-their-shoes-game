@@ -3,8 +3,9 @@ import type {
   PersonaDefinition, MissionDefinition, PlayerMission, GameEvent,
   CityEvent, EventChoice, MissionObjective, InteractionRequest,
   SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative,
-  TransportMode, StatBand, CashBand, ApproximateState, ObligationTrigger
+  TransportMode, StatBand, CashBand, ApproximateState, ObligationTrigger,
 } from './types';
+import { TrustLevel, getTrustLevel, getTrustPriceMultiplier } from './types';
 import { getRoute, getLocation, findShortestPath, getNearbyLocations } from './map';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -2038,4 +2039,46 @@ export function computeDynamicScarcity(
   }
 
   return shifts;
+}
+
+// --- Reputation Bias ---
+
+export function getReputationBias(player: Player): {
+  vendorPriceMultiplier: number;
+  helpAcceptChance: number;
+  negotiationLeverage: number;
+  trustLevel: TrustLevel;
+} {
+  const trust = player.socialTrust;
+  const level = getTrustLevel(trust);
+  const priceMultiplier = getTrustPriceMultiplier(trust);
+  const helpAcceptChance = clamp(0.3 + (trust / 100) * 0.6, 0.15, 0.95);
+  const leverage = clamp((trust - 50) / 50, -1, 1);
+
+  return {
+    vendorPriceMultiplier: priceMultiplier,
+    helpAcceptChance,
+    negotiationLeverage: leverage,
+    trustLevel: level,
+  };
+}
+
+export function computeNegotiationFairness(
+  offeredAmount: number,
+  requestedAmount: number,
+  offererTrust: number,
+  responderTrust: number,
+): { fairnessScore: number; biasedAcceptChance: number } {
+  const ratio = requestedAmount > 0 ? offeredAmount / requestedAmount : 1;
+  const baseFairness = clamp(ratio, 0, 2);
+  const trustDiff = (offererTrust - responderTrust) / 100;
+  const fairnessScore = clamp(baseFairness + trustDiff * 0.3, 0, 2);
+  const biasedAcceptChance = clamp(0.2 + fairnessScore * 0.35, 0.1, 0.9);
+
+  return { fairnessScore, biasedAcceptChance };
+}
+
+export function applyReputationToVendorPrice(basePrice: number, playerTrust: number): number {
+  const multiplier = getTrustPriceMultiplier(playerTrust);
+  return Math.round(basePrice * multiplier);
 }
