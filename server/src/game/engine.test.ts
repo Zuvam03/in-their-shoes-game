@@ -1,4 +1,4 @@
-import { SeededRng, tickCharacterState, resolveAction, evaluateKarma, createCharacterState } from './engine';
+import { SeededRng, tickCharacterState, resolveAction, evaluateKarma, createCharacterState, checkProximityEvents, computeDynamicScarcity, resetProximityTracking } from './engine';
 import { PERSONAS, getPersonaById } from './personas';
 import type { Player, Room, GameAction, CharacterState } from './types';
 import { MISSIONS } from './missions';
@@ -286,6 +286,165 @@ describe('Mission System', () => {
   it('missions have at least one alternative path', () => {
     for (const mission of MISSIONS) {
       expect(mission.alternativePaths.length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe('Proximity Events', () => {
+  const persona1 = PERSONAS[0];
+  const persona2 = PERSONAS[1];
+
+  function makePlayer(id: string, persona: typeof persona1, location: string): Player {
+    return {
+      id, socketId: id, name: `Player_${id}`,
+      persona,
+      state: { ...createCharacterState(persona, location), location },
+      mission: {
+        definition: MISSIONS[0], status: 'active',
+        objectives: [], startTick: 0, partialProgress: 0, journeyNotes: []
+      },
+      socialTrust: 50, communityImpact: 0,
+      hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0, obligationsFired: [], revealedConstraints: [] },
+      actionLog: [], dilemmasResolved: [], isAlive: true, isConnected: true, isReady: true
+    };
+  }
+
+  it('generates proximity events when players share a location', () => {
+    const p1 = makePlayer('a', persona1, 'park_street');
+    const p2 = makePlayer('b', persona2, 'park_street');
+    const room: Room = {
+      id: 'prox-test', hostId: 'a',
+      players: { a: p1, b: p2 },
+      phase: 'playing', matchDuration: 600, tick: 100, gameSpeed: 1,
+      cityEvents: [], pendingInteractions: [], seed: 42
+    };
+
+    resetProximityTracking('prox-test');
+    let found = false;
+    for (let attempt = 0; attempt < 500; attempt++) {
+      const rng = new SeededRng(100 + attempt * 7);
+      rng.next(); rng.next(); rng.next();
+      const events = checkProximityEvents(room, rng);
+      if (events.length > 0) {
+        found = true;
+        expect(events[0].involvedPlayerIds.length).toBeGreaterThanOrEqual(2);
+        expect(events[0].text.length).toBeGreaterThan(0);
+        break;
+      }
+      resetProximityTracking('prox-test');
+    }
+    expect(found).toBe(true);
+  });
+
+  it('does not fire for solo players', () => {
+    const p1 = makePlayer('a', persona1, 'esplanade');
+    const room: Room = {
+      id: 'solo-test', hostId: 'a',
+      players: { a: p1 },
+      phase: 'playing', matchDuration: 600, tick: 100, gameSpeed: 1,
+      cityEvents: [], pendingInteractions: [], seed: 42
+    };
+    resetProximityTracking('solo-test');
+    const rng = new SeededRng(42);
+    const events = checkProximityEvents(room, rng);
+    expect(events.length).toBe(0);
+  });
+
+  it('deduplicates proximity events for the same pair and template', () => {
+    const p1 = makePlayer('a', persona1, 'park_street');
+    const p2 = makePlayer('b', persona2, 'park_street');
+    const room: Room = {
+      id: 'dedup-test', hostId: 'a',
+      players: { a: p1, b: p2 },
+      phase: 'playing', matchDuration: 600, tick: 100, gameSpeed: 1,
+      cityEvents: [], pendingInteractions: [], seed: 42
+    };
+
+    resetProximityTracking('dedup-test');
+    const allEvents: string[] = [];
+    for (let attempt = 0; attempt < 500; attempt++) {
+      const rng = new SeededRng(42 + attempt);
+      const events = checkProximityEvents(room, rng);
+      for (const e of events) allEvents.push(e.text);
+    }
+    // Each unique template+pair combo should appear at most once
+    const unique = new Set(allEvents);
+    expect(unique.size).toBe(allEvents.length);
+  });
+});
+
+describe('Dynamic Scarcity', () => {
+  const persona1 = PERSONAS[0];
+
+  function makePlayer(id: string, location: string): Player {
+    return {
+      id, socketId: id, name: `Player_${id}`,
+      persona: persona1,
+      state: { ...createCharacterState(persona1, location), location },
+      mission: {
+        definition: MISSIONS[0], status: 'active',
+        objectives: [], startTick: 0, partialProgress: 0, journeyNotes: []
+      },
+      socialTrust: 50, communityImpact: 0,
+      hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0, obligationsFired: [], revealedConstraints: [] },
+      actionLog: [], dilemmasResolved: [], isAlive: true, isConnected: true, isReady: true
+    };
+  }
+
+  it('crowding increases prices and reduces availability', () => {
+    const players: Record<string, Player> = {};
+    for (let i = 0; i < 4; i++) {
+      players[`p${i}`] = makePlayer(`p${i}`, 'esplanade');
+    }
+    const room: Room = {
+      id: 'scarcity-test', hostId: 'p0',
+      players, phase: 'playing', matchDuration: 600, tick: 100, gameSpeed: 1,
+      cityEvents: [], pendingInteractions: [], seed: 42
+    };
+
+    const baseScarcity = new Map<string, import('./locationContent').ResourceScarcity>();
+    baseScarcity.set('esplanade', {
+      foodAvailability: 0.8, waterAvailability: 0.7,
+      medicineAvailability: 0.5, workAvailability: 0.6, priceMultiplier: 1.0
+    });
+
+    const rng = new SeededRng(42);
+    const shifts = computeDynamicScarcity(room, baseScarcity, rng);
+    const espShift = shifts.find(s => s.locationId === 'esplanade');
+    expect(espShift).toBeDefined();
+    if (espShift?.changes.foodAvailability !== undefined) {
+      expect(espShift.changes.foodAvailability).toBeLessThan(0.8);
+    }
+    if (espShift?.changes.priceMultiplier !== undefined) {
+      expect(espShift.changes.priceMultiplier).toBeGreaterThan(1.0);
+    }
+  });
+
+  it('heat events reduce water availability', () => {
+    const p = makePlayer('p0', 'esplanade');
+    const room: Room = {
+      id: 'heat-scarcity', hostId: 'p0',
+      players: { p0: p }, phase: 'playing', matchDuration: 600, tick: 100, gameSpeed: 1,
+      cityEvents: [{
+        id: 'heat1', type: 'heat', title: 'Heat Wave', description: 'Sweltering',
+        affectedLocations: ['all'], startTick: 50, duration: 200,
+        effects: [], requiresChoice: false
+      }],
+      pendingInteractions: [], seed: 42
+    };
+
+    const baseScarcity = new Map<string, import('./locationContent').ResourceScarcity>();
+    baseScarcity.set('esplanade', {
+      foodAvailability: 0.8, waterAvailability: 0.7,
+      medicineAvailability: 0.5, workAvailability: 0.6, priceMultiplier: 1.0
+    });
+
+    const rng = new SeededRng(42);
+    const shifts = computeDynamicScarcity(room, baseScarcity, rng);
+    const espShift = shifts.find(s => s.locationId === 'esplanade');
+    expect(espShift).toBeDefined();
+    if (espShift?.changes.waterAvailability !== undefined) {
+      expect(espShift.changes.waterAvailability).toBeLessThan(0.7);
     }
   });
 });

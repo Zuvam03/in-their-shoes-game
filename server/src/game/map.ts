@@ -421,3 +421,22 @@ export function getAvailableTransportModes(from: string, to: string): TransportM
   if (!route) return [];
   return route.modes;
 }
+
+export function locationDistance(a: string, b: string): number {
+  const la = getLocation(a);
+  const lb = getLocation(b);
+  if (!la || !lb) return Infinity;
+  return Math.sqrt((la.x - lb.x) ** 2 + (la.y - lb.y) ** 2);
+}
+
+export function getNearbyLocations(locationId: string, maxDist = 200): Location[] {
+  const origin = getLocation(locationId);
+  if (!origin) return [];
+  return LOCATIONS.filter(l =>
+    l.id !== locationId && locationDistance(locationId, l.id) <= maxDist
+  );
+}
+
+export function getLocationsByDistrict(district: string): Location[] {
+  return LOCATIONS.filter(l => l.district === district);
+}

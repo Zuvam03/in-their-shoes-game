@@ -11,12 +11,13 @@ import {
   createCharacterState, tickCharacterState, resolveAction, evaluateKarma,
   checkForUnexpectedFortune, generateCityEvent, calculateMatchResult, SeededRng,
   pickDilemmaForTick, buildDilemmaEvent, checkForDeath, generateDeathNarrative,
-  getLowStateBlockReason, toApproximateState, processHiddenObligations
+  getLowStateBlockReason, toApproximateState, processHiddenObligations,
+  checkProximityEvents, resetProximityTracking, computeDynamicScarcity
 } from '../game/engine';
 import { loadContent, getContentDilemmas, getContentPersonas } from '../content/loader';
 import {
   generateLocationSnapshots, getAvailableVendors, getAvailableInteractions,
-  getAtmosphereForTick, LocationSnapshot
+  getAtmosphereForTick, LocationSnapshot, ResourceScarcity
 } from '../game/locationContent';
 
 loadContent();
@@ -30,6 +31,7 @@ const roomBriefingTimers = new Map<string, NodeJS.Timeout>();
 const roomPrevLocations = new Map<string, Map<string, string>>();
 const roomLocationSnapshots = new Map<string, Map<string, LocationSnapshot>>();
 const roomUsedInteractions = new Map<string, Set<string>>();
+const roomBaseScarcity = new Map<string, Map<string, ResourceScarcity>>();
 
 export function setupRoomHandlers(io: Server, socket: Socket): void {
   socket.on('createRoom', ({ playerName, matchDuration = 600, gameSpeed = 1 }) => {
@@ -538,6 +540,12 @@ function startMatch(io: Server, room: Room): void {
   roomLocationSnapshots.set(room.id, snapshots);
   roomUsedInteractions.set(room.id, new Set());
 
+  const baseScarcity = new Map<string, ResourceScarcity>();
+  for (const [locId, snap] of snapshots) {
+    baseScarcity.set(locId, { ...snap.scarcity });
+  }
+  roomBaseScarcity.set(room.id, baseScarcity);
+
   room.phase = 'briefing';
   room.startTime = Date.now();
   room.tick = 0;
@@ -768,6 +776,74 @@ function startGameLoop(io: Server, room: Room): void {
       prevLocs.set(socketId, curLoc);
     }
 
+    // Proximity events — spontaneous interactions between co-located players
+    if (room.tick % 5 === 0) {
+      const proxEvents = checkProximityEvents(room, rng);
+      for (const pEvt of proxEvents) {
+        for (const pid of pEvt.involvedPlayerIds) {
+          const p = room.players[pid];
+          if (!p) continue;
+          const changes = pEvt.effects[pid];
+          if (changes) {
+            applyStateChanges(p, changes);
+          }
+          const kChange = pEvt.karmaEffects[pid] || 0;
+          if (kChange) {
+            p.hidden.karma = Math.max(-100, Math.min(100, p.hidden.karma + kChange));
+          }
+          const tChange = pEvt.trustEffects[pid] || 0;
+          if (tChange) {
+            p.socialTrust = Math.max(0, Math.min(100, p.socialTrust + tChange));
+          }
+          io.to(pid).emit('playerUpdate', p);
+          io.to(pid).emit('actionResult', {
+            success: true,
+            message: pEvt.text,
+            changes: changes || {},
+            narrative: pEvt.text,
+            trustChange: tChange
+          });
+          emitNotification(io, room.id, pid, 'proximity', pEvt.text, room.tick);
+        }
+      }
+    }
+
+    // Dynamic scarcity — update location resource availability
+    if (room.tick % 30 === 0) {
+      const baseScarcity = roomBaseScarcity.get(room.id);
+      const snaps = roomLocationSnapshots.get(room.id);
+      if (baseScarcity && snaps) {
+        const shifts = computeDynamicScarcity(room, baseScarcity, rng);
+        for (const shift of shifts) {
+          const snap = snaps.get(shift.locationId);
+          if (snap) {
+            Object.assign(snap.scarcity, shift.changes);
+          }
+        }
+        // Notify players at affected locations
+        for (const shift of shifts) {
+          for (const [sid, p] of Object.entries(room.players)) {
+            if (p.state.location === shift.locationId && p.isConnected && p.isAlive) {
+              const snap = snaps.get(shift.locationId);
+              if (snap) {
+                const activeWeather = getActiveWeather(room);
+                const enriched = {
+                  ...snap,
+                  atmosphere: getAtmosphereForTick(room.tick, activeWeather),
+                  vendors: getAvailableVendors(snap, room.tick),
+                  interactions: getAvailableInteractions(
+                    snap, room.tick, activeWeather,
+                    roomUsedInteractions.get(room.id) || new Set()
+                  )
+                };
+                io.to(sid).emit('locationSnapshot', { locationId: shift.locationId, snapshot: enriched });
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Clean up expired interaction requests
     room.pendingInteractions = room.pendingInteractions.filter(r => r.expiresAtTick > room.tick);
 
@@ -821,6 +897,8 @@ function endMatch(io: Server, room: Room): void {
     roomIntervals.delete(room.id);
   }
   roomPrevLocations.delete(room.id);
+  roomBaseScarcity.delete(room.id);
+  resetProximityTracking(room.id);
 
   const result = calculateMatchResult(room);
   room.matchResult = result;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useGameStore, Vendor, VendorItem, MicroInteraction } from '../store/gameStore';
+import { useGameStore, Vendor, VendorItem, MicroInteraction, ResourceScarcity } from '../store/gameStore';
 
 const VENDOR_TYPE_ICONS: Record<string, string> = {
   food: '🍛', drink: '☕', medicine: '💊', goods: '🛍️', service: '🔧'
@@ -244,16 +244,9 @@ export default function LocationContent() {
         </div>
       )}
 
-      {/* Scarcity warning */}
-      {snapshot.scarcity && snapshot.scarcity.priceMultiplier > 1.2 && (
-        <div style={{
-          padding: '5px 8px', borderRadius: '6px',
-          background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)',
-          fontSize: '10px', color: '#f87171',
-          display: 'flex', alignItems: 'center', gap: '4px',
-        }}>
-          <span>📈</span> Prices are high today ({Math.round(snapshot.scarcity.priceMultiplier * 100 - 100)}% above normal)
-        </div>
+      {/* Resource scarcity */}
+      {snapshot.scarcity && (
+        <ScarcityIndicator scarcity={snapshot.scarcity} />
       )}
 
       {/* Micro-interactions */}
@@ -298,6 +291,88 @@ export default function LocationContent() {
               />
             ))}
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScarcityIndicator({ scarcity }: { scarcity: ResourceScarcity }) {
+  const resources = [
+    { key: 'food', label: 'Food', value: scarcity.foodAvailability, icon: '🍛' },
+    { key: 'water', label: 'Water', value: scarcity.waterAvailability, icon: '💧' },
+    { key: 'medicine', label: 'Medicine', value: scarcity.medicineAvailability, icon: '💊' },
+    { key: 'work', label: 'Work', value: scarcity.workAvailability, icon: '💼' },
+  ];
+
+  const hasScarcity = resources.some(r => r.value < 0.4);
+  const hasHighPrices = scarcity.priceMultiplier > 1.2;
+
+  if (!hasScarcity && !hasHighPrices) return null;
+
+  function barColor(val: number): string {
+    if (val < 0.2) return 'var(--accent-red)';
+    if (val < 0.4) return 'var(--accent-orange)';
+    if (val < 0.7) return 'var(--accent-yellow)';
+    return 'var(--accent-green)';
+  }
+
+  function levelLabel(val: number): string {
+    if (val < 0.2) return 'Scarce';
+    if (val < 0.4) return 'Low';
+    if (val < 0.7) return 'OK';
+    return 'Good';
+  }
+
+  return (
+    <div style={{
+      padding: '8px', borderRadius: '8px',
+      background: hasScarcity ? 'rgba(239,68,68,0.04)' : 'rgba(245,200,66,0.04)',
+      border: `1px solid ${hasScarcity ? 'rgba(239,68,68,0.12)' : 'rgba(245,200,66,0.12)'}`,
+    }}>
+      <div style={{
+        fontSize: '9px', fontWeight: 600, textTransform: 'uppercase',
+        letterSpacing: '0.4px', marginBottom: '6px',
+        color: hasScarcity ? 'var(--accent-red)' : 'var(--accent-yellow)',
+      }}>
+        Resource Availability
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+        {resources.filter(r => r.value < 0.7).map(r => (
+          <div key={r.key} style={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            padding: '3px 6px', borderRadius: '4px',
+            background: 'var(--bg-secondary)',
+          }}>
+            <span style={{ fontSize: '10px' }}>{r.icon}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{
+                height: '3px', borderRadius: '2px',
+                background: 'var(--border)', overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%', borderRadius: '2px',
+                  width: `${r.value * 100}%`,
+                  background: barColor(r.value),
+                  transition: 'width 0.5s ease',
+                }} />
+              </div>
+            </div>
+            <span style={{
+              fontSize: '8px', fontWeight: 600,
+              color: barColor(r.value),
+            }}>
+              {levelLabel(r.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+      {hasHighPrices && (
+        <div style={{
+          marginTop: '4px', fontSize: '9px', color: 'var(--accent-orange)',
+          display: 'flex', alignItems: 'center', gap: '3px',
+        }}>
+          <span>📈</span> Prices +{Math.round(scarcity.priceMultiplier * 100 - 100)}% above normal
         </div>
       )}
     </div>

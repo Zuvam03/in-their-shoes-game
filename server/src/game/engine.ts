@@ -5,8 +5,12 @@ import type {
   SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative,
   TransportMode, StatBand, CashBand, ApproximateState, ObligationTrigger
 } from './types';
-import { getRoute, getLocation, findShortestPath } from './map';
+import { getRoute, getLocation, findShortestPath, getNearbyLocations } from './map';
 import { v4 as uuidv4 } from 'uuid';
+
+function clamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v));
+}
 
 // --- Seeded RNG ---
 export class SeededRng {
@@ -1670,4 +1674,368 @@ function generatePerformanceInsights(
   }
 
   return insights;
+}
+
+// --- Proximity Events ---
+
+export interface ProximityEvent {
+  id: string;
+  text: string;
+  involvedPlayerIds: string[];
+  effects: Record<string, Partial<CharacterState>>;
+  karmaEffects: Record<string, number>;
+  trustEffects: Record<string, number>;
+}
+
+interface ProximityTemplate {
+  id: string;
+  text: (names: string[]) => string;
+  minPlayers: number;
+  maxPlayers: number;
+  locationTypes?: string[];
+  timeOfDay?: string[];
+  effects: (playerIds: string[], rng: SeededRng) => {
+    stateChanges: Record<string, Partial<CharacterState>>;
+    karma: Record<string, number>;
+    trust: Record<string, number>;
+  };
+}
+
+const PROXIMITY_TEMPLATES: ProximityTemplate[] = [
+  {
+    id: 'shared_meal_bond',
+    text: (names) => `${names.join(' and ')} share a meal together — conversation flows easily.`,
+    minPlayers: 2, maxPlayers: 3,
+    locationTypes: ['food'],
+    effects: (ids, rng) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      for (const id of ids) {
+        changes[id] = { mood: 8 + rng.between(0, 4), stress: -(3 + rng.between(0, 3)) };
+        karma[id] = 2;
+        trust[id] = 3;
+      }
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'crowded_tension',
+    text: (names) => `The area is crowded. ${names[0]} and ${names[1]} jostle for space in the queue.`,
+    minPlayers: 2, maxPlayers: 2,
+    locationTypes: ['transport', 'shop'],
+    effects: (ids, rng) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      for (const id of ids) {
+        changes[id] = { stress: 5 + rng.between(0, 3), mood: -(2 + rng.between(0, 3)) };
+        karma[id] = 0;
+        trust[id] = -2;
+      }
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'mutual_aid_opportunity',
+    text: (names) => `${names[0]} notices ${names[1]} struggling. An opportunity to help.`,
+    minPlayers: 2, maxPlayers: 2,
+    effects: (ids, rng) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      changes[ids[0]] = { energy: -(3 + rng.between(0, 2)), mood: 6 };
+      changes[ids[1]] = { mood: 5, stress: -4 };
+      karma[ids[0]] = 5;
+      karma[ids[1]] = 1;
+      trust[ids[0]] = 4;
+      trust[ids[1]] = 2;
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'shared_shelter',
+    text: (names) => `${names.join(', ')} take shelter together from the rain. Stories are exchanged.`,
+    minPlayers: 2, maxPlayers: 4,
+    timeOfDay: ['morning', 'afternoon', 'evening'],
+    effects: (ids, rng) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      for (const id of ids) {
+        changes[id] = { mood: 5 + rng.between(0, 5), stress: -(2 + rng.between(0, 3)), energy: 3 };
+        karma[id] = 2;
+        trust[id] = 3;
+      }
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'street_food_discovery',
+    text: (names) => `${names[0]} discovers a hidden street food stall and shares the find with ${names.slice(1).join(' and ')}.`,
+    minPlayers: 2, maxPlayers: 3,
+    locationTypes: ['food', 'public'],
+    effects: (ids, rng) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      changes[ids[0]] = { mood: 10, hunger: -15, cash: -10 };
+      karma[ids[0]] = 4;
+      trust[ids[0]] = 5;
+      for (let i = 1; i < ids.length; i++) {
+        changes[ids[i]] = { mood: 7, hunger: -(10 + rng.between(0, 5)) };
+        karma[ids[i]] = 1;
+        trust[ids[i]] = 2;
+      }
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'workplace_solidarity',
+    text: (names) => `${names.join(' and ')} find themselves working side by side. The task goes faster together.`,
+    minPlayers: 2, maxPlayers: 3,
+    locationTypes: ['office'],
+    effects: (ids, rng) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      for (const id of ids) {
+        changes[id] = { energy: -(5 + rng.between(0, 3)), cash: 20 + rng.between(0, 15), mood: 4 };
+        karma[id] = 2;
+        trust[id] = 3;
+      }
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'information_exchange',
+    text: (names) => `${names[0]} and ${names[1]} swap tips about the city — shortcuts, cheap eats, safe spots.`,
+    minPlayers: 2, maxPlayers: 2,
+    effects: (ids) => {
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      for (const id of ids) {
+        changes[id] = { mood: 4, stress: -3 };
+        karma[id] = 2;
+        trust[id] = 4;
+      }
+      return { stateChanges: changes, karma, trust };
+    }
+  },
+  {
+    id: 'resource_competition',
+    text: (names) => `${names[0]} and ${names[1]} reach for the last available item at the same time. Tension rises.`,
+    minPlayers: 2, maxPlayers: 2,
+    locationTypes: ['shop', 'food'],
+    effects: (ids, rng) => {
+      const winner = rng.between(0, 1);
+      const loser = 1 - winner;
+      const changes: Record<string, Partial<CharacterState>> = {};
+      const karma: Record<string, number> = {};
+      const trust: Record<string, number> = {};
+      changes[ids[winner]] = { mood: 3, hunger: -10 };
+      changes[ids[loser]] = { mood: -5, stress: 5 };
+      karma[ids[winner]] = -1;
+      karma[ids[loser]] = 0;
+      trust[ids[winner]] = -2;
+      trust[ids[loser]] = 0;
+      return { stateChanges: changes, karma, trust };
+    }
+  }
+];
+
+const proximityFiredPairs = new Map<string, Set<string>>();
+
+export function resetProximityTracking(roomId: string): void {
+  proximityFiredPairs.delete(roomId);
+}
+
+export function checkProximityEvents(
+  room: Room,
+  rng: SeededRng
+): ProximityEvent[] {
+  const results: ProximityEvent[] = [];
+  const pairKey = (a: string, b: string) => a < b ? `${a}:${b}` : `${b}:${a}`;
+
+  if (!proximityFiredPairs.has(room.id)) proximityFiredPairs.set(room.id, new Set());
+  const fired = proximityFiredPairs.get(room.id)!;
+
+  const locationGroups = new Map<string, Player[]>();
+  for (const player of Object.values(room.players)) {
+    if (!player.isConnected || !player.isAlive) continue;
+    const loc = player.state.location;
+    if (!locationGroups.has(loc)) locationGroups.set(loc, []);
+    locationGroups.get(loc)!.push(player);
+  }
+
+  const dayPct = (room.tick % 600) / 600;
+  let timeOfDay: string;
+  if (dayPct < 0.25) timeOfDay = 'morning';
+  else if (dayPct < 0.55) timeOfDay = 'afternoon';
+  else if (dayPct < 0.67) timeOfDay = 'evening';
+  else timeOfDay = 'night';
+
+  for (const [locId, players] of locationGroups) {
+    if (players.length < 2) continue;
+    if (!rng.chance(0.02)) continue;
+
+    const loc = getLocation(locId);
+    const locType = loc?.type || 'public';
+
+    const eligible = PROXIMITY_TEMPLATES.filter(t => {
+      if (players.length < t.minPlayers) return false;
+      if (t.locationTypes && !t.locationTypes.includes(locType)) return false;
+      if (t.timeOfDay && !t.timeOfDay.includes(timeOfDay)) return false;
+      return true;
+    });
+
+    if (eligible.length === 0) continue;
+
+    const template = eligible[rng.between(0, eligible.length - 1)];
+    const count = Math.min(players.length, template.maxPlayers);
+    const involved = shufflePlayersRng(players, rng).slice(0, count);
+    const involvedIds = involved.map(p => p.id);
+
+    const pk = involvedIds.length === 2
+      ? pairKey(involvedIds[0], involvedIds[1])
+      : involvedIds.sort().join(':');
+
+    const eventKey = `${template.id}:${pk}`;
+    if (fired.has(eventKey)) continue;
+    fired.add(eventKey);
+
+    const { stateChanges, karma, trust } = template.effects(involvedIds, rng);
+    const names = involved.map(p => p.name);
+
+    results.push({
+      id: uuidv4(),
+      text: template.text(names),
+      involvedPlayerIds: involvedIds,
+      effects: stateChanges,
+      karmaEffects: karma,
+      trustEffects: trust
+    });
+  }
+
+  return results;
+}
+
+function shufflePlayersRng(arr: Player[], rng: SeededRng): Player[] {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = rng.between(0, i);
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+// --- Dynamic Resource Scarcity ---
+
+import type { ResourceScarcity } from './locationContent';
+
+export interface ScarcityShift {
+  locationId: string;
+  reason: string;
+  changes: Partial<ResourceScarcity>;
+}
+
+export function computeDynamicScarcity(
+  room: Room,
+  baseScarcity: Map<string, ResourceScarcity>,
+  rng: SeededRng
+): ScarcityShift[] {
+  const shifts: ScarcityShift[] = [];
+  const tick = room.tick;
+  const dayPct = (tick % 600) / 600;
+
+  const playersByLocation = new Map<string, number>();
+  for (const player of Object.values(room.players)) {
+    if (!player.isConnected || !player.isAlive) continue;
+    const loc = player.state.location;
+    playersByLocation.set(loc, (playersByLocation.get(loc) || 0) + 1);
+  }
+
+  for (const [locId, base] of baseScarcity) {
+    const crowding = playersByLocation.get(locId) || 0;
+    const activeEvents = room.cityEvents.filter(e =>
+      e.startTick + e.duration > tick &&
+      (e.affectedLocations.includes('all') || e.affectedLocations.includes(locId))
+    );
+
+    let foodMod = 0;
+    let waterMod = 0;
+    let medicineMod = 0;
+    let priceMod = 0;
+    let reason = '';
+
+    // Crowding drains food and water availability
+    if (crowding >= 3) {
+      foodMod -= 0.15 * crowding;
+      waterMod -= 0.1 * crowding;
+      priceMod += 0.1 * crowding;
+      reason = 'High demand from crowding';
+    }
+
+    // City events affect scarcity
+    for (const evt of activeEvents) {
+      if (evt.type === 'resource_shortage') {
+        foodMod -= 0.3;
+        waterMod -= 0.25;
+        priceMod += 0.4;
+        reason = reason || evt.title;
+      }
+      if (evt.type === 'heat') {
+        waterMod -= 0.2;
+        priceMod += 0.15;
+        reason = reason || 'Heat wave driving up demand';
+      }
+      if (evt.type === 'weather') {
+        foodMod -= 0.1;
+        priceMod += 0.1;
+        reason = reason || 'Rain disrupting supply chains';
+      }
+      if (evt.type === 'market') {
+        foodMod += 0.15;
+        priceMod -= 0.15;
+        reason = reason || 'Market day — supplies flowing in';
+      }
+      if (evt.type === 'emergency') {
+        medicineMod -= 0.3;
+        priceMod += 0.3;
+        reason = reason || 'Emergency straining medical supplies';
+      }
+    }
+
+    // Time-of-day effects
+    if (dayPct > 0.7) {
+      foodMod -= 0.15;
+      reason = reason || 'Evening — vendors closing up';
+    } else if (dayPct < 0.15) {
+      foodMod -= 0.1;
+      waterMod -= 0.05;
+      reason = reason || 'Early morning — limited availability';
+    }
+
+    // Late-game scarcity pressure
+    const matchProgress = tick / room.matchDuration;
+    if (matchProgress > 0.7) {
+      foodMod -= 0.1;
+      waterMod -= 0.08;
+      priceMod += 0.15;
+      reason = reason || 'Resources dwindling as the day wears on';
+    }
+
+    if (foodMod !== 0 || waterMod !== 0 || medicineMod !== 0 || priceMod !== 0) {
+      const changes: Partial<ResourceScarcity> = {};
+      if (foodMod !== 0) changes.foodAvailability = clamp(base.foodAvailability + foodMod, 0.05, 1.0);
+      if (waterMod !== 0) changes.waterAvailability = clamp(base.waterAvailability + waterMod, 0.05, 1.0);
+      if (medicineMod !== 0) changes.medicineAvailability = clamp(base.medicineAvailability + medicineMod, 0.05, 1.0);
+      if (priceMod !== 0) changes.priceMultiplier = Math.round(clamp(base.priceMultiplier + priceMod, 0.5, 2.5) * 10) / 10;
+
+      shifts.push({ locationId: locId, reason, changes });
+    }
+  }
+
+  return shifts;
 }
