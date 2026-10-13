@@ -83,6 +83,35 @@ export interface DilemmaRecord {
   tick: number;
 }
 
+export interface MoralMapEntry {
+  tick: number;
+  action: string;
+  karmaShift: number;
+  karmaBefore: number;
+  karmaAfter: number;
+  category: 'help' | 'harm' | 'dilemma' | 'trade' | 'obligation' | 'fortune';
+}
+
+export interface PerspectiveReveal {
+  karma: number;
+  backstory: string;
+  socialClass: string;
+  communityIdentity: string;
+  hiddenObligations: string[];
+  obligationsFired: string[];
+  revealedConstraints: string[];
+  decisionWeights: {
+    groupLoyalty: number;
+    selfPreservation: number;
+    principledAction: number;
+    statusAnxiety: number;
+    communityDuty: number;
+  };
+  politicalPressures: string[];
+  dilemmaProfile: string;
+  moralArchetype: string;
+}
+
 export interface CharacterState {
   health: number;
   energy: number;
@@ -343,6 +372,8 @@ export interface PlayerResult {
   deathNarrative?: DeathNarrative;
   scoreBreakdown: ScoreBreakdown;
   performanceInsights: PerformanceInsight[];
+  moralMap?: MoralMapEntry[];
+  perspective?: PerspectiveReveal;
 }
 
 export interface MatchResult {

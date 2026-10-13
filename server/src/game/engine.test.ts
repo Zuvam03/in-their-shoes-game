@@ -1,4 +1,4 @@
-import { SeededRng, tickCharacterState, resolveAction, evaluateKarma, createCharacterState, checkProximityEvents, computeDynamicScarcity, resetProximityTracking, getReputationBias, applyReputationToVendorPrice, computeNegotiationFairness } from './engine';
+import { SeededRng, tickCharacterState, resolveAction, evaluateKarma, createCharacterState, checkProximityEvents, computeDynamicScarcity, resetProximityTracking, getReputationBias, applyReputationToVendorPrice, computeNegotiationFairness, generateMoralMap, generatePerspectiveReveal } from './engine';
 import { PERSONAS, getPersonaById } from './personas';
 import type { Player, Room, GameAction, CharacterState } from './types';
 import { getTrustLevel, getTrustPriceMultiplier } from './types';
@@ -542,5 +542,122 @@ describe('Reputation Bias', () => {
     const lowTrust = computeNegotiationFairness(30, 30, 20, 40);
 
     expect(highTrust.fairnessScore).toBeGreaterThan(lowTrust.fairnessScore);
+  });
+});
+
+describe('Moral Map & Perspective Reveal', () => {
+  function makePlayer(overrides: Partial<Player> = {}): Player {
+    const persona = PERSONAS[0];
+    return {
+      id: 'test-player',
+      socketId: 'test-socket',
+      name: 'TestPlayer',
+      persona,
+      state: createCharacterState(persona, 'howrah_station'),
+      mission: { definition: MISSIONS[0], objectives: [], status: 'active', startTick: 0, partialProgress: 0, journeyNotes: [] },
+      actionLog: [],
+      socialTrust: 50,
+      communityImpact: 10,
+      dilemmasResolved: [],
+      activeDilemmaId: undefined,
+      isAlive: true,
+      isConnected: true,
+      isReady: true,
+      hidden: { karma: 20, karmaActions: 3, lastKarmaActionTick: 100, obligationsFired: [0], revealedConstraints: ['Must send money home'] },
+      ...overrides,
+    };
+  }
+
+  it('generates moral map entries from help and dilemma actions', () => {
+    const player = makePlayer({
+      actionLog: [
+        { id: '1', tick: 10, type: 'help_player', description: 'Helped another player', isPublic: true },
+        { id: '2', tick: 30, type: 'dilemma_choice', description: 'You chose: Share food with others', isPublic: false },
+        { id: '3', tick: 50, type: 'transfer_money', description: 'Transferred ₹20 to Ravi', isPublic: true },
+        { id: '4', tick: 70, type: 'move', description: 'Walked to Esplanade', isPublic: true },
+      ],
+    });
+
+    const map = generateMoralMap(player);
+    expect(map.length).toBe(3);
+    expect(map[0].category).toBe('help');
+    expect(map[0].karmaShift).toBeGreaterThan(0);
+    expect(map[1].category).toBe('dilemma');
+    expect(map[2].category).toBe('trade');
+    expect(map[2].karmaAfter).toBeGreaterThan(map[1].karmaAfter);
+  });
+
+  it('tracks running karma across entries', () => {
+    const player = makePlayer({
+      actionLog: [
+        { id: '1', tick: 10, type: 'help_player', description: 'Helped', isPublic: true },
+        { id: '2', tick: 20, type: 'help_player', description: 'Helped again', isPublic: true },
+      ],
+    });
+
+    const map = generateMoralMap(player);
+    expect(map.length).toBe(2);
+    expect(map[0].karmaBefore).toBe(0);
+    expect(map[0].karmaAfter).toBe(map[0].karmaShift);
+    expect(map[1].karmaBefore).toBe(map[0].karmaAfter);
+    expect(map[1].karmaAfter).toBe(map[0].karmaAfter + map[1].karmaShift);
+  });
+
+  it('classifies obligation events', () => {
+    const player = makePlayer({
+      actionLog: [
+        { id: '1', tick: 100, type: 'obligation', description: 'Hidden obligation: Must send money home', isPublic: false },
+      ],
+    });
+
+    const map = generateMoralMap(player);
+    expect(map.length).toBe(1);
+    expect(map[0].category).toBe('obligation');
+    expect(map[0].karmaShift).toBeLessThan(0);
+  });
+
+  it('generates perspective reveal with backstory and decision weights', () => {
+    const player = makePlayer();
+    const perspective = generatePerspectiveReveal(player);
+
+    expect(perspective.karma).toBe(20);
+    expect(perspective.backstory).toBeTruthy();
+    expect(perspective.socialClass).toBeTruthy();
+    expect(perspective.communityIdentity).toBeTruthy();
+    expect(perspective.decisionWeights).toBeDefined();
+    expect(perspective.decisionWeights.groupLoyalty).toBeGreaterThanOrEqual(1);
+    expect(perspective.moralArchetype).toBeTruthy();
+    expect(perspective.revealedConstraints).toContain('Must send money home');
+  });
+
+  it('assigns correct moral archetypes', () => {
+    const altruist = makePlayer({
+      hidden: { karma: 70, karmaActions: 10, lastKarmaActionTick: 100, obligationsFired: [], revealedConstraints: [] },
+      socialTrust: 75,
+      communityImpact: 30,
+      state: { ...createCharacterState(PERSONAS[0], 'howrah_station'), helpedOthersCount: 5, receivedHelpCount: 0 },
+    });
+    expect(generatePerspectiveReveal(altruist).moralArchetype).toBe('The Altruist');
+
+    const loner = makePlayer({
+      hidden: { karma: 0, karmaActions: 0, lastKarmaActionTick: 0, obligationsFired: [], revealedConstraints: [] },
+      socialTrust: 30,
+      communityImpact: 0,
+      dilemmasResolved: [],
+      state: { ...createCharacterState(PERSONAS[0], 'howrah_station'), helpedOthersCount: 0, receivedHelpCount: 0 },
+    });
+    expect(generatePerspectiveReveal(loner).moralArchetype).toBe('The Lone Wolf');
+  });
+
+  it('returns empty moral map for players with no moral actions', () => {
+    const player = makePlayer({
+      actionLog: [
+        { id: '1', tick: 10, type: 'move', description: 'Walked to Park Street', isPublic: true },
+        { id: '2', tick: 20, type: 'rest', description: 'Rested at bench', isPublic: false },
+      ],
+    });
+
+    const map = generateMoralMap(player);
+    expect(map.length).toBe(0);
   });
 });

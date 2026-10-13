@@ -4,6 +4,7 @@ import type {
   CityEvent, EventChoice, MissionObjective, InteractionRequest,
   SocialDilemma, DilemmaEvent, DilemmaRecord, DeathNarrative,
   TransportMode, StatBand, CashBand, ApproximateState, ObligationTrigger,
+  MoralMapEntry, PerspectiveReveal,
 } from './types';
 import { TrustLevel, getTrustLevel, getTrustPriceMultiplier } from './types';
 import { getRoute, getLocation, findShortestPath, getNearbyLocations } from './map';
@@ -1349,7 +1350,9 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
       dilemmasResolved: player.dilemmasResolved || [],
       personaLens: generatePersonaLens(player),
       scoreBreakdown,
-      performanceInsights
+      performanceInsights,
+      moralMap: generateMoralMap(player),
+      perspective: generatePerspectiveReveal(player),
     };
 
     if (!player.isAlive) {
@@ -1377,6 +1380,104 @@ export function calculateMatchResult(room: Room): import('./types').MatchResult 
     matchDurationActual: room.tick,
     totalTicks: room.tick,
     highlightEvents
+  };
+}
+
+export function generateMoralMap(player: Player): MoralMapEntry[] {
+  const entries: MoralMapEntry[] = [];
+  let runningKarma = 0;
+
+  const MORAL_TYPES = ['help_player', 'transfer_money', 'event_choice', 'dilemma_choice', 'obligation'];
+
+  for (const event of player.actionLog) {
+    if (!MORAL_TYPES.includes(event.type)) {
+      const desc = (event.description || '').toLowerCase();
+      if (!desc.includes('fortune') && !desc.includes('luck') && !desc.includes('obligation')) {
+        continue;
+      }
+    }
+
+    let shift = 0;
+    let category: MoralMapEntry['category'] = 'help';
+    const desc = (event.description || '').toLowerCase();
+
+    if (event.type === 'help_player') {
+      shift = 5;
+      category = 'help';
+    } else if (event.type === 'transfer_money') {
+      shift = 4;
+      category = 'trade';
+    } else if (event.type === 'dilemma_choice') {
+      category = 'dilemma';
+      if (desc.includes('help') || desc.includes('share') || desc.includes('give')) shift = 6;
+      else if (desc.includes('ignore') || desc.includes('walk past') || desc.includes('decline')) shift = -2;
+      else shift = 1;
+    } else if (event.type === 'event_choice') {
+      category = 'dilemma';
+      if (desc.includes('help') || desc.includes('share') || desc.includes('tip')) shift = 4;
+      else if (desc.includes('ignore') || desc.includes('walk') || desc.includes('detour')) shift = -1;
+      else shift = 0;
+    } else if (event.type === 'obligation' || desc.includes('obligation')) {
+      category = 'obligation';
+      shift = -3;
+    } else if (desc.includes('fortune') || desc.includes('luck')) {
+      category = 'fortune';
+      shift = 2;
+    }
+
+    const karmaBefore = runningKarma;
+    runningKarma = clamp(runningKarma + shift, -100, 100);
+
+    entries.push({
+      tick: event.tick,
+      action: event.description,
+      karmaShift: shift,
+      karmaBefore,
+      karmaAfter: runningKarma,
+      category,
+    });
+  }
+
+  return entries;
+}
+
+function getMoralArchetype(player: Player): string {
+  const karma = player.hidden.karma;
+  const trust = player.socialTrust;
+  const impact = player.communityImpact;
+  const helped = player.state.helpedOthersCount;
+  const dilemmas = player.dilemmasResolved?.length || 0;
+
+  if (karma > 60 && trust > 60 && impact > 20) return 'The Altruist';
+  if (karma > 40 && helped > 3 && trust > 50) return 'The Community Builder';
+  if (karma > 20 && dilemmas >= 2 && trust > 40) return 'The Principled Survivor';
+  if (karma > 0 && karma <= 20) return 'The Pragmatist';
+  if (karma === 0 && helped === 0) return 'The Lone Wolf';
+  if (karma < -20 && trust < 30) return 'The Desperate';
+  if (karma < 0 && impact < 0) return 'The Self-Preservationist';
+  if (trust > 60 && karma <= 0) return 'The Shrewd Ally';
+  if (dilemmas >= 3 && karma > 10) return 'The Tested Soul';
+  return 'The Survivor';
+}
+
+export function generatePerspectiveReveal(player: Player): PerspectiveReveal {
+  const sc = player.persona.socialContext;
+
+  return {
+    karma: player.hidden.karma,
+    backstory: player.persona.backstory,
+    socialClass: sc?.class || 'unknown',
+    communityIdentity: sc?.communityIdentity || player.persona.title,
+    hiddenObligations: sc?.hiddenObligations || [],
+    obligationsFired: (player.hidden.revealedConstraints || []),
+    revealedConstraints: player.hidden.revealedConstraints || [],
+    decisionWeights: sc?.decisionWeights || {
+      groupLoyalty: 5, selfPreservation: 5, principledAction: 5,
+      statusAnxiety: 5, communityDuty: 5,
+    },
+    politicalPressures: sc?.politicalPressures || [],
+    dilemmaProfile: sc?.dilemmaProfile || 'Balanced decision-maker',
+    moralArchetype: getMoralArchetype(player),
   };
 }
 

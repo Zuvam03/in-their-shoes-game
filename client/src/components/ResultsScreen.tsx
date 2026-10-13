@@ -6,6 +6,7 @@ import { ACHIEVEMENTS } from '../game/achievements';
 import ResultsShareCard from './ResultsShareCard';
 import { saveGameRecord } from './GameHistory';
 import KolkataChronicle from './KolkataChronicle';
+import { MoralMap, PerspectiveRevealPanel } from './MoralMapViz';
 
 // Animated counter hook — counts from 0 to target with easing
 function useCounter(target: number, duration: number, startDelay: number, active: boolean) {
@@ -109,7 +110,7 @@ function ConfettiCanvas({ active }: { active: boolean }) {
 }
 
 // Reveal phase type
-type RevealPhase = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+type RevealPhase = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export default function ResultsScreen() {
   const { matchResult, mySocketId, myPlayer, room, playAgain, soundEnabled } = useGameStore();
@@ -152,6 +153,8 @@ export default function ResultsScreen() {
       setTimeout(() => setPhase(4), 5200),
       setTimeout(() => setPhase(5), 6200),
       setTimeout(() => setPhase(6), 7200),
+      setTimeout(() => setPhase(7), 8400),
+      setTimeout(() => setPhase(8), 9600),
     ];
 
     // Confetti on win
@@ -775,9 +778,23 @@ export default function ResultsScreen() {
           </div>
         )}
 
+        {/* === PHASE 7: Moral Map === */}
+        {myResult?.moralMap && myResult.moralMap.length > 0 && (
+          <div style={{ ...sectionStyle(7) }}>
+            <MoralMap result={myResult} totalTicks={matchResult.totalTicks} />
+          </div>
+        )}
+
+        {/* === PHASE 8: Perspective Reveal === */}
+        {playerResults.some(r => r.perspective) && (
+          <div style={{ ...sectionStyle(8) }}>
+            <PerspectiveRevealPanel results={playerResults} myPlayerId={mySocketId || ''} />
+          </div>
+        )}
+
         {/* Match Highlights */}
         {highlightEvents.length > 0 && (
-          <div style={{ ...sectionStyle(6, 800) }}>
+          <div style={{ ...sectionStyle(8, 200) }}>
             <div style={{
               padding: '20px', borderRadius: '14px',
               background: 'var(--bg-card)', border: '1px solid var(--border)',
@@ -800,7 +817,7 @@ export default function ResultsScreen() {
         )}
 
         {/* Kolkata Chronicle */}
-        <div style={{ ...sectionStyle(6, 900) }}>
+        <div style={{ ...sectionStyle(8, 400) }}>
           <button onClick={() => setShowChronicle(true)} style={{
             width: '100%', padding: '16px 20px', borderRadius: '12px',
             background: 'linear-gradient(135deg, #faf5e8 0%, #f0e6cc 100%)',
@@ -823,14 +840,14 @@ export default function ResultsScreen() {
         </div>
 
         {/* Share Card */}
-        <div style={{ ...sectionStyle(6, 1000) }}>
+        <div style={{ ...sectionStyle(8, 600) }}>
           <ResultsShareCard />
         </div>
 
         {/* Action Buttons */}
         <div style={{
           display: 'flex', gap: '12px', marginBottom: '24px',
-          ...sectionStyle(6, 1200),
+          ...sectionStyle(8, 800),
         }}>
           <button
             onClick={() => {
@@ -843,6 +860,7 @@ export default function ResultsScreen() {
                 `Score: ${myResult.score}/100 | Rank: #${myResult.rank}/${playerResults.length}`,
                 `Social Trust: ${myResult.socialTrust} | Community: ${myResult.communityImpact >= 0 ? '+' : ''}${myResult.communityImpact}`,
                 `Helped ${myResult.cooperationCount} player(s) | Faced ${myResult.dilemmasResolved.length} dilemma(s)`,
+                myResult.perspective ? `Moral Archetype: ${myResult.perspective.moralArchetype} | Karma: ${myResult.perspective.karma > 0 ? '+' : ''}${myResult.perspective.karma}` : '',
                 ``,
                 myResult.dilemmasResolved.length > 0
                   ? `Dilemma choices: ${myResult.dilemmasResolved.map(d => `${d.dilemmaTitle} → ${d.choiceLabel}`).join(', ')}`
