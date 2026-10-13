@@ -39,6 +39,8 @@ import AchievementProgress from './AchievementProgress';
 import { playActionSuccess, playActionFail, playWarning, playCoinEarn, playCoinSpend, playChat, playDilemma, playFortune, playGameStart, playGameEnd, playAmbient, stopAmbient, playMove, playHelp, playNotification, playAchievement } from '../game/sounds';
 import CityEventCinematic from './CityEventCinematic';
 import DeathScreen from './DeathScreen';
+import LocationContent from './LocationContent';
+import ArrivalToast from './ArrivalToast';
 import { getLocationById } from '../game/mapData';
 
 type Tab = 'actions' | 'info' | 'mission' | 'social' | 'log';
@@ -238,8 +240,9 @@ export default function GameScreen() {
               <div style={{
                 position: 'absolute', bottom: '0', left: '0', right: '0',
                 background: 'linear-gradient(transparent, var(--bg-secondary))',
-                padding: '8px', maxHeight: '45%', overflowY: 'auto'
+                padding: '8px', maxHeight: '50%', overflowY: 'auto'
               }}>
+                <LocationContent />
                 <ActionPanel />
               </div>
             </>
@@ -291,6 +294,7 @@ export default function GameScreen() {
         <ActionResultToast />
         <AmbientOverlay />
         <PersonaInsights />
+        <ArrivalToast />
         <DaySummary />
         <CityEventCinematic />
         <DilemmaModal />
@@ -509,6 +513,7 @@ export default function GameScreen() {
             {activeTab === 'actions' && (
               <div style={{ padding: '10px' }}>
                 <LocationDetail />
+                <LocationContent />
                 <ActionPanel />
                 <TradePanel />
                 <ActionCooldowns />
@@ -561,6 +566,7 @@ export default function GameScreen() {
       <ActionResultToast />
       <AmbientOverlay />
       <PersonaInsights />
+      <ArrivalToast />
       <DaySummary />
       <CityEventCinematic />
       <DilemmaModal />

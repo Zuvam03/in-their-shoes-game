@@ -296,50 +296,64 @@ export interface VendorItem {
   id: string;
   name: string;
   cost: number;
-  effects: Partial<CharacterState>;
+  effects: Partial<Record<string, number>>;
   description: string;
+  limited?: number;
 }
 
 export interface Vendor {
   id: string;
   name: string;
   type: 'food' | 'drink' | 'medicine' | 'goods' | 'service';
+  description: string;
+  availableFrom: number;
+  availableUntil: number;
   items: VendorItem[];
   personality: string;
-  availableHours: { start: number; end: number };
-  priceMultiplier: number;
 }
 
 export interface NPC {
   id: string;
   name: string;
   role: string;
-  dialogue: string;
-  mood: string;
+  description: string;
+  availableFrom: number;
+  availableUntil: number;
+  dialogue: string[];
+  interactionType: 'talk' | 'help' | 'trade' | 'quest';
 }
 
 export interface MicroChoice {
   id: string;
-  text: string;
-  effects: Partial<CharacterState>;
+  label: string;
+  effects: Partial<Record<string, number>>;
   karmaChange: number;
   narrative: string;
 }
 
 export interface MicroInteraction {
   id: string;
-  prompt: string;
+  text: string;
   choices: MicroChoice[];
-  timeOfDay?: 'morning' | 'afternoon' | 'evening' | 'night';
-  weatherCondition?: 'rain' | 'heat' | 'clear';
+  timeOfDay: 'morning' | 'afternoon' | 'evening' | 'night' | 'any';
+  weather: 'rain' | 'heat' | 'clear' | 'any';
   oneShot: boolean;
 }
 
 export interface AtmosphereState {
-  description: string;
-  ambientSounds: string;
-  crowdLevel: 'empty' | 'sparse' | 'moderate' | 'crowded' | 'packed';
+  crowd: 'empty' | 'sparse' | 'moderate' | 'busy' | 'packed';
+  noise: 'silent' | 'quiet' | 'moderate' | 'loud' | 'deafening';
+  smell: string;
+  visualDetail: string;
   mood: string;
+}
+
+export interface ResourceScarcity {
+  foodAvailability: number;
+  waterAvailability: number;
+  medicineAvailability: number;
+  workAvailability: number;
+  priceMultiplier: number;
 }
 
 export interface LocationSnapshot {
@@ -348,7 +362,7 @@ export interface LocationSnapshot {
   npcs: NPC[];
   interactions: MicroInteraction[];
   atmosphere: AtmosphereState;
-  scarcity: { level: 'abundant' | 'normal' | 'scarce' | 'critical'; priceMultiplier: number };
+  scarcity: ResourceScarcity;
 }
 
 export interface GameNotification {
